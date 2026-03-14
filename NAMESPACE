@@ -3,4 +3,5 @@
 export(combine_rule_elements)
 export(extract_rules)
 export(rect_split_to_expr)
+export(rule_text)
 import(rlang)
