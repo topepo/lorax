@@ -32,7 +32,7 @@
 #'
 #' @export
 rect_split_to_expr <- function(split) {
-  validate_split(split)
+  validate_split(split, call = rlang::current_env())
 
   column_sym <- rlang::sym(split$column)
   operator <- split$operator
@@ -42,11 +42,12 @@ rect_split_to_expr <- function(split) {
 }
 
 # Internal helper to validate split structure
-validate_split <- function(split) {
+validate_split <- function(split, call = rlang::caller_env()) {
   # Check that input is a list
   if (!is.list(split)) {
     cli::cli_abort(
-      "{.arg split} must be a list, not {.obj_type_friendly {split}}."
+      "{.arg split} must be a list, not {.obj_type_friendly {split}}.",
+      call = call
     )
   }
 
@@ -55,7 +56,8 @@ validate_split <- function(split) {
   if (!all(required_names %in% names(split))) {
     missing <- setdiff(required_names, names(split))
     cli::cli_abort(
-      "{.arg split} must have elements {.field {required_names}}, missing {.field {missing}}."
+      "{.arg split} must have elements {.field {required_names}}, missing {.field {missing}}.",
+      call = call
     )
   }
 
@@ -63,7 +65,8 @@ validate_split <- function(split) {
   extra_names <- setdiff(names(split), required_names)
   if (length(extra_names) > 0) {
     cli::cli_abort(
-      "{.arg split} must only have elements {.field {required_names}}, found extra {.field {extra_names}}."
+      "{.arg split} must only have elements {.field {required_names}}, found extra {.field {extra_names}}.",
+      call = call
     )
   }
 
@@ -73,14 +76,18 @@ validate_split <- function(split) {
       length(split$column) != 1 ||
       split$column == ""
   ) {
-    cli::cli_abort("{.field column} must be a non-empty character string.")
+    cli::cli_abort(
+      "{.field column} must be a non-empty character string.",
+      call = call
+    )
   }
 
   # Validate operator
   valid_operators <- c("<", "<=", ">", ">=", "==", "%in%")
   if (!split$operator %in% valid_operators) {
     cli::cli_abort(
-      "{.field operator} must be one of {.or {valid_operators}}, not {.val {split$operator}}."
+      "{.field operator} must be one of {.or {valid_operators}}, not {.val {split$operator}}.",
+      call = call
     )
   }
 
@@ -88,24 +95,28 @@ validate_split <- function(split) {
   if (split$operator == "%in%") {
     if (!is.character(split$value)) {
       cli::cli_abort(
-        "{.field value} must be a character vector when {.field operator} is {.val %in%}."
+        "{.field value} must be a character vector when {.field operator} is {.val %in%}.",
+        call = call
       )
     }
     if (length(split$value) == 1) {
       cli::cli_abort(
-        "Single character values should use {.val ==} operator, not {.val %in%}."
+        "Single character values should use {.val ==} operator, not {.val %in%}.",
+        call = call
       )
     }
   } else {
     # For other operators, value should be single numeric or character
     if (length(split$value) != 1) {
       cli::cli_abort(
-        "{.field value} must be length 1 for operator {.val {split$operator}}."
+        "{.field value} must be length 1 for operator {.val {split$operator}}.",
+        call = call
       )
     }
     if (!is.numeric(split$value) && !is.character(split$value)) {
       cli::cli_abort(
-        "{.field value} must be numeric or character for operator {.val {split$operator}}."
+        "{.field value} must be numeric or character for operator {.val {split$operator}}.",
+        call = call
       )
     }
   }
