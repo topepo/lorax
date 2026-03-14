@@ -9,14 +9,8 @@ Authors@R: c(
 Description: R functions and methods to extract elements of tree- and
     rule-based models.
 License: MIT + file LICENSE
-Encoding: UTF-8
-Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
-Suggests:
-    rpart,
-    spelling,
-    testthat (>= 3.0.0)
-Language: en-US
+Depends: 
+    R (>= 4.1.0)
 Imports: 
     cli,
     dplyr,
@@ -24,4 +18,13 @@ Imports:
     purrr,
     rlang (>= 1.1.0),
     tibble
+Suggests:
+    palmerpenguins,
+    rpart,
+    spelling,
+    testthat (>= 3.0.0)
 Config/testthat/edition: 3
+Encoding: UTF-8
+Language: en-US
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
