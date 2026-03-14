@@ -199,3 +199,24 @@ test_that("extract_rules.ObliqueForest() node assignments are consistent", {
                                    rule_id_1based))
   }
 })
+
+test_that("extract_rules.ObliqueForest() handles single-node tree", {
+  # Force a single-node tree with very high split_min_stat
+  set.seed(123)
+  small_data <- data.frame(y = 1:50, x = rnorm(50))
+  
+  forest <- orsf(y ~ ., data = small_data, n_tree = 1,
+                 oobag_pred_type = "none",
+                 split_min_stat = 100)
+  
+  # Verify it's actually a single-node tree
+  expect_equal(forest$forest$child_left[[1]][1], 0)
+  
+  rules <- extract_rules(forest, tree = 1)
+  
+  expect_s3_class(rules, "rule_set_ObliqueForest")
+  expect_equal(nrow(rules), 1)
+  expect_equal(rules$tree, 1L)
+  expect_equal(rules$id, 1L)  # 1-indexed
+  expect_equal(rules$rules[[1]], rlang::expr(TRUE))
+})

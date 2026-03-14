@@ -109,3 +109,40 @@ test_that("extract_rules.rpart() works with wa_trees data", {
     expect_equal(sum(result), expected_n)
   }
 })
+
+test_that("extract_rules.rpart() handles single-node tree (already exists)", {
+  # This test already exists above, just confirming it works
+  single_tree <- rpart(Sepal.Length ~ Sepal.Width, data = iris, cp = 1)
+  rules <- extract_rules(single_tree)
+  
+  expect_s3_class(rules, "rule_set_rpart")
+  expect_equal(nrow(rules), 1)
+  expect_equal(rules$id, 1L)
+  expect_equal(rules$rules[[1]], rlang::expr(TRUE))
+})
+
+test_that("extract_rules.rpart() handles no-split data", {
+  # Data where no good split can be made
+  null_data <- data.frame(y = 1:10, x = rep(1:5, each = 2))
+  tree <- rpart(y ~ ., data = null_data)
+  
+  rules <- extract_rules(tree)
+  
+  expect_s3_class(rules, "rule_set_rpart")
+  expect_equal(nrow(rules), 1)
+  expect_equal(rules$id, 1L)
+  expect_equal(rules$rules[[1]], rlang::expr(TRUE))
+})
+
+test_that("extract_rules.rpart() handles no-split data", {
+  # Data where no good split can be made
+  null_data <- data.frame(y = 1:10, x = rep(1:5, each = 2))
+  tree <- rpart(y ~ ., data = null_data)
+  
+  rules <- extract_rules(tree)
+  
+  expect_s3_class(rules, "rule_set_rpart")
+  expect_equal(nrow(rules), 1)
+  expect_equal(rules$id, 1L)
+  expect_equal(rules$rules[[1]], rlang::expr(TRUE))
+})
