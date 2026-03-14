@@ -8,7 +8,7 @@
 #' @param x A object
 #' @param ... Other arguments passed to methods
 #'
-#' @return A data frame with column `equation` (an R expression) and `id` (an
+#' @return A data frame with column `rules` (an R expression) and `id` (an
 #' identifier).
 #'
 #' @export

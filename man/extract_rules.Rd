@@ -12,7 +12,7 @@ extract_rules(x, ...)
 \item{...}{Other arguments passed to methods}
 }
 \value{
-A data frame with column \code{equation} (an R expression) and \code{id} (an
+A data frame with column \code{rules} (an R expression) and \code{id} (an
 identifier).
 }
 \description{

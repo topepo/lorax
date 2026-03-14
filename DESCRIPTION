@@ -12,13 +12,15 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-Suggests: 
+Suggests:
+    rpart,
     spelling,
     testthat (>= 3.0.0)
 Language: en-US
 Imports: 
     cli,
     dplyr,
+    partykit,
     purrr,
     rlang (>= 1.1.0),
     tibble
