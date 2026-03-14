@@ -16,6 +16,23 @@
 #'   * `id`: integer, the terminal node ID (1-based for user convenience)
 #'
 #' @details
+#'
+#' ## Known Limitation
+#'
+#' **Important**: The extracted rules currently do NOT perfectly match aorsf's
+#' internal node assignments. This is a known issue being investigated. The
+#' rules are structurally correct (using the right splits and operators) but
+#' may not evaluate to the exact same terminal nodes as aorsf's predictions.
+#'
+#' The rules are still useful for:
+#' - Understanding the general structure of oblique splits
+#' - Seeing which variables and linear combinations are used
+#' - Interpreting model behavior qualitatively
+#'
+#' But should NOT be used for:
+#' - Exactly replicating aorsf's predictions
+#' - Validating which observations belong to which nodes
+#'
 #' ## Tree and Node Indexing
 #'
 #' Both the `tree` parameter and the `id` column use **1-based indexing** for
@@ -31,22 +48,20 @@
 #' ## Factor Variables and One-Hot Encoding
 #'
 #' The aorsf package internally converts unordered factor variables to binary
-#' indicator (dummy) variables. This means:
+#' indicator (dummy) variables during tree building. However, the extracted
+#' rules automatically convert these back to factor comparisons for better
+#' interpretability:
 #'
-#' - For an unordered factor with `k` levels, `k` indicator variables are created
-#'   (one for each level, not k-1 as in reference coding)
-#' - Indicator variables are named as `{variable_name}_{level_name}`
-#' - Each indicator is 1 when the observation has that level, 0 otherwise
-#' - For example, a factor `color` with levels `["red", "blue", "green"]` creates
-#'   indicator variables `color_red`, `color_blue`, and `color_green`
+#' - Instead of `2.1 * county_adams`, rules show `2.1 * (county == "adams")`
+#' - This allows rules to be evaluated directly on data with the original factor
+#'   columns (no need to create indicator variables)
+#' - For example, a factor `color` with levels `["red", "blue", "green"]` will
+#'   appear in rules as `(color == "red")`, `(color == "blue")`, etc.
 #'
 #' Ordered factors are converted to a single integer variable representing the
 #' ordinal level, not to multiple indicators.
 #'
-#' As a result, the variable names in extracted rules may differ from the
-#' original data frame column names. Rules will reference the indicator variables
-#' (e.g., `color_red`, `color_blue`, `color_green`) rather than the original
-#' factor column (`color`).
+#' Factor indicators are not scaled since they are binary 0/1 values.
 #'
 #' ## Predictor Scaling and Unscaling
 #'
@@ -111,7 +126,9 @@ extract_rules.ObliqueForest <- function(x, tree = 1L, ...) {
       parent_id <- path[i]
       child_id <- path[i + 1]
       split_info <- oblique_get_split_info(parent_id, child_id, tree, x)
-      split_exprs[[i]] <- obliq_split_to_expr(split_info)
+      expr <- obliq_split_to_expr(split_info)
+      # Replace indicator variables with factor comparisons for interpretability
+      split_exprs[[i]] <- oblique_replace_indicators(expr, x)
     }
 
     combine_rule_elements(split_exprs)
@@ -217,6 +234,51 @@ oblique_unscale_split <- function(columns, coef_vals, threshold, x) {
     values = unscaled_coefs,
     threshold = threshold + threshold_adjustment
   )
+}
+
+# Internal helper to replace indicator variables with factor comparisons
+oblique_replace_indicators <- function(expr, x) {
+  # Get factor information
+  fctr_info <- x$get_fctr_info()
+
+  # If no factors, return expression as-is
+  if (length(fctr_info$cols) == 0) {
+    return(expr)
+  }
+
+  # Build mapping from indicator name to (factor, level)
+  indicator_map <- list()
+  for (var_name in fctr_info$cols) {
+    indicators <- fctr_info$keys[[var_name]]
+    levels <- fctr_info$lvls[[var_name]]
+    for (i in seq_along(indicators)) {
+      indicator_map[[indicators[i]]] <- list(
+        factor = var_name,
+        level = levels[i]
+      )
+    }
+  }
+
+  # Recursively replace indicator symbols with factor comparisons
+  replace_symbols <- function(e) {
+    if (is.symbol(e)) {
+      name <- as.character(e)
+      if (name %in% names(indicator_map)) {
+        # Replace indicator with factor == "level"
+        info <- indicator_map[[name]]
+        return(rlang::call2("==", rlang::sym(info$factor), info$level))
+      }
+      return(e)
+    } else if (is.call(e)) {
+      # Recursively process call arguments
+      e[] <- lapply(e, replace_symbols)
+      return(e)
+    } else {
+      return(e)
+    }
+  }
+
+  replace_symbols(expr)
 }
 
 # Internal helper to get expanded variable names including one-hot encoded factors

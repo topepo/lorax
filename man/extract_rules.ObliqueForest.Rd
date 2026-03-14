@@ -29,6 +29,27 @@ aorsf ObliqueForest model. Each rule represents the path from the root node
 to a terminal node using oblique (linear combination) splits.
 }
 \details{
+\subsection{Known Limitation}{
+
+\strong{Important}: The extracted rules currently do NOT perfectly match aorsf's
+internal node assignments. This is a known issue being investigated. The
+rules are structurally correct (using the right splits and operators) but
+may not evaluate to the exact same terminal nodes as aorsf's predictions.
+
+The rules are still useful for:
+\itemize{
+\item Understanding the general structure of oblique splits
+\item Seeing which variables and linear combinations are used
+\item Interpreting model behavior qualitatively
+}
+
+But should NOT be used for:
+\itemize{
+\item Exactly replicating aorsf's predictions
+\item Validating which observations belong to which nodes
+}
+}
+
 \subsection{Tree and Node Indexing}{
 
 Both the \code{tree} parameter and the \code{id} column use \strong{1-based indexing} for
@@ -46,23 +67,21 @@ with R conventions.
 \subsection{Factor Variables and One-Hot Encoding}{
 
 The aorsf package internally converts unordered factor variables to binary
-indicator (dummy) variables. This means:
+indicator (dummy) variables during tree building. However, the extracted
+rules automatically convert these back to factor comparisons for better
+interpretability:
 \itemize{
-\item For an unordered factor with \code{k} levels, \code{k} indicator variables are created
-(one for each level, not k-1 as in reference coding)
-\item Indicator variables are named as \verb{\{variable_name\}_\{level_name\}}
-\item Each indicator is 1 when the observation has that level, 0 otherwise
-\item For example, a factor \code{color} with levels \verb{["red", "blue", "green"]} creates
-indicator variables \code{color_red}, \code{color_blue}, and \code{color_green}
+\item Instead of \code{2.1 * county_adams}, rules show \code{2.1 * (county == "adams")}
+\item This allows rules to be evaluated directly on data with the original factor
+columns (no need to create indicator variables)
+\item For example, a factor \code{color} with levels \verb{["red", "blue", "green"]} will
+appear in rules as \code{(color == "red")}, \code{(color == "blue")}, etc.
 }
 
 Ordered factors are converted to a single integer variable representing the
 ordinal level, not to multiple indicators.
 
-As a result, the variable names in extracted rules may differ from the
-original data frame column names. Rules will reference the indicator variables
-(e.g., \code{color_red}, \code{color_blue}, \code{color_green}) rather than the original
-factor column (\code{color}).
+Factor indicators are not scaled since they are binary 0/1 values.
 }
 
 \subsection{Predictor Scaling and Unscaling}{
