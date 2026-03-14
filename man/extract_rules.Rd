@@ -12,8 +12,8 @@ extract_rules(x, ...)
 \item{...}{Other arguments passed to methods}
 }
 \value{
-A data frame with column \code{equation} (an R expression) and \code{id} (a
-character identifier).
+A data frame with column \code{equation} (an R expression) and \code{id} (an
+identifier).
 }
 \description{
 A rule is a logical expression of predictor variables that reflects which

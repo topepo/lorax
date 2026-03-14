@@ -8,8 +8,8 @@
 #' @param x A object
 #' @param ... Other arguments passed to methods
 #'
-#' @return A data frame with column `equation` (an R expression) and `id` (a
-#' character identifier).
+#' @return A data frame with column `equation` (an R expression) and `id` (an
+#' identifier).
 #'
 #' @export
 extract_rules <- function(x, ...) {
