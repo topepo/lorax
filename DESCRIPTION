@@ -23,7 +23,8 @@ Suggests:
     palmerpenguins,
     rpart,
     spelling,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    xgboost
 Config/testthat/edition: 3
 Encoding: UTF-8
 Language: en-US

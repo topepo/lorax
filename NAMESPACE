@@ -3,6 +3,7 @@
 S3method(extract_rules,ObliqueForest)
 S3method(extract_rules,party)
 S3method(extract_rules,rpart)
+S3method(extract_rules,xgb.Booster)
 export(combine_rule_elements)
 export(extract_rules)
 export(obliq_split_to_expr)
