@@ -418,3 +418,148 @@ test_that("rule_text() handles complex nested expressions with bullets", {
   result <- rule_text(expr, bullets = TRUE)
   expect_equal(result, "* a > 1\n* b < 2\n* c == 3\n* d >= 4")
 })
+
+# ------------------------------------------------------------------------------
+# Label substitution tests
+
+test_that("rule_text() substitutes single variable", {
+  expr <- rlang::expr(pct_owed > 0.5)
+  key <- data.frame(
+    original = "pct_owed",
+    label = "percentage owed by customer",
+    stringsAsFactors = FALSE
+  )
+  result <- rule_text(expr, key = key)
+  expect_equal(result, "percentage owed by customer > 0.5")
+})
+
+test_that("rule_text() substitutes multiple variables", {
+  expr <- rlang::expr(pct_owed > 0.5 & amount < 1000)
+  key <- data.frame(
+    original = c("pct_owed", "amount"),
+    label = c("percentage owed by customer", "total amount"),
+    stringsAsFactors = FALSE
+  )
+  result <- rule_text(expr, key = key)
+  expect_equal(
+    result,
+    "percentage owed by customer > 0.5 & total amount < 1000"
+  )
+})
+
+test_that("rule_text() works with bullets and key", {
+  expr <- rlang::expr(pct_owed > 0.5 & amount < 1000)
+  key <- data.frame(
+    original = c("pct_owed", "amount"),
+    label = c("percentage owed", "total amount"),
+    stringsAsFactors = FALSE
+  )
+  result <- rule_text(expr, bullets = TRUE, key = key)
+  expect_equal(result, "* percentage owed > 0.5\n* total amount < 1000")
+})
+
+test_that("rule_text() variable not in key remains unchanged", {
+  expr <- rlang::expr(pct_owed > 0.5 & other_var < 100)
+  key <- data.frame(
+    original = "pct_owed",
+    label = "percentage owed",
+    stringsAsFactors = FALSE
+  )
+  result <- rule_text(expr, key = key)
+  expect_equal(result, "percentage owed > 0.5 & other_var < 100")
+})
+
+test_that("rule_text() works with NULL key", {
+  expr <- rlang::expr(pct_owed > 0.5)
+  result <- rule_text(expr, key = NULL)
+  expect_equal(result, "pct_owed > 0.5")
+})
+
+test_that("rule_text() works with empty key tibble", {
+  expr <- rlang::expr(pct_owed > 0.5)
+  key <- data.frame(
+    original = character(0),
+    label = character(0),
+    stringsAsFactors = FALSE
+  )
+  result <- rule_text(expr, key = key)
+  expect_equal(result, "pct_owed > 0.5")
+})
+
+test_that("rule_text() handles nested expressions with same variable multiple times", {
+  expr <- rlang::expr(age > 30 & age < 60)
+  key <- data.frame(
+    original = "age",
+    label = "patient age in months",
+    stringsAsFactors = FALSE
+  )
+  result <- rule_text(expr, key = key)
+  expect_equal(
+    result,
+    "patient age in months > 30 & patient age in months < 60"
+  )
+})
+
+test_that("rule_text() handles labels with special characters", {
+  expr <- rlang::expr(x > 5)
+  key <- data.frame(
+    original = "x",
+    label = "customer's balance ($)",
+    stringsAsFactors = FALSE
+  )
+  result <- rule_text(expr, key = key)
+  expect_equal(result, "customer's balance ($) > 5")
+})
+
+test_that("rule_text() validates key is a data frame", {
+  expr <- rlang::expr(x > 5)
+  expect_snapshot(
+    rule_text(expr, key = "not a data frame"),
+    error = TRUE
+  )
+  expect_snapshot(
+    rule_text(expr, key = list(original = "x", label = "y")),
+    error = TRUE
+  )
+})
+
+test_that("rule_text() validates key has required columns", {
+  expr <- rlang::expr(x > 5)
+  expect_snapshot(
+    rule_text(expr, key = data.frame(wrong = "x")),
+    error = TRUE
+  )
+  expect_snapshot(
+    rule_text(expr, key = data.frame(original = "x")),
+    error = TRUE
+  )
+  expect_snapshot(
+    rule_text(expr, key = data.frame(label = "y")),
+    error = TRUE
+  )
+})
+
+test_that("rule_text() validates key columns are character", {
+  expr <- rlang::expr(x > 5)
+  expect_snapshot(
+    rule_text(expr, key = data.frame(original = 1, label = "y")),
+    error = TRUE
+  )
+  expect_snapshot(
+    rule_text(expr, key = data.frame(original = "x", label = 2)),
+    error = TRUE
+  )
+})
+
+test_that("rule_text() validates key original column has no duplicates", {
+  expr <- rlang::expr(x > 5)
+  key <- data.frame(
+    original = c("x", "x"),
+    label = c("first", "second"),
+    stringsAsFactors = FALSE
+  )
+  expect_snapshot(
+    rule_text(expr, key = key),
+    error = TRUE
+  )
+})

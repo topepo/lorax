@@ -4,7 +4,7 @@
 \alias{rule_text}
 \title{Convert a rule expression to a readable text format}
 \usage{
-rule_text(expr, bullets = FALSE, digits = 4, max_width = Inf)
+rule_text(expr, bullets = FALSE, digits = 4, max_width = Inf, key = NULL)
 }
 \arguments{
 \item{expr}{An R expression to format. Typically created by
@@ -22,6 +22,12 @@ numeric values in the rule. Default is 4.}
 formatted rule exceeds this width, it will be truncated with \code{...}
 appended. The \code{...} is included in the width count. Default is \code{Inf} (no
 truncation).}
+
+\item{key}{Optional data frame or tibble with columns \code{original} and \code{label}
+(both character). When provided, variable names matching values in
+\code{original} are substituted with corresponding values in \code{label} in the
+printed output. The \code{original} column must not contain duplicates. If a
+variable name is not in \code{key$original}, it remains unchanged.}
 }
 \value{
 A character string containing the formatted rule. When
@@ -52,6 +58,14 @@ rule_text(rule3, digits = 6)
 # Truncate long rules
 rule4 <- rlang::expr(very_long_variable_name > 100 & another_long_name < 50)
 rule_text(rule4, max_width = 30)
+
+# With label substitution
+expr <- rlang::expr(pct_owed > 0.5 & amount < 1000)
+key <- tibble::tibble(
+  original = c("pct_owed", "amount"),
+  label = c("percentage owed by customer", "total amount")
+)
+rule_text(expr, key = key)
 
 # Integration with other helpers
 split1 <- list(column = "age", value = 30.5, operator = ">=")

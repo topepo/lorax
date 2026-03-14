@@ -137,7 +137,7 @@ extract_rules.ObliqueForest <- function(x, tree = 1L, ...) {
   tibble::tibble(
     tree = as.integer(tree),
     rules = rules_list,
-    id = as.integer(terminal_ids) + 1L  # Convert from 0-indexed to 1-indexed
+    id = as.integer(terminal_ids) + 1L # Convert from 0-indexed to 1-indexed
   ) |>
     dplyr::arrange(.data$id) |>
     tibble::new_tibble(class = c("rule_set_ObliqueForest", "rule_set"))

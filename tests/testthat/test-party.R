@@ -119,9 +119,9 @@ test_that("extract_rules.party() handles no-split data", {
   # Data where no good split can be made
   null_data <- data.frame(y = 1:10, x = rep(1:5, each = 2))
   tree <- ctree(y ~ ., data = null_data)
-  
+
   rules <- extract_rules(tree)
-  
+
   expect_s3_class(rules, "rule_set_party")
   expect_equal(nrow(rules), 1)
   expect_equal(rules$id, 1L)

@@ -121,6 +121,11 @@ validate_exprs <- function(exprs, operator, call = rlang::caller_env()) {
 #'   formatted rule exceeds this width, it will be truncated with `...`
 #'   appended. The `...` is included in the width count. Default is `Inf` (no
 #'   truncation).
+#' @param key Optional data frame or tibble with columns `original` and `label`
+#'   (both character). When provided, variable names matching values in
+#'   `original` are substituted with corresponding values in `label` in the
+#'   printed output. The `original` column must not contain duplicates. If a
+#'   variable name is not in `key$original`, it remains unchanged.
 #'
 #' @return A character string containing the formatted rule. When
 #'   `bullets = TRUE`, conditions are separated by newlines with bullet markers.
@@ -146,6 +151,14 @@ validate_exprs <- function(exprs, operator, call = rlang::caller_env()) {
 #' rule4 <- rlang::expr(very_long_variable_name > 100 & another_long_name < 50)
 #' rule_text(rule4, max_width = 30)
 #'
+#' # With label substitution
+#' expr <- rlang::expr(pct_owed > 0.5 & amount < 1000)
+#' key <- tibble::tibble(
+#'   original = c("pct_owed", "amount"),
+#'   label = c("percentage owed by customer", "total amount")
+#' )
+#' rule_text(expr, key = key)
+#'
 #' # Integration with other helpers
 #' split1 <- list(column = "age", value = 30.5, operator = ">=")
 #' split2 <- list(column = "income", value = 50000, operator = ">")
@@ -158,12 +171,19 @@ validate_exprs <- function(exprs, operator, call = rlang::caller_env()) {
 #' cat(rule_text(rule, bullets = TRUE), "\n")
 #'
 #' @export
-rule_text <- function(expr, bullets = FALSE, digits = 4, max_width = Inf) {
+rule_text <- function(
+  expr,
+  bullets = FALSE,
+  digits = 4,
+  max_width = Inf,
+  key = NULL
+) {
   validate_rule_text_args(
     expr,
     bullets,
     digits,
     max_width,
+    key,
     call = rlang::current_env()
   )
 
@@ -173,10 +193,12 @@ rule_text <- function(expr, bullets = FALSE, digits = 4, max_width = Inf) {
   if (bullets) {
     # Extract individual conditions and format as bullets
     conditions <- extract_conditions(formatted_expr)
+    conditions <- substitute_text(conditions, key)
     paste0("* ", conditions, collapse = "\n")
   } else {
     # Return as single line with optional truncation
     rule_str <- deparse1(formatted_expr)
+    rule_str <- substitute_text(rule_str, key)
     if (nchar(rule_str) > max_width) {
       rule_str <- paste0(substr(rule_str, 1, max_width - 3), "...")
     }
@@ -190,6 +212,7 @@ validate_rule_text_args <- function(
   bullets,
   digits,
   max_width,
+  key,
   call = rlang::caller_env()
 ) {
   if (!is.language(expr) && !is.symbol(expr)) {
@@ -231,6 +254,39 @@ validate_rule_text_args <- function(
     )
   }
 
+  # Validate key
+  if (!is.null(key)) {
+    if (!is.data.frame(key)) {
+      cli::cli_abort(
+        "{.arg key} must be a data frame or tibble, not {.obj_type_friendly {key}}.",
+        call = call
+      )
+    }
+
+    required_cols <- c("original", "label")
+    if (!all(required_cols %in% names(key))) {
+      missing <- setdiff(required_cols, names(key))
+      cli::cli_abort(
+        "{.arg key} must have columns {.field {required_cols}}, missing {.field {missing}}.",
+        call = call
+      )
+    }
+
+    if (!is.character(key$original) || !is.character(key$label)) {
+      cli::cli_abort(
+        "Columns {.field original} and {.field label} in {.arg key} must be character vectors.",
+        call = call
+      )
+    }
+
+    if (any(duplicated(key$original))) {
+      cli::cli_abort(
+        "{.field original} column in {.arg key} must not contain duplicates.",
+        call = call
+      )
+    }
+  }
+
   invisible(NULL)
 }
 
@@ -249,6 +305,25 @@ format_numeric_in_expr <- function(expr, digits) {
     # Return other types unchanged
     return(expr)
   }
+}
+
+# Internal helper to substitute variable names in text
+substitute_text <- function(text, key) {
+  if (is.null(key) || nrow(key) == 0) {
+    return(text)
+  }
+
+  # For each text element (may be a vector in bullets mode)
+  for (i in seq_along(text)) {
+    # For each variable to substitute
+    for (j in seq_len(nrow(key))) {
+      # Use word boundary regex to match whole variable names only
+      pattern <- paste0("\\b", key$original[j], "\\b")
+      text[i] <- gsub(pattern, key$label[j], text[i])
+    }
+  }
+
+  text
 }
 
 # Internal helper to extract individual conditions from an expression

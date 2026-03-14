@@ -222,3 +222,67 @@
       Error in `rule_text()`:
       ! `max_width` must be a single numeric value >= 4, not `NA`.
 
+# rule_text() validates key is a data frame
+
+    Code
+      rule_text(expr, key = "not a data frame")
+    Condition
+      Error in `rule_text()`:
+      ! `key` must be a data frame or tibble, not a string.
+
+---
+
+    Code
+      rule_text(expr, key = list(original = "x", label = "y"))
+    Condition
+      Error in `rule_text()`:
+      ! `key` must be a data frame or tibble, not a list.
+
+# rule_text() validates key has required columns
+
+    Code
+      rule_text(expr, key = data.frame(wrong = "x"))
+    Condition
+      Error in `rule_text()`:
+      ! `key` must have columns original and label, missing original and label.
+
+---
+
+    Code
+      rule_text(expr, key = data.frame(original = "x"))
+    Condition
+      Error in `rule_text()`:
+      ! `key` must have columns original and label, missing label.
+
+---
+
+    Code
+      rule_text(expr, key = data.frame(label = "y"))
+    Condition
+      Error in `rule_text()`:
+      ! `key` must have columns original and label, missing original.
+
+# rule_text() validates key columns are character
+
+    Code
+      rule_text(expr, key = data.frame(original = 1, label = "y"))
+    Condition
+      Error in `rule_text()`:
+      ! Columns original and label in `key` must be character vectors.
+
+---
+
+    Code
+      rule_text(expr, key = data.frame(original = "x", label = 2))
+    Condition
+      Error in `rule_text()`:
+      ! Columns original and label in `key` must be character vectors.
+
+# rule_text() validates key original column has no duplicates
+
+    Code
+      rule_text(expr, key = key)
+    Condition
+      Error in `rule_text()`:
+      ! original column in `key` must not contain duplicates.
+
