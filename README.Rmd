@@ -16,19 +16,71 @@ knitr::opts_chunk$set(
 # lorax
 
 <!-- badges: start -->
+[![R-CMD-check](https://github.com/topepo/lorax/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/topepo/lorax/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/topepo/lorax/graph/badge.svg)](https://app.codecov.io/gh/topepo/lorax)
 <!-- badges: end -->
 
-The goal of lorax is to ...
+The goal of lorax is to help look at different aspects of tree- and rule-based models. 
 
 ## Installation
 
 You can install the development version of lorax like so:
 
 ``` r
-# FILL THIS IN! HOW CAN PEOPLE INSTALL YOUR DEV PACKAGE?
+require(pak)
+pak::pak("topepo/lorax)
 ```
 
 ## Example
+
+
+```{r}
+#| label: startup
+#| results: hide
+library(tibble)
+library(lorax)
+library(ranger)
+library(palmerpenguins)
+library(partykit)
+
+set.seed(822)
+rngr_fit <- ranger(species ~ ., data = penguins, max.depth = 3, num.trees = 10)
+```
+
+
+```{r}
+#| label: ranger-party
+rngr_party <- as.party(rngr_fit, tree = 1)
+rngr_party
+
+plot(rngr_party)
+```
+
+```{r}
+#| label: ranger-rules
+all_rules <- extract_rules(rngr_party, trees = 10)
+
+# An expression
+all_rules$rules[[1]]
+
+# Text
+all_rules$rules[[1]] |> rule_text()
+
+# Substitutions
+new_names <- 
+ tribble(
+  ~ original, ~ label,
+  "flipper_length_mm", "Flipper Length",
+  "body_mass_g", "Body Mass"
+ )
+ 
+all_rules$rules[[1]] |> rule_text(key = new_names)
+
+# Bullets:
+all_rules$rules[[1]] |> 
+ rule_text(key = new_names, bullets = TRUE) |> 
+ cat()
+```
 
 ## Code of Conduct
   
