@@ -563,3 +563,158 @@ test_that("rule_text() validates key original column has no duplicates", {
     error = TRUE
   )
 })
+# ------------------------------------------------------------------------------
+# max_group_nchar tests
+
+test_that("rule_text() abbreviates long %in% lists", {
+  expr <- rlang::expr(county %in% c("adams", "benton", "chelan", "clallam"))
+  result <- rule_text(expr, max_group_nchar = 20)
+  expect_equal(result, "county %in% {4 values}")
+})
+
+test_that("rule_text() keeps short %in% lists", {
+  expr <- rlang::expr(county %in% c("adams", "benton"))
+  result <- rule_text(expr, max_group_nchar = 100)
+  expect_equal(result, 'county %in% c("adams", "benton")')
+})
+
+test_that("rule_text() abbreviates in compound expressions", {
+  expr <- rlang::expr(
+    age > 30 & county %in% c("adams", "benton", "chelan", "clallam")
+  )
+  result <- rule_text(expr, max_group_nchar = 20)
+  expect_equal(result, "age > 30 & county %in% {4 values}")
+})
+
+test_that("rule_text() abbreviates with bullets", {
+  expr <- rlang::expr(
+    age > 30 & county %in% c("adams", "benton", "chelan", "clallam")
+  )
+  result <- rule_text(expr, bullets = TRUE, max_group_nchar = 20)
+  expect_equal(result, "* age > 30\n* county %in% {4 values}")
+})
+
+test_that("rule_text() abbreviates multiple %in% operations", {
+  expr <- rlang::expr(
+    county %in%
+      c("adams", "benton", "chelan", "clallam") &
+      state %in% c("Washington", "Oregon", "California")
+  )
+  result <- rule_text(expr, max_group_nchar = 25)
+  expect_true(grepl("county %in% \\{4 values\\}", result))
+  expect_true(grepl("state %in% \\{3 values\\}", result))
+})
+
+test_that("rule_text() handles numeric values in %in%", {
+  expr <- rlang::expr(id %in% c(123456, 234567, 345678, 456789))
+  result <- rule_text(expr, max_group_nchar = 20)
+  expect_equal(result, "id %in% {4 values}")
+})
+
+test_that("rule_text() works with mixed content in c()", {
+  expr <- rlang::expr(var %in% c("a", "b", "c", "d", "e", "f"))
+  result <- rule_text(expr, max_group_nchar = 15)
+  expect_equal(result, "var %in% {6 values}")
+})
+
+test_that("rule_text() respects Inf max_group_nchar", {
+  expr <- rlang::expr(county %in% c("adams", "benton", "chelan", "clallam"))
+  result <- rule_text(expr, max_group_nchar = Inf)
+  expect_equal(result, 'county %in% c("adams", "benton", "chelan", "clallam")')
+})
+
+test_that("rule_text() default max_group_nchar is Inf", {
+  expr <- rlang::expr(county %in% c("adams", "benton", "chelan", "clallam"))
+  result <- rule_text(expr)
+  expect_equal(result, 'county %in% c("adams", "benton", "chelan", "clallam")')
+})
+
+test_that("rule_text() abbreviates only when necessary", {
+  expr <- rlang::expr(x %in% c("a", "b"))
+  # Character count is c("a", "b") = 12 characters
+  result1 <- rule_text(expr, max_group_nchar = 20)
+  expect_equal(result1, 'x %in% c("a", "b")')
+
+  result2 <- rule_text(expr, max_group_nchar = 10)
+  expect_equal(result2, "x %in% {2 values}")
+})
+
+test_that("rule_text() validates max_group_nchar is positive numeric", {
+  expr <- rlang::expr(x > 5)
+
+  expect_snapshot(
+    rule_text(expr, max_group_nchar = "10"),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    rule_text(expr, max_group_nchar = -1),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    rule_text(expr, max_group_nchar = 0),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    rule_text(expr, max_group_nchar = c(10, 20)),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    rule_text(expr, max_group_nchar = NA),
+    error = TRUE
+  )
+})
+
+test_that("rule_text() abbreviation works with key substitution", {
+  expr <- rlang::expr(county %in% c("adams", "benton", "chelan", "clallam"))
+  key <- data.frame(
+    original = "county",
+    label = "patient county",
+    stringsAsFactors = FALSE
+  )
+  result <- rule_text(expr, max_group_nchar = 20, key = key)
+  expect_equal(result, "patient county %in% {4 values}")
+})
+
+test_that("rule_text() abbreviation works with digits formatting", {
+  expr <- rlang::expr(x > 1.234567 & id %in% c(100, 200, 300, 400))
+  result <- rule_text(expr, digits = 2, max_group_nchar = 10)
+  expect_true(grepl("x > 1\\.2", result))
+  expect_true(grepl("id %in% \\{4 values\\}", result))
+})
+
+test_that("rule_text() abbreviation works with max_width", {
+  expr <- rlang::expr(county %in% c("adams", "benton", "chelan", "clallam"))
+  result <- rule_text(expr, max_group_nchar = 20, max_width = 15)
+  expect_equal(nchar(result), 15)
+  expect_true(grepl("\\.\\.\\.$", result))
+})
+
+test_that("rule_text() handles empty %in% lists", {
+  expr <- rlang::expr(x %in% c())
+  # Empty c() won't match the pattern since it has no content
+  result <- rule_text(expr, max_group_nchar = 10)
+  expect_equal(result, "x %in% c()")
+})
+
+test_that("rule_text() handles single value in %in%", {
+  expr <- rlang::expr(x %in% c("value"))
+  result1 <- rule_text(expr, max_group_nchar = 100)
+  expect_equal(result1, 'x %in% c("value")')
+
+  result2 <- rule_text(expr, max_group_nchar = 5)
+  expect_equal(result2, "x %in% {1 values}")
+})
+
+test_that("rule_text() preserves structure when not abbreviating", {
+  expr1 <- rlang::expr(x %in% c("a", "b"))
+  expr2 <- rlang::expr(y > 5)
+  combined <- combine_rule_elements(list(expr1, expr2))
+
+  result <- rule_text(combined, max_group_nchar = 100)
+  expect_true(grepl('x %in% c\\("a", "b"\\)', result))
+  expect_true(grepl("y > 5", result))
+})

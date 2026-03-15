@@ -4,7 +4,14 @@
 \alias{rule_text}
 \title{Convert a rule expression to a readable text format}
 \usage{
-rule_text(expr, bullets = FALSE, digits = 4, max_width = Inf, key = NULL)
+rule_text(
+  expr,
+  bullets = FALSE,
+  digits = 4,
+  max_width = Inf,
+  key = NULL,
+  max_group_nchar = Inf
+)
 }
 \arguments{
 \item{expr}{An R expression to format. Typically created by
@@ -28,6 +35,12 @@ truncation).}
 \code{original} are substituted with corresponding values in \code{label} in the
 printed output. The \code{original} column must not contain duplicates. If a
 variable name is not in \code{key$original}, it remains unchanged.}
+
+\item{max_group_nchar}{Maximum number of characters for value lists in \code{\%in\%}
+operations. When the total character count of values in a \code{c(...)} vector
+exceeds this limit, the values are replaced with \verb{\{X values\}} where X is
+the count. Default is \code{Inf} (no abbreviation). Character count includes
+quotes and separators as they appear in deparsed output.}
 }
 \value{
 A character string containing the formatted rule. When
@@ -77,5 +90,15 @@ rule <- combine_rule_elements(list(
   rect_split_to_expr(split3)
 ))
 cat(rule_text(rule, bullets = TRUE), "\n")
+
+# Abbreviate long value lists
+split4 <- list(
+  column = "county",
+  value = c("adams", "benton", "chelan", "clallam"),
+  operator = "\%in\%"
+)
+rule_long <- rect_split_to_expr(split4)
+rule_text(rule_long) # Full list
+rule_text(rule_long, max_group_nchar = 20) # Abbreviated
 
 }

@@ -126,6 +126,11 @@ validate_exprs <- function(exprs, operator, call = rlang::caller_env()) {
 #'   `original` are substituted with corresponding values in `label` in the
 #'   printed output. The `original` column must not contain duplicates. If a
 #'   variable name is not in `key$original`, it remains unchanged.
+#' @param max_group_nchar Maximum number of characters for value lists in `%in%`
+#'   operations. When the total character count of values in a `c(...)` vector
+#'   exceeds this limit, the values are replaced with `{X values}` where X is
+#'   the count. Default is `Inf` (no abbreviation). Character count includes
+#'   quotes and separators as they appear in deparsed output.
 #'
 #' @return A character string containing the formatted rule. When
 #'   `bullets = TRUE`, conditions are separated by newlines with bullet markers.
@@ -170,13 +175,24 @@ validate_exprs <- function(exprs, operator, call = rlang::caller_env()) {
 #' ))
 #' cat(rule_text(rule, bullets = TRUE), "\n")
 #'
+#' # Abbreviate long value lists
+#' split4 <- list(
+#'   column = "county",
+#'   value = c("adams", "benton", "chelan", "clallam"),
+#'   operator = "%in%"
+#' )
+#' rule_long <- rect_split_to_expr(split4)
+#' rule_text(rule_long) # Full list
+#' rule_text(rule_long, max_group_nchar = 20) # Abbreviated
+#'
 #' @export
 rule_text <- function(
   expr,
   bullets = FALSE,
   digits = 4,
   max_width = Inf,
-  key = NULL
+  key = NULL,
+  max_group_nchar = Inf
 ) {
   validate_rule_text_args(
     expr,
@@ -184,6 +200,7 @@ rule_text <- function(
     digits,
     max_width,
     key,
+    max_group_nchar,
     call = rlang::current_env()
   )
 
@@ -193,11 +210,20 @@ rule_text <- function(
   if (bullets) {
     # Extract individual conditions and format as bullets
     conditions <- extract_conditions(formatted_expr)
+    # Abbreviate after deparsing for each condition
+    conditions <- vapply(
+      conditions,
+      abbreviate_in_text,
+      character(1),
+      max_group_nchar = max_group_nchar
+    )
     conditions <- substitute_text(conditions, key)
     paste0("* ", conditions, collapse = "\n")
   } else {
     # Return as single line with optional truncation
     rule_str <- deparse1(formatted_expr)
+    # Abbreviate after deparsing
+    rule_str <- abbreviate_in_text(rule_str, max_group_nchar)
     rule_str <- substitute_text(rule_str, key)
     if (nchar(rule_str) > max_width) {
       rule_str <- paste0(substr(rule_str, 1, max_width - 3), "...")
@@ -213,6 +239,7 @@ validate_rule_text_args <- function(
   digits,
   max_width,
   key,
+  max_group_nchar,
   call = rlang::caller_env()
 ) {
   if (!is.language(expr) && !is.symbol(expr)) {
@@ -250,6 +277,18 @@ validate_rule_text_args <- function(
   ) {
     cli::cli_abort(
       "{.arg max_width} must be a single numeric value >= 4, not {.obj_type_friendly {max_width}}.",
+      call = call
+    )
+  }
+
+  if (
+    !is.numeric(max_group_nchar) ||
+      length(max_group_nchar) != 1 ||
+      is.na(max_group_nchar) ||
+      max_group_nchar < 1
+  ) {
+    cli::cli_abort(
+      "{.arg max_group_nchar} must be a single positive numeric value, not {.obj_type_friendly {max_group_nchar}}.",
       call = call
     )
   }
@@ -305,6 +344,75 @@ format_numeric_in_expr <- function(expr, digits) {
     # Return other types unchanged
     return(expr)
   }
+}
+
+# Internal helper to abbreviate long value lists in %in% operations
+abbreviate_in_text <- function(text, max_group_nchar) {
+  if (is.infinite(max_group_nchar)) {
+    return(text)
+  }
+
+  # Pattern to match: %in% c(...)
+  # This regex captures the c(...) part after %in%
+  pattern <- "%in%\\s+c\\(([^)]+)\\)"
+
+  # Find all matches
+  matches <- gregexpr(pattern, text, perl = TRUE)
+
+  if (matches[[1]][1] == -1) {
+    # No matches found
+    return(text)
+  }
+
+  # Process matches from right to left to maintain string positions
+  match_starts <- matches[[1]]
+  match_lengths <- attr(matches[[1]], "match.length")
+
+  # Get capture group positions (the content inside c(...))
+  capture_starts <- attr(matches[[1]], "capture.start")
+  capture_lengths <- attr(matches[[1]], "capture.length")
+
+  # Process from end to start
+  for (i in rev(seq_along(match_starts))) {
+    # Extract the c(...) part
+    c_start <- match_starts[i] +
+      regexpr(
+        "c\\(",
+        substr(
+          text,
+          match_starts[i],
+          match_starts[i] + match_lengths[i] - 1
+        )
+      )[[1]] -
+      1
+    c_end <- match_starts[i] + match_lengths[i] - 1
+    c_text <- substr(text, c_start, c_end)
+
+    # Check character count
+    if (nchar(c_text) > max_group_nchar) {
+      # Count values inside c(...)
+      inner_text <- substr(
+        text,
+        capture_starts[i],
+        capture_starts[i] + capture_lengths[i] - 1
+      )
+
+      # Count commas to get number of values (commas + 1)
+      # But we need to be careful about nested structures
+      # Simple approach: split on comma and count
+      n_values <- length(strsplit(inner_text, ",")[[1]])
+
+      # Create replacement
+      replacement <- paste0("{", n_values, " values}")
+
+      # Replace in text
+      before <- substr(text, 1, c_start - 1)
+      after <- substr(text, c_end + 1, nchar(text))
+      text <- paste0(before, replacement, after)
+    }
+  }
+
+  text
 }
 
 # Internal helper to substitute variable names in text

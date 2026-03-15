@@ -286,3 +286,43 @@
       Error in `rule_text()`:
       ! original column in `key` must not contain duplicates.
 
+# rule_text() validates max_group_nchar is positive numeric
+
+    Code
+      rule_text(expr, max_group_nchar = "10")
+    Condition
+      Error in `rule_text()`:
+      ! `max_group_nchar` must be a single positive numeric value, not a string.
+
+---
+
+    Code
+      rule_text(expr, max_group_nchar = -1)
+    Condition
+      Error in `rule_text()`:
+      ! `max_group_nchar` must be a single positive numeric value, not a number.
+
+---
+
+    Code
+      rule_text(expr, max_group_nchar = 0)
+    Condition
+      Error in `rule_text()`:
+      ! `max_group_nchar` must be a single positive numeric value, not a number.
+
+---
+
+    Code
+      rule_text(expr, max_group_nchar = c(10, 20))
+    Condition
+      Error in `rule_text()`:
+      ! `max_group_nchar` must be a single positive numeric value, not a double vector.
+
+---
+
+    Code
+      rule_text(expr, max_group_nchar = NA)
+    Condition
+      Error in `rule_text()`:
+      ! `max_group_nchar` must be a single positive numeric value, not `NA`.
+
