@@ -20,6 +20,7 @@ Imports:
     tibble
 Suggests:
     aorsf,
+    dbarts,
     lightgbm,
     palmerpenguins,
     rpart,
