@@ -3,6 +3,7 @@
 
 ## usethis namespace: start
 #' @import rlang
+#' @importFrom partykit as.party
 ## usethis namespace: end
 
 ## mockable bindings: start

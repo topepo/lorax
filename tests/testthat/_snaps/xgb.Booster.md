@@ -1,32 +1,40 @@
-# extract_rules.xgb.Booster() validates tree parameter
+# as.party.xgb.Booster validates tree parameter
 
     Code
-      extract_rules(bst, tree = 1.5)
+      as.party(bst, tree = 0, data = penguins)
     Condition
-      Error in `extract_rules()`:
-      ! `tree` must be a single integer, not a number.
+      Error in `as.party()`:
+      ! `tree` must be >= 1, not 0.
 
 ---
 
     Code
-      extract_rules(bst, tree = c(1, 2))
+      as.party(bst, tree = c(1, 2), data = penguins)
     Condition
-      Error in `extract_rules()`:
+      Error in `as.party()`:
       ! `tree` must be a single integer, not a double vector.
 
 ---
 
     Code
-      extract_rules(bst, tree = 100)
+      as.party(bst, tree = "1", data = penguins)
     Condition
-      Error in `extract_rules()`:
-      ! `tree` must be between 1 and 3, not 100.
+      Error in `as.party()`:
+      ! `tree` must be a single integer, not a string.
 
 ---
 
     Code
-      extract_rules(bst, tree = 0)
+      as.party(bst, tree = 100, data = penguins)
     Condition
-      Error in `extract_rules()`:
-      ! `tree` must be >= 1, not 0.
+      Error in `as.party()`:
+      ! `tree` must be between 1 and 15, not 100.
+
+# as.party.xgb.Booster requires response in data
+
+    Code
+      as.party(bst, tree = 1, data = penguins[, -1])
+    Condition
+      Error in `as.party()`:
+      ! `data` must contain the response variable in addition to predictors.
 
