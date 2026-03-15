@@ -1,3 +1,4 @@
+LightGBM
 ORCID
 ObliqueForest
 PBC
@@ -8,6 +9,8 @@ aorsf's
 funder
 gblinear
 interpretability
+lgb
+lightgbm
 multiclass
 tibble
 unscale
