@@ -5,3 +5,7 @@
 ^README\.Rmd$
 ^\.covrignore$
 ^\.claude$
+^\.github$
+^codecov\.yml$
+^[.]?air[.]toml$
+^\.vscode$
