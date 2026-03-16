@@ -128,11 +128,14 @@ as.party.C5.0 <- function(obj, tree = 1L, data = NULL, ...) {
   # Get variable names
   var_names <- obj$predictors
 
-  # For boosted models, extract the specific tree
-  # The tree text contains multiple trees concatenated together
+  # Parse tree structure based on model type
+  # - Boosted models (num_trials > 1): Multiple trees concatenated in tree_text
+  #   Need to locate and extract the specific tree requested
+  # - Single tree models (num_trials == 1): Tree text contains only one tree
+  #   Can parse directly without needing to locate specific tree position
   if (num_trials > 1) {
-    # Find the start of the requested tree
-    # Skip header lines and previous trees
+    # Boosted model: locate the start of the requested tree
+    # Skip header lines and previous trees to find where our tree begins
     tree_start_idx <- c5_find_tree_start(
       tree_lines,
       tree,
@@ -142,11 +145,11 @@ as.party.C5.0 <- function(obj, tree = 1L, data = NULL, ...) {
 
     if (is.null(tree_start_idx)) {
       cli::cli_abort(
-        "Could not locate tree {tree} in boosted model tree structure."
+        "Could not locate tree {tree} in boosted {.pkg C50} model tree structure."
       )
     }
 
-    # Parse from the start of the requested tree
+    # Parse from the located starting position
     root_node <- c5_parse_tree_at_index(
       tree_lines,
       tree_start_idx,
@@ -154,7 +157,8 @@ as.party.C5.0 <- function(obj, tree = 1L, data = NULL, ...) {
       obj$levels
     )
   } else {
-    # Single tree model - use existing logic
+    # Single tree model: parse the entire tree text
+    # tree_start_idx not needed since there's only one tree
     root_node <- c5_parse_tree_lines(tree_lines, var_names, obj$levels)
   }
 
