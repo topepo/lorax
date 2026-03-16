@@ -78,6 +78,7 @@
 #'
 #' @export
 as.party.regression_forest <- function(obj, tree = 1L, data = NULL, ...) {
+  rlang::check_installed("grf")
   # Validate tree parameter
   if (!is.numeric(tree) || length(tree) != 1 || tree != as.integer(tree)) {
     cli::cli_abort(

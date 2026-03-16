@@ -49,6 +49,7 @@
 #'
 #' @export
 extract_rules.lgb.Booster <- function(x, tree = 1L, ...) {
+  rlang::check_installed("lightgbm")
   # Validate tree parameter
   if (!is.numeric(tree) || length(tree) != 1 || tree != as.integer(tree)) {
     cli::cli_abort(
@@ -327,6 +328,7 @@ lgb_get_split_info <- function(
 #'
 #' @export
 as.party.lgb.Booster <- function(obj, tree = 1L, data, ...) {
+  rlang::check_installed("lightgbm")
   # Validate tree parameter
   if (!is.numeric(tree) || length(tree) != 1 || tree != as.integer(tree)) {
     cli::cli_abort(

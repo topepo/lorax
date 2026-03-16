@@ -49,6 +49,7 @@
 #'
 #' @export
 extract_rules.xgb.Booster <- function(x, tree = 1L, ...) {
+  rlang::check_installed("xgboost")
   # Validate tree parameter
   if (!is.numeric(tree) || length(tree) != 1 || tree != as.integer(tree)) {
     cli::cli_abort(
@@ -275,6 +276,7 @@ xgb_get_split_info <- function(parent_id, child_id, tree_dt) {
 #'
 #' @export
 as.party.xgb.Booster <- function(obj, tree = 1L, data, ...) {
+  rlang::check_installed("xgboost")
   # Validate tree parameter
   if (!is.numeric(tree) || length(tree) != 1 || tree != as.integer(tree)) {
     cli::cli_abort(

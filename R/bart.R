@@ -49,6 +49,7 @@
 #'
 #' @export
 extract_rules.bart <- function(x, tree = 1L, chain = 1L, ...) {
+  rlang::check_installed("dbarts")
   # Validate tree parameter
   if (!is.numeric(tree) || length(tree) != 1 || tree != as.integer(tree)) {
     cli::cli_abort(
@@ -430,6 +431,7 @@ bart_contains_row <- function(node, target_row) {
 #'
 #' @export
 as.party.bart <- function(obj, tree = 1L, chain = 1L, data, ...) {
+  rlang::check_installed("dbarts")
   # Validate tree parameter
   if (!is.numeric(tree) || length(tree) != 1 || tree != as.integer(tree)) {
     cli::cli_abort(

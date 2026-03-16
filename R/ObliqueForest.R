@@ -102,6 +102,7 @@
 #'
 #' @export
 extract_rules.ObliqueForest <- function(x, tree = 1L, ...) {
+  rlang::check_installed("aorsf")
   # Validate tree argument (1-based for user convenience)
   if (!is.numeric(tree) || length(tree) != 1 || tree != as.integer(tree)) {
     cli::cli_abort("{.arg tree} must be a single integer.")

@@ -1,5 +1,6 @@
 #' @export
 extract_rules.rpart <- function(x, ...) {
+  rlang::check_installed("rpart")
   terminal_ids <- rpart_get_terminal_nodes(x)
 
   rules_list <- lapply(terminal_ids, function(node_id) {
