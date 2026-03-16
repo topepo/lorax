@@ -440,44 +440,13 @@ traverse_to_terminal <- function(node, obs) {
   }
 }
 
-# Extract response variable from model call
-#
-# Attempts to extract the response variable by evaluating the model's call.
-# This is useful when the training data contains predictors but the response
-# needs to be extracted separately.
-#
-# @param obj Model object with a $call element
-# @param response_param Name of parameter in call containing response (e.g., "y", "Y")
-# @param expected_length Expected length of response (e.g., nrow of data)
-# @param eval_env Environment in which to evaluate the call (default parent.frame(2))
-#
-# @return Response vector/factor, or NULL if extraction fails
-extract_response_from_call <- function(
-  obj,
-  response_param = "y",
-  expected_length = NULL,
-  eval_env = parent.frame(2)
-) {
-  response <- NULL
-
-  if (!is.null(obj$call) && response_param %in% names(obj$call)) {
-    response <- try(
-      eval(obj$call[[response_param]], envir = eval_env),
-      silent = TRUE
-    )
-
-    # Validate response
-    if (inherits(response, "try-error")) {
-      response <- NULL
-    } else if (
-      !is.null(expected_length) && length(response) != expected_length
-    ) {
-      response <- NULL
-    }
-  }
-
-  response
-}
+# REMOVED: extract_response_from_call
+# This function relied on evaluating objects from the model's call, which is
+# problematic as it depends on objects being available in specific environments.
+# Instead, extract response directly from:
+# - Model object (e.g., randomForest$y)
+# - Data parameter (extract using Terms or variable names)
+# - Or don't create fitted values if response not available
 
 # Validate and select predictor columns from data
 #
@@ -536,33 +505,49 @@ create_fitted_dataframe <- function(fitted_ids, response = NULL) {
   }
 }
 
-# Extract training data from model call
-#
-# Attempts to extract the training data by evaluating the model's call.
-# This is useful for models that don't store the full training data.
-#
-# @param obj Model object with a $call element
-# @param data_param Name of parameter in call containing data (default "data")
-# @param eval_env Environment in which to evaluate the call (default parent.frame(2))
-#
-# @return Data.frame, or NULL if extraction fails
-extract_data_from_call <- function(
-  obj,
-  data_param = "data",
-  eval_env = parent.frame(2)
-) {
-  data <- NULL
+# REMOVED: extract_data_from_call
+# This function relied on evaluating objects from the model's call, which is
+# problematic as it depends on objects being available in specific environments.
+# Instead:
+# - Require data parameter to be passed explicitly
+# - Or create placeholder data with reconstruct_data() for structure inspection
 
-  if (!is.null(obj$call) && data_param %in% names(obj$call)) {
-    data <- try(
-      eval(obj$call[[data_param]], envir = eval_env),
-      silent = TRUE
+# Validate party object has proper node information
+#
+# Checks if a party object will display proper node summaries (not asterisks).
+# A party object needs fitted values with response data to compute terminal
+# node summaries for constparty objects.
+#
+# @param party_obj A party object to validate
+# @param action Character: "error" to abort, "warn" to warn, "silent" to return logical
+#
+# @return Logical indicating if party object is valid (only when action = "silent")
+validate_party_node_info <- function(
+  party_obj,
+  action = c("error", "warn", "silent")
+) {
+  action <- match.arg(action)
+
+  # Check if this will be a constparty (has fitted response)
+  has_fitted <- !is.null(party_obj$fitted)
+  has_response <- has_fitted && "(response)" %in% names(party_obj$fitted)
+
+  # If we have fitted data, we need response for proper summaries
+  is_valid <- !has_fitted || has_response
+
+  if (!is_valid) {
+    msg <- c(
+      "Party object will show asterisks (*) in terminal node summaries.",
+      "i" = "The party object has fitted values but no response variable.",
+      "i" = "Provide the {.arg data} parameter with response variable included."
     )
 
-    if (inherits(data, "try-error") || !is.data.frame(data)) {
-      data <- NULL
+    if (action == "error") {
+      cli::cli_abort(msg)
+    } else if (action == "warn") {
+      cli::cli_warn(msg)
     }
   }
 
-  data
+  invisible(is_valid)
 }

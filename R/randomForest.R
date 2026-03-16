@@ -155,20 +155,27 @@ as.party.randomForest <- function(obj, tree = 1L, data = NULL, ...) {
       preserve_extra = TRUE
     )
   } else {
-    # Try to extract from model call
-    orig_data <- extract_data_from_call(obj, data_param = "data")
-    if (!is.null(orig_data)) {
-      orig_data <- validate_and_select_data(
-        orig_data,
-        var_names,
-        preserve_extra = TRUE
-      )
-    }
-  }
-
-  # If no data available, create 0-row placeholder
-  if (is.null(orig_data)) {
+    # No data provided - create 0-row placeholder with response column
+    # This allows structure inspection but not fitted values computation
     orig_data <- reconstruct_data(var_names, n_obs = 0)
+
+    # Add response column if we have terms
+    if (!is.null(obj$terms)) {
+      response_name <- all.vars(obj$terms)[attr(obj$terms, "response")]
+      if (length(response_name) > 0 && !response_name %in% names(orig_data)) {
+        # Determine response type from model
+        if (obj$type == "classification") {
+          # Classification - create factor with correct levels
+          orig_data[[response_name]] <- factor(
+            character(0),
+            levels = obj$classes
+          )
+        } else {
+          # Regression - create numeric
+          orig_data[[response_name]] <- numeric(0)
+        }
+      }
+    }
   }
 
   # Create terms object
@@ -211,6 +218,9 @@ as.party.randomForest <- function(obj, tree = 1L, data = NULL, ...) {
   if (!is.null(fitted) && "(response)" %in% names(fitted)) {
     class(party_obj) <- c("constparty", "party")
   }
+
+  # Validate that party object has proper node information
+  validate_party_node_info(party_obj, action = "warn")
 
   party_obj
 }

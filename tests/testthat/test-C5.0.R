@@ -43,23 +43,24 @@ test_that("as.party.C5.0 validates tree parameter", {
   penguins <- get_penguins_data()
   c5_model <- C50::C5.0(species ~ ., data = penguins)
 
-  expect_snapshot(as.party(c5_model, tree = 0), error = TRUE)
+  expect_snapshot(as.party(c5_model, tree = 0, data = penguins), error = TRUE)
   # When tree exceeds num_trials, it should warn and use max tree
-  expect_snapshot(as.party(c5_model, tree = 5))
-  expect_snapshot(as.party(c5_model, tree = c(1, 2)), error = TRUE)
-  expect_snapshot(as.party(c5_model, tree = "1"), error = TRUE)
+  expect_snapshot(as.party(c5_model, tree = 5, data = penguins))
+  expect_snapshot(
+    as.party(c5_model, tree = c(1, 2), data = penguins),
+    error = TRUE
+  )
+  expect_snapshot(as.party(c5_model, tree = "1", data = penguins), error = TRUE)
 })
 
-test_that("as.party.C5.0 works without data parameter", {
+test_that("as.party.C5.0 requires data parameter", {
   skip_if_not_installed("C50")
   skip_if_not_installed("palmerpenguins")
 
   penguins <- get_penguins_data()
   c5_model <- C50::C5.0(species ~ ., data = penguins)
-  p <- as.party(c5_model, tree = 1)
 
-  expect_s3_class(p, "party")
-  expect_equal(ncol(p$data), 5)
+  expect_snapshot(as.party(c5_model, tree = 1), error = TRUE)
 })
 
 test_that("as.party.C5.0 works with boosted models", {
@@ -127,7 +128,7 @@ test_that("as.party.C5.0 rejects rule-based models", {
   penguins <- get_penguins_data()
   c5_rules <- C50::C5.0(species ~ ., data = penguins, rules = TRUE)
 
-  expect_snapshot(as.party(c5_rules, tree = 1), error = TRUE)
+  expect_snapshot(as.party(c5_rules, tree = 1, data = penguins), error = TRUE)
 })
 
 test_that("as.party.C5.0 does not show asterisks in node summaries", {

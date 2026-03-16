@@ -69,24 +69,18 @@ test_that("as.party.ranger validates tree parameter", {
 
   rf <- ranger::ranger(species ~ ., data = penguins, num.trees = 5)
 
-  expect_snapshot(as.party(rf, tree = 0), error = TRUE)
-  expect_snapshot(as.party(rf, tree = 10), error = TRUE)
-  expect_snapshot(as.party(rf, tree = c(1, 2)), error = TRUE)
-  expect_snapshot(as.party(rf, tree = "1"), error = TRUE)
+  expect_snapshot(as.party(rf, tree = 0, data = penguins), error = TRUE)
+  expect_snapshot(as.party(rf, tree = 10, data = penguins), error = TRUE)
+  expect_snapshot(as.party(rf, tree = c(1, 2), data = penguins), error = TRUE)
+  expect_snapshot(as.party(rf, tree = "1", data = penguins), error = TRUE)
 })
 
-test_that("as.party.ranger works without data parameter", {
+test_that("as.party.ranger requires data parameter", {
   skip_if_not_installed("ranger")
 
-  # Use iris which is in global environment
   rf <- ranger::ranger(Species ~ ., data = iris, num.trees = 5)
-  p <- as.party(rf, tree = 1)
 
-  expect_s3_class(p, "party")
-  expect_equal(ncol(p$data), 5)
-  expect_true(all(
-    c("Sepal.Length", "Sepal.Width", "Species") %in% colnames(p$data)
-  ))
+  expect_snapshot(as.party(rf, tree = 1), error = TRUE)
 })
 
 test_that("as.party.ranger requires write.forest = TRUE", {
@@ -102,7 +96,7 @@ test_that("as.party.ranger requires write.forest = TRUE", {
     write.forest = FALSE
   )
 
-  expect_snapshot(as.party(rf, tree = 1), error = TRUE)
+  expect_snapshot(as.party(rf, tree = 1, data = penguins), error = TRUE)
 })
 
 test_that("as.party.ranger extracts different trees", {

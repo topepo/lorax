@@ -7,9 +7,9 @@
 #' @param tree Integer specifying which tree to convert (1-based indexing,
 #'   default is 1). For single tree models, use `tree = 1`. For boosted models
 #'   with `trials > 1`, this selects which boosting iteration to extract.
-#' @param data Optional data.frame containing the training data. If NULL,
-#'   will attempt to reconstruct from model, or create a placeholder.
-#'   Providing data enables full party functionality.
+#' @param data Data.frame containing the training data, including both predictors
+#'   and response variable. Required for proper party object creation with fitted
+#'   values and node summaries.
 #' @param ... Not currently used.
 #'
 #' @return A `party` object from the \pkg{partykit} package.
@@ -84,6 +84,15 @@
 #' @export
 as.party.C5.0 <- function(obj, tree = 1L, data = NULL, ...) {
   rlang::check_installed("C50")
+
+  # Require data parameter
+  if (is.null(data)) {
+    cli::cli_abort(
+      "{.arg data} is required for {.fn as.party.C5.0}.",
+      "i" = "Provide the training data to create a valid party object with fitted values."
+    )
+  }
+
   # Validate tree parameter
   if (!is.numeric(tree) || length(tree) != 1 || tree != as.integer(tree)) {
     cli::cli_abort(
@@ -172,36 +181,12 @@ as.party.C5.0 <- function(obj, tree = 1L, data = NULL, ...) {
   root_node <- assign_node_ids(root_node)$node
 
   # Get original training data
-  orig_data <- NULL
-  response_name <- NULL
-
-  if (!is.null(data)) {
-    # Data parameter provided - use it
-    orig_data <- validate_and_select_data(
-      data,
-      var_names,
-      preserve_extra = TRUE
-    )
-  } else {
-    # Try to extract from model call
-    orig_data <- extract_data_from_call(
-      obj,
-      data_param = "data",
-      eval_env = environment(obj$Terms)
-    )
-    if (!is.null(orig_data)) {
-      orig_data <- validate_and_select_data(
-        orig_data,
-        var_names,
-        preserve_extra = TRUE
-      )
-    }
-  }
-
-  # If no data available, create 0-row placeholder
-  if (is.null(orig_data)) {
-    orig_data <- reconstruct_data(var_names, n_obs = 0)
-  }
+  # Data is required, so we can directly validate and select
+  orig_data <- validate_and_select_data(
+    data,
+    var_names,
+    preserve_extra = TRUE
+  )
 
   # Create terms object
   terms <- obj$Terms
