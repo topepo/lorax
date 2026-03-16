@@ -88,7 +88,7 @@ as.party.ranger <- function(obj, tree = 1L, data = NULL, ...) {
   # Check that forest exists
   if (is.null(obj$forest)) {
     cli::cli_abort(
-      "ranger model must have {.code write.forest = TRUE} to extract trees."
+      "{.pkg ranger} model must have {.code write.forest = TRUE} to extract trees."
     )
   }
 
@@ -124,35 +124,20 @@ as.party.ranger <- function(obj, tree = 1L, data = NULL, ...) {
 
   if (!is.null(data)) {
     # Data parameter provided - use it
-    # Validate data has correct variables
-    if (!all(var_names %in% names(data))) {
-      missing <- setdiff(var_names, names(data))
-      cli::cli_abort(
-        "{.arg data} must contain variables: {.field {missing}}."
-      )
-    }
-    # Select predictor columns
-    orig_data <- data[, var_names, drop = FALSE]
-    # Add response if available
-    if (!is.null(response_name) && response_name %in% names(data)) {
-      orig_data[[response_name]] <- data[[response_name]]
-    }
-  } else if (!is.null(obj$call$data)) {
-    # Try to extract from model call
-    orig_data <- try(
-      eval(obj$call$data, envir = parent.frame(2)),
-      silent = TRUE
+    orig_data <- validate_and_select_data(
+      data,
+      var_names,
+      preserve_extra = TRUE
     )
-    if (inherits(orig_data, "try-error")) {
-      orig_data <- NULL
-    } else {
-      # Select predictor columns
-      orig_data_pred <- orig_data[, var_names, drop = FALSE]
-      # Add response if available
-      if (!is.null(response_name) && response_name %in% names(orig_data)) {
-        orig_data_pred[[response_name]] <- orig_data[[response_name]]
-      }
-      orig_data <- orig_data_pred
+  } else {
+    # Try to extract from model call
+    orig_data <- extract_data_from_call(obj, data_param = "data")
+    if (!is.null(orig_data)) {
+      orig_data <- validate_and_select_data(
+        orig_data,
+        var_names,
+        preserve_extra = TRUE
+      )
     }
   }
 
@@ -186,18 +171,7 @@ as.party.ranger <- function(obj, tree = 1L, data = NULL, ...) {
       response <- orig_data[[response_name]]
     }
 
-    if (!is.null(response)) {
-      fitted <- data.frame(
-        "(fitted)" = fitted_ids,
-        "(response)" = response,
-        check.names = FALSE
-      )
-    } else {
-      fitted <- data.frame(
-        "(fitted)" = fitted_ids,
-        check.names = FALSE
-      )
-    }
+    fitted <- create_fitted_dataframe(fitted_ids, response)
   }
 
   # Create party object

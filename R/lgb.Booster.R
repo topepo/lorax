@@ -380,7 +380,7 @@ as.party.lgb.Booster <- function(obj, tree = 1L, data, ...) {
   # tree_index column uses 0-based indexing
   if (nrow(tree_dt) == 0 || all(is.na(tree_dt$tree_index))) {
     cli::cli_abort(
-      "Model does not contain any trees."
+      "{.pkg lightgbm} model does not contain any trees."
     )
   }
 
@@ -527,11 +527,7 @@ as.party.lgb.Booster <- function(obj, tree = 1L, data, ...) {
   # Get response (will be in original format)
   response <- orig_data[[response_name]]
 
-  fitted <- data.frame(
-    "(fitted)" = fitted_ids,
-    "(response)" = response,
-    check.names = FALSE
-  )
+  fitted <- create_fitted_dataframe(fitted_ids, response)
 
   # Create constparty object
   party_obj <- create_party_object(

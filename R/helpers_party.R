@@ -439,3 +439,130 @@ traverse_to_terminal <- function(node, obs) {
     partykit::id_node(node)
   }
 }
+
+# Extract response variable from model call
+#
+# Attempts to extract the response variable by evaluating the model's call.
+# This is useful when the training data contains predictors but the response
+# needs to be extracted separately.
+#
+# @param obj Model object with a $call element
+# @param response_param Name of parameter in call containing response (e.g., "y", "Y")
+# @param expected_length Expected length of response (e.g., nrow of data)
+# @param eval_env Environment in which to evaluate the call (default parent.frame(2))
+#
+# @return Response vector/factor, or NULL if extraction fails
+extract_response_from_call <- function(
+  obj,
+  response_param = "y",
+  expected_length = NULL,
+  eval_env = parent.frame(2)
+) {
+  response <- NULL
+
+  if (!is.null(obj$call) && response_param %in% names(obj$call)) {
+    response <- try(
+      eval(obj$call[[response_param]], envir = eval_env),
+      silent = TRUE
+    )
+
+    # Validate response
+    if (inherits(response, "try-error")) {
+      response <- NULL
+    } else if (
+      !is.null(expected_length) && length(response) != expected_length
+    ) {
+      response <- NULL
+    }
+  }
+
+  response
+}
+
+# Validate and select predictor columns from data
+#
+# Ensures that data contains the required predictor variables and selects
+# them along with any additional columns (like response variables).
+#
+# @param data Data.frame to validate and subset
+# @param var_names Character vector of required predictor names
+# @param preserve_extra Logical, whether to preserve columns beyond predictors
+#
+# @return Data.frame with predictors (and optionally additional columns)
+validate_and_select_data <- function(data, var_names, preserve_extra = TRUE) {
+  # Check that data has all required variables
+  if (!all(var_names %in% names(data))) {
+    missing <- setdiff(var_names, names(data))
+    cli::cli_abort(
+      "{.arg data} must contain variables: {.field {missing}}."
+    )
+  }
+
+  # Select predictor columns
+  result <- data[, var_names, drop = FALSE]
+
+  # Preserve any additional columns if requested
+  if (preserve_extra) {
+    extra_cols <- setdiff(names(data), var_names)
+    for (col in extra_cols) {
+      result[[col]] <- data[[col]]
+    }
+  }
+
+  result
+}
+
+# Create fitted dataframe for party object
+#
+# Creates the fitted dataframe expected by party objects, containing
+# fitted node IDs and optionally the response variable.
+#
+# @param fitted_ids Integer vector of terminal node IDs
+# @param response Optional response vector
+#
+# @return Data.frame with "(fitted)" column and optionally "(response)" column
+create_fitted_dataframe <- function(fitted_ids, response = NULL) {
+  if (is.null(response)) {
+    data.frame(
+      "(fitted)" = fitted_ids,
+      check.names = FALSE
+    )
+  } else {
+    data.frame(
+      "(fitted)" = fitted_ids,
+      "(response)" = response,
+      check.names = FALSE
+    )
+  }
+}
+
+# Extract training data from model call
+#
+# Attempts to extract the training data by evaluating the model's call.
+# This is useful for models that don't store the full training data.
+#
+# @param obj Model object with a $call element
+# @param data_param Name of parameter in call containing data (default "data")
+# @param eval_env Environment in which to evaluate the call (default parent.frame(2))
+#
+# @return Data.frame, or NULL if extraction fails
+extract_data_from_call <- function(
+  obj,
+  data_param = "data",
+  eval_env = parent.frame(2)
+) {
+  data <- NULL
+
+  if (!is.null(obj$call) && data_param %in% names(obj$call)) {
+    data <- try(
+      eval(obj$call[[data_param]], envir = eval_env),
+      silent = TRUE
+    )
+
+    if (inherits(data, "try-error") || !is.data.frame(data)) {
+      data <- NULL
+    }
+  }
+
+  data
+}

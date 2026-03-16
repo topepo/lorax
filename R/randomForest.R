@@ -89,7 +89,7 @@ as.party.randomForest <- function(obj, tree = 1L, data = NULL, ...) {
   # Check that forest exists
   if (is.null(obj$forest)) {
     cli::cli_abort(
-      "randomForest model must have {.code keep.forest = TRUE} to extract trees."
+      "{.pkg randomForest} model must have {.code keep.forest = TRUE} to extract trees."
     )
   }
 
@@ -147,37 +147,20 @@ as.party.randomForest <- function(obj, tree = 1L, data = NULL, ...) {
 
   if (!is.null(data)) {
     # Data parameter provided - use it
-    # Validate data has correct variables
-    if (!all(var_names %in% names(data))) {
-      missing <- setdiff(var_names, names(data))
-      cli::cli_abort(
-        "{.arg data} must contain variables: {.field {missing}}."
-      )
-    }
-    # Select predictor columns
-    orig_data <- data[, var_names, drop = FALSE]
-    # Preserve any additional columns beyond features (e.g., response)
-    extra_cols <- setdiff(names(data), var_names)
-    for (col in extra_cols) {
-      orig_data[[col]] <- data[[col]]
-    }
-  } else if (!is.null(obj$call$data)) {
-    # Try to extract from model call
-    orig_data <- try(
-      eval(obj$call$data, envir = parent.frame(2)),
-      silent = TRUE
+    orig_data <- validate_and_select_data(
+      data,
+      var_names,
+      preserve_extra = TRUE
     )
-    if (!inherits(orig_data, "try-error")) {
-      # Select predictor columns
-      orig_data_pred <- orig_data[, var_names, drop = FALSE]
-      # Preserve any additional columns beyond features (e.g., response for formula interface)
-      extra_cols <- setdiff(names(orig_data), var_names)
-      for (col in extra_cols) {
-        orig_data_pred[[col]] <- orig_data[[col]]
-      }
-      orig_data <- orig_data_pred
-    } else {
-      orig_data <- NULL
+  } else {
+    # Try to extract from model call
+    orig_data <- extract_data_from_call(obj, data_param = "data")
+    if (!is.null(orig_data)) {
+      orig_data <- validate_and_select_data(
+        orig_data,
+        var_names,
+        preserve_extra = TRUE
+      )
     }
   }
 
@@ -203,31 +186,13 @@ as.party.randomForest <- function(obj, tree = 1L, data = NULL, ...) {
     fitted_ids <- compute_fitted_node_ids(root_node, orig_data)
 
     # Get response if available from call
-    response <- NULL
-    if (!is.null(obj$call$y)) {
-      response <- try(
-        eval(obj$call$y, envir = parent.frame(2)),
-        silent = TRUE
-      )
-      if (
-        inherits(response, "try-error") || length(response) != nrow(orig_data)
-      ) {
-        response <- NULL
-      }
-    }
+    response <- extract_response_from_call(
+      obj,
+      response_param = "y",
+      expected_length = nrow(orig_data)
+    )
 
-    if (!is.null(response)) {
-      fitted <- data.frame(
-        "(fitted)" = fitted_ids,
-        "(response)" = response,
-        check.names = FALSE
-      )
-    } else {
-      fitted <- data.frame(
-        "(fitted)" = fitted_ids,
-        check.names = FALSE
-      )
-    }
+    fitted <- create_fitted_dataframe(fitted_ids, response)
   }
 
   # Create party object

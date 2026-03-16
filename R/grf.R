@@ -96,7 +96,7 @@ as.party.regression_forest <- function(obj, tree = 1L, data = NULL, ...) {
   # Check that tree structure is available
   if (is.null(obj[["_tree_drawn"]]) && is.null(obj[["X.orig"]])) {
     cli::cli_abort(
-      "Cannot extract tree structure from grf object. Ensure model was fitted with {.code num.trees > 0}."
+      "Cannot extract tree structure from {.pkg grf} object. Ensure model was fitted with {.code num.trees > 0}."
     )
   }
 
@@ -154,20 +154,11 @@ as.party.regression_forest <- function(obj, tree = 1L, data = NULL, ...) {
 
   if (!is.null(data)) {
     # Data parameter provided - use it
-    # Validate data has correct variables
-    if (!all(var_names %in% names(data))) {
-      missing <- setdiff(var_names, names(data))
-      cli::cli_abort(
-        "{.arg data} must contain variables: {.field {missing}}."
-      )
-    }
-    # Select predictor columns
-    orig_data <- data[, var_names, drop = FALSE]
-    # Preserve any additional columns beyond features (e.g., response)
-    extra_cols <- setdiff(names(data), var_names)
-    for (col in extra_cols) {
-      orig_data[[col]] <- data[[col]]
-    }
+    orig_data <- validate_and_select_data(
+      data,
+      var_names,
+      preserve_extra = TRUE
+    )
   } else if (!is.null(obj$X.orig)) {
     # Try to extract from model
     orig_data <- as.data.frame(obj$X.orig)
@@ -215,18 +206,7 @@ as.party.regression_forest <- function(obj, tree = 1L, data = NULL, ...) {
       }
     }
 
-    if (!is.null(response)) {
-      fitted <- data.frame(
-        "(fitted)" = fitted_ids,
-        "(response)" = response,
-        check.names = FALSE
-      )
-    } else {
-      fitted <- data.frame(
-        "(fitted)" = fitted_ids,
-        check.names = FALSE
-      )
-    }
+    fitted <- create_fitted_dataframe(fitted_ids, response)
   }
 
   # Create party object

@@ -451,11 +451,7 @@ as.party.xgb.Booster <- function(obj, tree = 1L, data, ...) {
   # Get response (will be in original format)
   response <- orig_data[[response_name]]
 
-  fitted <- data.frame(
-    "(fitted)" = fitted_ids,
-    "(response)" = response,
-    check.names = FALSE
-  )
+  fitted <- create_fitted_dataframe(fitted_ids, response)
 
   # Create constparty object
   party_obj <- create_party_object(

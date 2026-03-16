@@ -99,7 +99,7 @@ as.party.C5.0 <- function(obj, tree = 1L, data = NULL, ...) {
   # Check if model uses rules (not supported)
   if (!is.null(obj$rules) && nchar(obj$rules) > 0) {
     cli::cli_abort(
-      "C5.0 rule-based models are not supported. Use tree-based models only."
+      "{.pkg C50} rule-based models are not supported. Use tree-based models only."
     )
   }
 
@@ -115,7 +115,7 @@ as.party.C5.0 <- function(obj, tree = 1L, data = NULL, ...) {
   tree_text <- obj$tree
   if (is.null(tree_text) || nchar(tree_text) == 0) {
     cli::cli_abort(
-      "C5.0 model does not contain tree structure."
+      "{.pkg C50} model does not contain tree structure."
     )
   }
 
@@ -157,7 +157,7 @@ as.party.C5.0 <- function(obj, tree = 1L, data = NULL, ...) {
 
   if (is.null(root_node)) {
     cli::cli_abort(
-      "Failed to parse C5.0 tree structure. Tree format may not be supported."
+      "Failed to parse {.pkg C50} tree structure. Tree format may not be supported."
     )
   }
 
@@ -170,38 +170,24 @@ as.party.C5.0 <- function(obj, tree = 1L, data = NULL, ...) {
 
   if (!is.null(data)) {
     # Data parameter provided - use it
-    # Validate data has correct variables
-    if (!all(var_names %in% names(data))) {
-      missing <- setdiff(var_names, names(data))
-      cli::cli_abort(
-        "{.arg data} must contain variables: {.field {missing}}."
-      )
-    }
-    # Select predictor columns
-    orig_data <- data[, var_names, drop = FALSE]
-    # Preserve any additional columns beyond features (e.g., response)
-    extra_cols <- setdiff(names(data), var_names)
-    for (col in extra_cols) {
-      orig_data[[col]] <- data[[col]]
-    }
-  } else if (!is.null(obj$call) && "data" %in% names(obj$call)) {
-    # Try to get from call
-    # Attempt to evaluate in the environment where the model was created
-    orig_data <- try(
-      eval(obj$call$data, envir = environment(obj$Terms)),
-      silent = TRUE
+    orig_data <- validate_and_select_data(
+      data,
+      var_names,
+      preserve_extra = TRUE
     )
-    if (inherits(orig_data, "try-error")) {
-      orig_data <- NULL
-    } else {
-      # Select predictor columns
-      orig_data_pred <- orig_data[, var_names, drop = FALSE]
-      # Preserve any additional columns beyond features
-      extra_cols <- setdiff(names(orig_data), var_names)
-      for (col in extra_cols) {
-        orig_data_pred[[col]] <- orig_data[[col]]
-      }
-      orig_data <- orig_data_pred
+  } else {
+    # Try to extract from model call
+    orig_data <- extract_data_from_call(
+      obj,
+      data_param = "data",
+      eval_env = environment(obj$Terms)
+    )
+    if (!is.null(orig_data)) {
+      orig_data <- validate_and_select_data(
+        orig_data,
+        var_names,
+        preserve_extra = TRUE
+      )
     }
   }
 
@@ -230,35 +216,13 @@ as.party.C5.0 <- function(obj, tree = 1L, data = NULL, ...) {
     )
 
     # Get response if available from call
-    response <- NULL
-    if (!is.null(obj$call) && "x" %in% names(obj$call)) {
-      # C5.0 uses x ~ y or y ~ x formula - try to extract response
-      # Try looking for y or outcome in call
-      if ("y" %in% names(obj$call)) {
-        response <- try(
-          eval(obj$call$y, envir = parent.frame(2)),
-          silent = TRUE
-        )
-        if (
-          inherits(response, "try-error") || length(response) != nrow(orig_data)
-        ) {
-          response <- NULL
-        }
-      }
-    }
+    response <- extract_response_from_call(
+      obj,
+      response_param = "y",
+      expected_length = nrow(orig_data)
+    )
 
-    if (!is.null(response)) {
-      fitted <- data.frame(
-        "(fitted)" = fitted_ids,
-        "(response)" = response,
-        check.names = FALSE
-      )
-    } else {
-      fitted <- data.frame(
-        "(fitted)" = fitted_ids,
-        check.names = FALSE
-      )
-    }
+    fitted <- create_fitted_dataframe(fitted_ids, response)
   }
 
   # Create party object

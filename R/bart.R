@@ -98,7 +98,7 @@ extract_rules.bart <- function(x, tree = 1L, chain = 1L, ...) {
   # Check that model was fitted with keeptrees = TRUE
   if (is.null(x$fit)) {
     cli::cli_abort(
-      "BART model must be fitted with {.code keeptrees = TRUE} to extract rules."
+      "{.pkg dbarts} model must be fitted with {.code keeptrees = TRUE} to extract rules."
     )
   }
 
@@ -493,7 +493,7 @@ as.party.bart <- function(obj, tree = 1L, chain = 1L, data, ...) {
   # Check that model was fitted with keeptrees = TRUE
   if (is.null(obj$fit)) {
     cli::cli_abort(
-      "BART model must be fitted with {.code keeptrees = TRUE} to extract trees."
+      "{.pkg dbarts} model must be fitted with {.code keeptrees = TRUE} to extract trees."
     )
   }
 
@@ -699,11 +699,7 @@ as.party.bart <- function(obj, tree = 1L, chain = 1L, data, ...) {
   # Get response (will be in original format, e.g., factor for classification)
   response <- party_data[[response_name]]
 
-  fitted <- data.frame(
-    "(fitted)" = fitted_ids,
-    "(response)" = response,
-    check.names = FALSE
-  )
+  fitted <- create_fitted_dataframe(fitted_ids, response)
 
   # Create constparty object
   party_obj <- create_party_object(
