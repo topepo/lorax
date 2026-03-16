@@ -30,21 +30,38 @@
 #' of these conditions using AND logic.
 #'
 #' @examples
-#' \dontrun{
-#' library(dbarts)
+#' if (rlang::is_installed(c("dbarts", "palmerpenguins"))) {
+#'   # Classification example
+#'   data(penguins, package = "palmerpenguins")
+#'   penguins <- na.omit(penguins)
 #'
-#' fit <- bart(
-#'   y ~ .,
-#'   data = data,
-#'   keeptrees = TRUE,
-#'   verbose = FALSE
-#' )
+#'   train_data <- penguins[, c("bill_length_mm", "bill_depth_mm",
+#'                              "flipper_length_mm", "body_mass_g", "species")]
 #'
-#' # Extract rules from first tree
-#' rules <- extract_rules(fit, tree = 1L)
+#'   fit <- dbarts::bart(
+#'     x.train = train_data[, 1:4],
+#'     y.train = train_data$species,
+#'     keeptrees = TRUE,
+#'     verbose = FALSE,
+#'     ntree = 2
+#'   )
 #'
-#' # View as text
-#' rule_text(rules$rules[[1]])
+#'   # Extract rules from first tree
+#'   rules <- extract_rules(fit, tree = 1L)
+#'
+#'   # View as text
+#'   rule_text(rules$rules[[1]])
+#'
+#'   # Regression example
+#'   data(mtcars)
+#'   fit_reg <- dbarts::bart(
+#'     x.train = mtcars[, -1],
+#'     y.train = mtcars$mpg,
+#'     keeptrees = TRUE,
+#'     verbose = FALSE,
+#'     ntree = 2
+#'   )
+#'   rules_reg <- extract_rules(fit_reg, tree = 1L)
 #' }
 #'
 #' @export
@@ -407,6 +424,7 @@ bart_contains_row <- function(node, target_row) {
 #'
 #' @examples
 #' if (rlang::is_installed(c("dbarts", "palmerpenguins"))) {
+#'   # Classification example
 #'   data(penguins, package = "palmerpenguins")
 #'   penguins <- na.omit(penguins)
 #'
@@ -427,6 +445,18 @@ bart_contains_row <- function(node, target_row) {
 #'   party_tree <- as.party(fit, tree = 1L, chain = 1L, data = train_data)
 #'   print(party_tree)
 #'   plot(party_tree)
+#'
+#'   # Regression example
+#'   data(mtcars)
+#'   fit_reg <- dbarts::bart(
+#'     x.train = mtcars[, -1],
+#'     y.train = mtcars$mpg,
+#'     keeptrees = TRUE,
+#'     verbose = FALSE,
+#'     ntree = 2
+#'   )
+#'   party_tree_reg <- as.party(fit_reg, tree = 1L, chain = 1L, data = mtcars)
+#'   print(party_tree_reg)
 #' }
 #'
 #' @export

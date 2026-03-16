@@ -92,6 +92,7 @@ by partykit.
 }
 \examples{
 if (rlang::is_installed("lightgbm")) {
+  # Binary classification example
   data(agaricus.train, package = "lightgbm")
 
   # Prepare data with response column
@@ -103,7 +104,7 @@ if (rlang::is_installed("lightgbm")) {
   bst <- lightgbm::lgb.train(
     params = list(objective = "binary", max_depth = 3),
     data = dtrain,
-    nrounds = 5,
+    nrounds = 3,
     verbose = -1
   )
 
@@ -111,6 +112,21 @@ if (rlang::is_installed("lightgbm")) {
   party_tree <- as.party(bst, tree = 1L, data = train_data)
   print(party_tree)
   plot(party_tree)
+
+  # Regression example
+  data(mtcars)
+  reg_data <- mtcars
+  dtrain_reg <- lightgbm::lgb.Dataset(as.matrix(mtcars[, -1]), label = mtcars$mpg)
+
+  bst_reg <- lightgbm::lgb.train(
+    params = list(objective = "regression", max_depth = 3),
+    data = dtrain_reg,
+    nrounds = 3,
+    verbose = -1
+  )
+
+  party_tree_reg <- as.party(bst_reg, tree = 1L, data = reg_data)
+  print(party_tree_reg)
 }
 
 }

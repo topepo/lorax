@@ -72,11 +72,11 @@
 #'   plot(party_tree)
 #'
 #'   # Boosted model with multiple trials
-#'   c5_boost <- C50::C5.0(species ~ ., data = penguins, trials = 10)
+#'   c5_boost <- C50::C5.0(species ~ ., data = penguins, trials = 3)
 #'   # Extract first boosting iteration
 #'   party_tree1 <- as.party(c5_boost, tree = 1L, data = penguins)
-#'   # Extract fifth boosting iteration
-#'   party_tree5 <- as.party(c5_boost, tree = 5, data = penguins)
+#'   # Extract third boosting iteration
+#'   party_tree3 <- as.party(c5_boost, tree = 3L, data = penguins)
 #' }
 #'
 #' @export

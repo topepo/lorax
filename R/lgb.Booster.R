@@ -29,22 +29,33 @@
 #' features.
 #'
 #' @examples
-#' \dontrun{
-#' library(lightgbm)
-#' data(agaricus.train, package = "lightgbm")
+#' if (rlang::is_installed("lightgbm")) {
+#'   # Binary classification
+#'   data(agaricus.train, package = "lightgbm")
+#'   dtrain <- lightgbm::lgb.Dataset(agaricus.train$data, label = agaricus.train$label)
+#'   bst <- lightgbm::lgb.train(
+#'     params = list(objective = "binary", max_depth = 3),
+#'     data = dtrain,
+#'     nrounds = 3,
+#'     verbose = -1
+#'   )
 #'
-#' dtrain <- lgb.Dataset(agaricus.train$data, label = agaricus.train$label)
-#' bst <- lgb.train(
-#'   params = list(objective = "binary", max_depth = 3),
-#'   data = dtrain,
-#'   nrounds = 5
-#' )
+#'   # Extract rules from first tree
+#'   rules <- extract_rules(bst, tree = 1L)
 #'
-#' # Extract rules from first tree
-#' rules <- extract_rules(bst, tree = 1L)
+#'   # View as text
+#'   rule_text(rules$rules[[1]])
 #'
-#' # View as text
-#' rule_text(rules$rules[[1]])
+#'   # Regression example
+#'   data(mtcars)
+#'   dtrain_reg <- lightgbm::lgb.Dataset(as.matrix(mtcars[, -1]), label = mtcars$mpg)
+#'   bst_reg <- lightgbm::lgb.train(
+#'     params = list(objective = "regression", max_depth = 3),
+#'     data = dtrain_reg,
+#'     nrounds = 3,
+#'     verbose = -1
+#'   )
+#'   rules_reg <- extract_rules(bst_reg, tree = 1L)
 #' }
 #'
 #' @export
@@ -305,6 +316,7 @@ lgb_get_split_info <- function(
 #'
 #' @examples
 #' if (rlang::is_installed("lightgbm")) {
+#'   # Binary classification example
 #'   data(agaricus.train, package = "lightgbm")
 #'
 #'   # Prepare data with response column
@@ -316,7 +328,7 @@ lgb_get_split_info <- function(
 #'   bst <- lightgbm::lgb.train(
 #'     params = list(objective = "binary", max_depth = 3),
 #'     data = dtrain,
-#'     nrounds = 5,
+#'     nrounds = 3,
 #'     verbose = -1
 #'   )
 #'
@@ -324,6 +336,21 @@ lgb_get_split_info <- function(
 #'   party_tree <- as.party(bst, tree = 1L, data = train_data)
 #'   print(party_tree)
 #'   plot(party_tree)
+#'
+#'   # Regression example
+#'   data(mtcars)
+#'   reg_data <- mtcars
+#'   dtrain_reg <- lightgbm::lgb.Dataset(as.matrix(mtcars[, -1]), label = mtcars$mpg)
+#'
+#'   bst_reg <- lightgbm::lgb.train(
+#'     params = list(objective = "regression", max_depth = 3),
+#'     data = dtrain_reg,
+#'     nrounds = 3,
+#'     verbose = -1
+#'   )
+#'
+#'   party_tree_reg <- as.party(bst_reg, tree = 1L, data = reg_data)
+#'   print(party_tree_reg)
 #' }
 #'
 #' @export

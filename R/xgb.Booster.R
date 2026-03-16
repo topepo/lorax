@@ -33,9 +33,10 @@
 #' library(xgboost)
 #' data(agaricus.train, package = "xgboost")
 #'
+#' # Binary classification
 #' bst <- xgb.train(
 #'   data = xgb.DMatrix(agaricus.train$data, label = agaricus.train$label),
-#'   nrounds = 5,
+#'   nrounds = 3,
 #'   max_depth = 3,
 #'   objective = "binary:logistic"
 #' )
@@ -45,6 +46,16 @@
 #'
 #' # View as text
 #' rule_text(rules$rules[[1]])
+#'
+#' # Regression example
+#' data(mtcars)
+#' bst_reg <- xgb.train(
+#'   data = xgb.DMatrix(as.matrix(mtcars[, -1]), label = mtcars$mpg),
+#'   nrounds = 3,
+#'   max_depth = 3,
+#'   objective = "reg:squarederror"
+#' )
+#' rules_reg <- extract_rules(bst_reg, tree = 1L)
 #' }
 #'
 #' @export
@@ -254,7 +265,7 @@ xgb_get_split_info <- function(parent_id, child_id, tree_dt) {
 #' if (rlang::is_installed("xgboost")) {
 #'   data(agaricus.train, package = "xgboost")
 #'
-#'   # Prepare data with response column
+#'   # Binary classification example
 #'   train_data <- as.data.frame(as.matrix(agaricus.train$data))
 #'   train_data$label <- agaricus.train$label
 #'
@@ -263,7 +274,7 @@ xgb_get_split_info <- function(parent_id, child_id, tree_dt) {
 #'   bst <- xgboost::xgb.train(
 #'     data = dtrain,
 #'     max_depth = 3,
-#'     nrounds = 5,
+#'     nrounds = 3,
 #'     objective = "binary:logistic",
 #'     verbose = 0
 #'   )
@@ -272,6 +283,22 @@ xgb_get_split_info <- function(parent_id, child_id, tree_dt) {
 #'   party_tree <- as.party(bst, tree = 1L, data = train_data)
 #'   print(party_tree)
 #'   plot(party_tree)
+#'
+#'   # Regression example
+#'   data(mtcars)
+#'   reg_data <- mtcars
+#'   dtrain_reg <- xgboost::xgb.DMatrix(as.matrix(mtcars[, -1]), label = mtcars$mpg)
+#'
+#'   bst_reg <- xgboost::xgb.train(
+#'     data = dtrain_reg,
+#'     max_depth = 3,
+#'     nrounds = 3,
+#'     objective = "reg:squarederror",
+#'     verbose = 0
+#'   )
+#'
+#'   party_tree_reg <- as.party(bst_reg, tree = 1L, data = reg_data)
+#'   print(party_tree_reg)
 #' }
 #'
 #' @export

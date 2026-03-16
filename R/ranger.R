@@ -47,10 +47,11 @@
 #'
 #' @examples
 #' if (rlang::is_installed(c("ranger", "palmerpenguins"))) {
+#'   # Classification example
 #'   data(penguins, package = "palmerpenguins")
 #'   penguins <- na.omit(penguins)
 #'
-#'   rf <- ranger::ranger(species ~ ., data = penguins, num.trees = 10)
+#'   rf <- ranger::ranger(species ~ ., data = penguins, num.trees = 3)
 #'
 #'   # Convert first tree
 #'   party_tree <- as.party(rf, tree = 1L, data = penguins)
@@ -59,6 +60,12 @@
 #'
 #'   # Predictions from party object
 #'   predict(party_tree, newdata = penguins[1:5, ])
+#'
+#'   # Regression example
+#'   data(mtcars)
+#'   rf_reg <- ranger::ranger(mpg ~ ., data = mtcars, num.trees = 3)
+#'   party_tree_reg <- as.party(rf_reg, tree = 1L, data = mtcars)
+#'   print(party_tree_reg)
 #' }
 #'
 #' @export

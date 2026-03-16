@@ -69,10 +69,11 @@ by partykit.
 }
 \examples{
 if (rlang::is_installed(c("randomForest", "palmerpenguins"))) {
+  # Classification example
   data(penguins, package = "palmerpenguins")
   penguins <- na.omit(penguins)
 
-  rf <- randomForest::randomForest(species ~ ., data = penguins, ntree = 10)
+  rf <- randomForest::randomForest(species ~ ., data = penguins, ntree = 3)
 
   # Convert first tree
   party_tree <- as.party(rf, tree = 1L, data = penguins)
@@ -81,6 +82,12 @@ if (rlang::is_installed(c("randomForest", "palmerpenguins"))) {
 
   # Predictions from party object
   predict(party_tree, newdata = penguins[1:5, ])
+
+  # Regression example
+  data(mtcars)
+  rf_reg <- randomForest::randomForest(mpg ~ ., data = mtcars, ntree = 3)
+  party_tree_reg <- as.party(rf_reg, tree = 1L, data = mtcars)
+  print(party_tree_reg)
 }
 
 }

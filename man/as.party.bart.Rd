@@ -93,6 +93,7 @@ by partykit.
 }
 \examples{
 if (rlang::is_installed(c("dbarts", "palmerpenguins"))) {
+  # Classification example
   data(penguins, package = "palmerpenguins")
   penguins <- na.omit(penguins)
 
@@ -113,6 +114,18 @@ if (rlang::is_installed(c("dbarts", "palmerpenguins"))) {
   party_tree <- as.party(fit, tree = 1L, chain = 1L, data = train_data)
   print(party_tree)
   plot(party_tree)
+
+  # Regression example
+  data(mtcars)
+  fit_reg <- dbarts::bart(
+    x.train = mtcars[, -1],
+    y.train = mtcars$mpg,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 2
+  )
+  party_tree_reg <- as.party(fit_reg, tree = 1L, chain = 1L, data = mtcars)
+  print(party_tree_reg)
 }
 
 }

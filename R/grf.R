@@ -57,7 +57,7 @@
 #'     X = penguins[, c("bill_length_mm", "bill_depth_mm",
 #'                      "flipper_length_mm", "body_mass_g")],
 #'     Y = penguins$bill_length_mm,
-#'     num.trees = 10
+#'     num.trees = 3
 #'   )
 #'
 #'   # Convert first tree
@@ -71,7 +71,7 @@
 #'                      "flipper_length_mm", "body_mass_g")],
 #'     Y = penguins$bill_length_mm,
 #'     W = rbinom(nrow(penguins), 1, 0.5),
-#'     num.trees = 10
+#'     num.trees = 3
 #'   )
 #'   party_tree2 <- as.party(cf, tree = 1L, data = penguins)
 #' }

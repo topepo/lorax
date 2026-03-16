@@ -46,9 +46,10 @@ features or non-tree boosters (\code{gblinear}).
 library(xgboost)
 data(agaricus.train, package = "xgboost")
 
+# Binary classification
 bst <- xgb.train(
   data = xgb.DMatrix(agaricus.train$data, label = agaricus.train$label),
-  nrounds = 5,
+  nrounds = 3,
   max_depth = 3,
   objective = "binary:logistic"
 )
@@ -58,6 +59,16 @@ rules <- extract_rules(bst, tree = 1L)
 
 # View as text
 rule_text(rules$rules[[1]])
+
+# Regression example
+data(mtcars)
+bst_reg <- xgb.train(
+  data = xgb.DMatrix(as.matrix(mtcars[, -1]), label = mtcars$mpg),
+  nrounds = 3,
+  max_depth = 3,
+  objective = "reg:squarederror"
+)
+rules_reg <- extract_rules(bst_reg, tree = 1L)
 }
 
 }

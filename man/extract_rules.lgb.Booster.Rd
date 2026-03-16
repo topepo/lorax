@@ -42,22 +42,33 @@ Note: This function does not work with LightGBM models containing categorical
 features.
 }
 \examples{
-\dontrun{
-library(lightgbm)
-data(agaricus.train, package = "lightgbm")
+if (rlang::is_installed("lightgbm")) {
+  # Binary classification
+  data(agaricus.train, package = "lightgbm")
+  dtrain <- lightgbm::lgb.Dataset(agaricus.train$data, label = agaricus.train$label)
+  bst <- lightgbm::lgb.train(
+    params = list(objective = "binary", max_depth = 3),
+    data = dtrain,
+    nrounds = 3,
+    verbose = -1
+  )
 
-dtrain <- lgb.Dataset(agaricus.train$data, label = agaricus.train$label)
-bst <- lgb.train(
-  params = list(objective = "binary", max_depth = 3),
-  data = dtrain,
-  nrounds = 5
-)
+  # Extract rules from first tree
+  rules <- extract_rules(bst, tree = 1L)
 
-# Extract rules from first tree
-rules <- extract_rules(bst, tree = 1L)
+  # View as text
+  rule_text(rules$rules[[1]])
 
-# View as text
-rule_text(rules$rules[[1]])
+  # Regression example
+  data(mtcars)
+  dtrain_reg <- lightgbm::lgb.Dataset(as.matrix(mtcars[, -1]), label = mtcars$mpg)
+  bst_reg <- lightgbm::lgb.train(
+    params = list(objective = "regression", max_depth = 3),
+    data = dtrain_reg,
+    nrounds = 3,
+    verbose = -1
+  )
+  rules_reg <- extract_rules(bst_reg, tree = 1L)
 }
 
 }

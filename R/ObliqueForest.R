@@ -85,19 +85,24 @@
 #' `x$control$lincomb_scale`.
 #'
 #' @examples
-#' \dontrun{
-#' library(aorsf)
-#' penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
-#' forest <- orsf(species ~ ., data = penguins, n_tree = 10)
+#' if (rlang::is_installed(c("aorsf", "palmerpenguins"))) {
+#'   # Classification example
+#'   penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
+#'   forest <- aorsf::orsf(species ~ ., data = penguins, n_tree = 3)
 #'
-#' # Extract rules from first tree (default)
-#' rules <- extract_rules(forest)
+#'   # Extract rules from first tree (default)
+#'   rules <- extract_rules(forest)
 #'
-#' # View rules as text
-#' rules$rules[[1]] |> rule_text(bullets = TRUE) |> cat("\n")
+#'   # View rules as text
+#'   rules$rules[[1]] |> rule_text(bullets = TRUE) |> cat("\n")
 #'
-#' # Extract rules from different tree
-#' rules5 <- extract_rules(forest, tree = 5)
+#'   # Extract rules from different tree
+#'   rules3 <- extract_rules(forest, tree = 3L)
+#'
+#'   # Regression example
+#'   data(mtcars)
+#'   forest_reg <- aorsf::orsf(mpg ~ ., data = mtcars, n_tree = 3)
+#'   rules_reg <- extract_rules(forest_reg, tree = 1L)
 #' }
 #'
 #' @export

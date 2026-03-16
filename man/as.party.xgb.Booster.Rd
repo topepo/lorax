@@ -91,7 +91,7 @@ by partykit.
 if (rlang::is_installed("xgboost")) {
   data(agaricus.train, package = "xgboost")
 
-  # Prepare data with response column
+  # Binary classification example
   train_data <- as.data.frame(as.matrix(agaricus.train$data))
   train_data$label <- agaricus.train$label
 
@@ -100,7 +100,7 @@ if (rlang::is_installed("xgboost")) {
   bst <- xgboost::xgb.train(
     data = dtrain,
     max_depth = 3,
-    nrounds = 5,
+    nrounds = 3,
     objective = "binary:logistic",
     verbose = 0
   )
@@ -109,6 +109,22 @@ if (rlang::is_installed("xgboost")) {
   party_tree <- as.party(bst, tree = 1L, data = train_data)
   print(party_tree)
   plot(party_tree)
+
+  # Regression example
+  data(mtcars)
+  reg_data <- mtcars
+  dtrain_reg <- xgboost::xgb.DMatrix(as.matrix(mtcars[, -1]), label = mtcars$mpg)
+
+  bst_reg <- xgboost::xgb.train(
+    data = dtrain_reg,
+    max_depth = 3,
+    nrounds = 3,
+    objective = "reg:squarederror",
+    verbose = 0
+  )
+
+  party_tree_reg <- as.party(bst_reg, tree = 1L, data = reg_data)
+  print(party_tree_reg)
 }
 
 }
