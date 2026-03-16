@@ -10,18 +10,13 @@ XGBoost
 aorsf
 aorsf's
 bart
-bestvar
 categoricals
-dbarts
 funder
-gblinear
 grf
 interpretability
 leftDaughter
 lgb
-lightgbm
 multiclass
-nodestatus
 partykit
 partykit's
 randomForest
@@ -29,7 +24,4 @@ rightDaughter
 tibble
 unscale
 unscaling
-varIDs
-varNames
 xgb
-xgboost

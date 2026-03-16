@@ -23,13 +23,13 @@ predictions.}
 A \code{party} object from the \pkg{partykit} package.
 }
 \description{
-Convert a single tree from a randomForest model to a party object for use
-with partykit visualization and analysis tools.
+Convert a single tree from a \pkg{randomForest} model to a party object for use
+with \pkg{partykit} visualization and analysis tools.
 }
 \details{
 \subsection{randomForest tree storage format}{
 
-The randomForest package stores trees in \code{obj$forest} as parallel matrices:
+The \pkg{randomForest} package stores trees in \code{obj$forest} as parallel matrices:
 \itemize{
 \item \code{leftDaughter[i, tree]}: 1-based row index of left child (0 = no child)
 \item \code{rightDaughter[i, tree]}: 1-based row index of right child (0 = no child)
@@ -42,7 +42,7 @@ The randomForest package stores trees in \code{obj$forest} as parallel matrices:
 
 \subsection{Node indexing}{
 \itemize{
-\item randomForest uses 1-based row indices for nodes (root is row 1)
+\item \pkg{randomForest} uses 1-based row indices for nodes (root is row 1)
 \item Value 0 in leftDaughter/rightDaughter indicates no child
 \item User-facing \code{tree} parameter uses 1-based indexing (R convention)
 }
@@ -52,15 +52,15 @@ The randomForest package stores trees in \code{obj$forest} as parallel matrices:
 \itemize{
 \item For numeric variables: left child when feature <= threshold, right child
 when feature > threshold
-\item Note: randomForest uses <= for left (different from ranger's <)
+\item Note: \pkg{randomForest} uses <= for left (different from ranger's <)
 \item partykit split created with \code{right = FALSE} to match this
 }
 }
 
 \subsection{Terminal node identification}{
 \itemize{
-\item nodestatus == -1 indicates terminal node
-\item Alternatively: bestvar == 0 or both daughters == 0
+\item \code{nodestatus == -1} indicates terminal node
+\item Alternatively: \code{bestvar == 0} or both \code{daughters == 0}
 }
 
 The party object will use 1-based node IDs and variable indices as required

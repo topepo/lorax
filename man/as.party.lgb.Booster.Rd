@@ -24,13 +24,13 @@ that includes both the predictor variables and the response variable.}
 A \code{constparty} object from the \pkg{partykit} package.
 }
 \description{
-Convert a single tree from a LightGBM boosted tree model to a party object
-for use with partykit visualization and analysis tools.
+Convert a single tree from a \pkg{lightgbm} boosted tree model to a party object
+for use with \pkg{partykit} visualization and analysis tools.
 }
 \details{
 \subsection{Important note on data}{
 
-LightGBM models do not store the original training data or response values.
+\pkg{lightgbm} models do not store the original training data or response values.
 You \strong{must} provide the original data frame (including the response variable)
 via the \code{data} parameter for correct terminal node statistics, bar charts,
 and other visualizations.
@@ -38,7 +38,7 @@ and other visualizations.
 
 \subsection{LightGBM tree storage format}{
 
-LightGBM stores trees in a tabular format accessible via
+\pkg{lightgbm} stores trees in a tabular format accessible via
 \code{lightgbm::lgb.model.dt.tree()}. Each tree is represented as rows in a table:
 \itemize{
 \item \code{tree_index}: 0-based tree index
@@ -57,37 +57,37 @@ LightGBM stores trees in a tabular format accessible via
 
 \subsection{Node indexing}{
 \itemize{
-\item Internally, LightGBM uses 0-based tree and node indices
+\item Internally, \pkg{lightgbm} uses 0-based tree and node indices
 \item User-facing \code{tree} parameter uses 1-based indexing (R convention)
-\item When tree=1 is requested, we filter to tree_index==0 internally
-\item Internal nodes use split_index, leaf nodes use leaf_index
+\item When \code{tree=1} is requested, we filter to \code{tree_index==0} internally
+\item Internal nodes use \code{split_index}, leaf nodes use \code{leaf_index}
 }
 }
 
 \subsection{Split encoding}{
 \itemize{
-\item decision_type "<=": left child when feature <= threshold
+\item \verb{decision_type "<="}: left child when feature <= threshold
 \item right child when feature > threshold
-\item partykit split created with \code{right = FALSE} (left interval closed)
+\item \pkg{partykit} split created with \code{right = FALSE} (left interval closed)
 }
 }
 
 \subsection{Child node references}{
 \itemize{
-\item Internal nodes have explicit left_child and right_child IDs
-\item These reference either split_index (internal) or leaf_index (leaf)
+\item Internal nodes have explicit \code{left_child} and \code{right_child} IDs
+\item These reference either \code{split_index} (internal) or \code{leaf_index} (leaf)
 \item Need to look up child in appropriate column based on node type
 }
 }
 
 \subsection{Variable names}{
 \itemize{
-\item split_feature column contains actual feature names or "Column_N" defaults
+\item \code{split_feature} column contains actual feature names or \code{"Column_N"} defaults
 \item Must map to column positions in data.frame
 }
 
 The party object will use 1-based node IDs and variable indices as required
-by partykit.
+by \pkg{partykit}.
 }
 }
 \examples{

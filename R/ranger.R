@@ -1,7 +1,7 @@
 #' Convert ranger model to party object
 #'
-#' Convert a single tree from a ranger random forest model to a party object
-#' for use with partykit visualization and analysis tools.
+#' Convert a single tree from a \pkg{ranger} random forest model to a party object
+#' for use with \pkg{partykit} visualization and analysis tools.
 #'
 #' @param obj A `ranger` object from the \pkg{ranger} package.
 #' @param tree Integer specifying which tree to convert (1-based indexing,
@@ -17,7 +17,7 @@
 #' @details
 #' ## Ranger tree storage format
 #'
-#' The ranger package stores trees in `obj$forest` with parallel vectors:
+#' The \pkg{ranger} package stores trees in `obj$forest` with parallel vectors:
 #' - `split.varIDs[[tree]]`: 0-based variable indices for splits
 #' - `split.values[[tree]]`: threshold values for splits
 #' - `child.nodeIDs[[tree]]`: matrix with 2 columns (left, right child IDs)
@@ -26,24 +26,24 @@
 #'
 #' ## Node indexing
 #'
-#' - Internally, ranger uses 0-based node indices (root is node 0)
+#' - Internally, \pkg{ranger} uses 0-based node indices (root is node 0)
 #' - User-facing `tree` parameter uses 1-based indexing (R convention)
-#' - Leaf nodes have split.varIDs entry of NA or large sentinel value
+#' - Leaf nodes have `split.varIDs` entry of `NA` or large sentinel value
 #'
 #' ## Split encoding
 #'
 #' - For numeric variables: left child when feature < threshold, right child
 #'   when feature >= threshold
-#' - partykit split created with `right = TRUE` (right interval closed)
+#' - \pkg{partykit} split created with `right = TRUE` (right interval closed)
 #'
 #' ## Child node references
 #'
-#' - `child.nodeIDs` is a matrix with 2 columns: left_child, right_child
+#' - `child.nodeIDs` is a matrix with 2 columns: `left_child`, `right_child`
 #' - Value 0 indicates no child (terminal node)
 #' - Both children 0 means current node is terminal
 #'
 #' The party object will use 1-based node IDs and variable indices as required
-#' by partykit.
+#' by \pkg{partykit}.
 #'
 #' @examples
 #' if (rlang::is_installed(c("ranger", "palmerpenguins"))) {

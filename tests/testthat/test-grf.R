@@ -139,4 +139,35 @@ test_that("as.party.regression_forest extracts different trees", {
   # Verify both work
   expect_true(length(partykit::nodeids(p1)) > 0)
   expect_true(length(partykit::nodeids(p2)) > 0)
+
+  # Trees should not be identical
+  expect_false(identical(p1$node, p2$node))
+})
+
+test_that("as.party.grf does not show asterisks in node summaries", {
+  skip_if_not_installed("grf")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  rf <- grf::regression_forest(
+    X = as.matrix(penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )]),
+    Y = penguins$bill_length_mm,
+    num.trees = 5
+  )
+
+  p <- as.party(rf, tree = 1)
+
+  output <- capture.output(print(p))
+
+  # Check for asterisks in node summaries (after the colon)
+  # Pattern: ": *" or ": * " indicates missing summary
+  has_asterisk_summary <- any(grepl(":\\s*\\*\\s*($|\\()", output))
+
+  expect_false(has_asterisk_summary)
 })

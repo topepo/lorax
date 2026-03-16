@@ -3,9 +3,9 @@
 # These helpers provide common utilities for building partykit structures
 # from tree-based models. The main components are:
 #
-# - build_partysplit(): Creates a partysplit object for numeric splits
-# - reconstruct_data(): Creates placeholder data when training data unavailable
-# - create_party_object(): Wrapper around partykit::party() constructor
+# - `build_partysplit()`: Creates a partysplit object for numeric splits
+# - `reconstruct_data()`: Creates placeholder data when training data unavailable
+# - `create_party_object()`: Wrapper around [partykit::party()] constructor
 
 # Build a standard numeric partysplit object
 #

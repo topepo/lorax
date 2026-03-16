@@ -346,3 +346,62 @@ test_that("as.party.bart with minimal trees", {
 
   expect_s3_class(p, "party")
 })
+
+test_that("as.party.bart produces different trees for different tree numbers", {
+  skip_if_not_installed("dbarts")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )],
+    y.train = penguins$bill_length_mm,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 5,
+    nskip = 100,
+    ndpost = 1
+  ))
+
+  p1 <- as.party(fit, tree = 1, chain = 1, data = penguins)
+  p2 <- as.party(fit, tree = 2, chain = 1, data = penguins)
+
+  # Trees should not be identical
+  expect_false(identical(p1$node, p2$node))
+})
+
+test_that("as.party.bart does not show asterisks in node summaries", {
+  skip_if_not_installed("dbarts")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )],
+    y.train = penguins$bill_length_mm,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 3,
+    nskip = 100,
+    ndpost = 1
+  ))
+
+  p <- as.party(fit, tree = 1, chain = 1, data = penguins)
+  output <- capture.output(print(p))
+
+  # Check for asterisks in node summaries (after the colon)
+  # Pattern: ": *" or ": * " indicates missing summary
+  has_asterisk_summary <- any(grepl(":\\s*\\*\\s*($|\\()", output))
+
+  expect_false(has_asterisk_summary)
+})

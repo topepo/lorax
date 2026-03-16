@@ -129,3 +129,21 @@ test_that("as.party.C5.0 rejects rule-based models", {
 
   expect_snapshot(as.party(c5_rules, tree = 1), error = TRUE)
 })
+
+test_that("as.party.C5.0 does not show asterisks in node summaries", {
+  skip_if_not_installed("C50")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  c5_model <- C50::C5.0(species ~ ., data = penguins)
+  p <- as.party(c5_model, tree = 1, data = penguins)
+
+  output <- capture.output(print(p))
+
+  # Check for asterisks in node summaries (after the colon)
+  # Pattern: ": *" or ": * " indicates missing summary
+  has_asterisk_summary <- any(grepl(":\\s*\\*\\s*($|\\()", output))
+
+  expect_false(has_asterisk_summary)
+})

@@ -29,7 +29,7 @@ object for use with partykit visualization and analysis tools.
 \details{
 \subsection{C5.0 tree storage format}{
 
-The C50 package stores trees in a custom text format in \code{obj$tree}. This
+The \pkg{C50} package stores trees in a custom text format in \code{obj$tree}. This
 format uses indented lines with key-value pairs:
 \itemize{
 \item \code{type="2"}: Internal node with split
@@ -44,8 +44,8 @@ format uses indented lines with key-value pairs:
 
 \subsection{Boosting and trials}{
 \itemize{
-\item Single tree models (trials = 1): Only tree = 1 is valid
-\item Boosted models (trials > 1): Multiple sequential trees available
+\item Single tree models (\code{trials = 1}): Only \code{tree = 1} is valid
+\item Boosted models (\code{trials > 1}): Multiple sequential trees available
 \item The \code{tree} parameter maps to trial/iteration number
 \item Each boosting trial produces one tree
 }
@@ -64,7 +64,7 @@ format uses indented lines with key-value pairs:
 \itemize{
 \item For numeric: typically left/low when <= threshold, right/high when > threshold
 \item C5.0 may use ternary splits with separate handling of missing values
-\item partykit uses binary splits, so we simplify to binary when needed
+\item \pkg{partykit} uses binary splits, so we simplify to binary when needed
 }
 }
 
@@ -72,15 +72,15 @@ format uses indented lines with key-value pairs:
 \itemize{
 \item \code{obj$predictors} contains ordered list of predictor variable names
 \item \code{att} attribute in tree text references these by name
-\item Map to 1-based indices for partykit
+\item Map to 1-based indices for \pkg{partykit}
 }
 }
 
 \subsection{Important limitations}{
 \itemize{
-\item C5.0's text format is complex and may vary by version
+\item \pkg{C50}'s text format is complex and may vary by version
 \item Ternary splits with missing value branches simplified to binary
-\item Rule-based models (obj$rules != "") not supported
+\item Rule-based models (\code{obj$rules != ""}) not supported
 \item Categorical variable splits may need special handling
 }
 }

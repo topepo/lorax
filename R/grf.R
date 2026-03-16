@@ -1,7 +1,7 @@
 #' Convert grf model to party object
 #'
-#' Convert a single tree from a grf (generalized random forests) model to a
-#' party object for use with partykit visualization and analysis tools.
+#' Convert a single tree from a \pkg{grf} (generalized random forests) model to a
+#' party object for use with \pkg{partykit} visualization and analysis tools.
 #'
 #' @param obj A grf object (e.g., `regression_forest`, `causal_forest`) from
 #'   the grf package.
@@ -17,7 +17,7 @@
 #' @details
 #' ## GRF tree storage format
 #'
-#' The grf package stores trees in a nested list structure, typically accessed
+#' The \pkg{grf} package stores trees in a nested list structure, typically accessed
 #' via `grf::get_tree(obj, tree)`. Each tree is represented as nested lists:
 #' - `is_leaf`: Logical, TRUE for terminal nodes
 #' - `split_variable`: 0-based index of variable to split on (internal nodes)
@@ -28,7 +28,7 @@
 #'
 #' ## Node indexing
 #'
-#' - Internally, grf uses 0-based variable indices
+#' - Internally, \pkg{grf} uses 0-based variable indices
 #' - User-facing `tree` parameter uses 1-based indexing (R convention)
 #' - Trees use 0-based indexing internally but we access with 1-based tree number
 #'
@@ -36,16 +36,16 @@
 #'
 #' - For numeric variables: left child when feature < threshold, right child
 #'   when feature >= threshold
-#' - partykit split created with `right = TRUE` (right interval closed)
+#' - \pkg{partykit} split created with `right = TRUE` (right interval closed)
 #'
 #' ## Tree structure
 #'
-#' - grf provides nested list structure (not flattened)
+#' - \pkg{grf} provides nested list structure (not flattened)
 #' - This is the most direct representation for recursive conversion
-#' - Each node is a list with is_leaf flag and split info
+#' - Each node is a list with `is_leaf` flag and split info
 #'
 #' The party object will use 1-based node IDs and variable indices as required
-#' by partykit.
+#' by \pkg{partykit}.
 #'
 #' @examples
 #' if (rlang::is_installed(c("grf", "palmerpenguins"))) {

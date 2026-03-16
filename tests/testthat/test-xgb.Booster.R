@@ -399,4 +399,36 @@ test_that("as.party.xgb.Booster with large multiclass", {
 
   expect_s3_class(p1, "party")
   expect_s3_class(p6, "party")
+
+  # Trees should not be identical
+  expect_false(identical(p1$node, p6$node))
+})
+
+test_that("as.party.xgb.Booster does not show asterisks in node summaries", {
+  skip_if_not_installed("xgboost")
+
+  data(agaricus.train, package = "xgboost")
+  train_data <- as.data.frame(as.matrix(agaricus.train$data))
+  train_data$label <- agaricus.train$label
+
+  dtrain <- xgboost::xgb.DMatrix(
+    agaricus.train$data,
+    label = agaricus.train$label
+  )
+  bst <- xgboost::xgb.train(
+    params = list(max_depth = 3, objective = "binary:logistic"),
+    data = dtrain,
+    nrounds = 3,
+    verbose = 0
+  )
+
+  p <- as.party(bst, tree = 1, data = train_data)
+
+  output <- capture.output(print(p))
+
+  # Check for asterisks in node summaries (after the colon)
+  # Pattern: ": *" or ": * " indicates missing summary
+  has_asterisk_summary <- any(grepl(":\\s*\\*\\s*($|\\()", output))
+
+  expect_false(has_asterisk_summary)
 })

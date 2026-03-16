@@ -18,14 +18,14 @@
 #'   * `id`: integer, terminal node ID (1-based).
 #'
 #' @details
-#' LightGBM uses 0-based indexing internally, but this function uses 1-based
+#' \pkg{lightgbm} uses 0-based indexing internally, but this function uses 1-based
 #' indexing for the `tree` parameter and output `id` column (R convention).
 #'
-#' Split conditions in LightGBM follow the pattern: left child when feature <=
+#' Split conditions in \pkg{lightgbm} follow the pattern: left child when feature <=
 #' threshold, right child when feature > threshold. Rules are combinations of
 #' these conditions using AND logic.
 #'
-#' Note: This function does not work with LightGBM models containing categorical
+#' Note: This function does not work with \pkg{lightgbm} models containing categorical
 #' features.
 #'
 #' @examples
@@ -250,8 +250,8 @@ lgb_get_split_info <- function(
 
 #' Convert lgb.Booster model to party object
 #'
-#' Convert a single tree from a LightGBM boosted tree model to a party object
-#' for use with partykit visualization and analysis tools.
+#' Convert a single tree from a \pkg{lightgbm} boosted tree model to a party object
+#' for use with \pkg{partykit} visualization and analysis tools.
 #'
 #' @param obj An `lgb.Booster` object from the \pkg{lightgbm} package.
 #' @param tree Integer specifying which tree to convert (1-based indexing,
@@ -268,14 +268,14 @@ lgb_get_split_info <- function(
 #' @details
 #' ## Important note on data
 #'
-#' LightGBM models do not store the original training data or response values.
+#' \pkg{lightgbm} models do not store the original training data or response values.
 #' You **must** provide the original data frame (including the response variable)
 #' via the `data` parameter for correct terminal node statistics, bar charts,
 #' and other visualizations.
 #'
 #' ## LightGBM tree storage format
 #'
-#' LightGBM stores trees in a tabular format accessible via
+#' \pkg{lightgbm} stores trees in a tabular format accessible via
 #' `lightgbm::lgb.model.dt.tree()`. Each tree is represented as rows in a table:
 #' - `tree_index`: 0-based tree index
 #' - `split_index`: 0-based node ID for internal nodes (NA for leaves)
@@ -291,30 +291,30 @@ lgb_get_split_info <- function(
 #'
 #' ## Node indexing
 #'
-#' - Internally, LightGBM uses 0-based tree and node indices
+#' - Internally, \pkg{lightgbm} uses 0-based tree and node indices
 #' - User-facing `tree` parameter uses 1-based indexing (R convention)
-#' - When tree=1 is requested, we filter to tree_index==0 internally
-#' - Internal nodes use split_index, leaf nodes use leaf_index
+#' - When `tree=1` is requested, we filter to `tree_index==0` internally
+#' - Internal nodes use `split_index`, leaf nodes use `leaf_index`
 #'
 #' ## Split encoding
 #'
-#' - decision_type "<=": left child when feature <= threshold
+#' - `decision_type "<="`: left child when feature <= threshold
 #' - right child when feature > threshold
-#' - partykit split created with `right = FALSE` (left interval closed)
+#' - \pkg{partykit} split created with `right = FALSE` (left interval closed)
 #'
 #' ## Child node references
 #'
-#' - Internal nodes have explicit left_child and right_child IDs
-#' - These reference either split_index (internal) or leaf_index (leaf)
+#' - Internal nodes have explicit `left_child` and `right_child` IDs
+#' - These reference either `split_index` (internal) or `leaf_index` (leaf)
 #' - Need to look up child in appropriate column based on node type
 #'
 #' ## Variable names
 #'
-#' - split_feature column contains actual feature names or "Column_N" defaults
+#' - `split_feature` column contains actual feature names or `"Column_N"` defaults
 #' - Must map to column positions in data.frame
 #'
 #' The party object will use 1-based node IDs and variable indices as required
-#' by partykit.
+#' by \pkg{partykit}.
 #'
 #' @examples
 #' if (rlang::is_installed("lightgbm")) {

@@ -31,14 +31,14 @@ boosted tree model. Each terminal node (leaf) becomes one rule representing
 the path from root to that leaf.
 }
 \details{
-LightGBM uses 0-based indexing internally, but this function uses 1-based
+\pkg{lightgbm} uses 0-based indexing internally, but this function uses 1-based
 indexing for the \code{tree} parameter and output \code{id} column (R convention).
 
-Split conditions in LightGBM follow the pattern: left child when feature <=
+Split conditions in \pkg{lightgbm} follow the pattern: left child when feature <=
 threshold, right child when feature > threshold. Rules are combinations of
 these conditions using AND logic.
 
-Note: This function does not work with LightGBM models containing categorical
+Note: This function does not work with \pkg{lightgbm} models containing categorical
 features.
 }
 \examples{

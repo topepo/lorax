@@ -26,13 +26,13 @@ placeholder data.frame. Providing data enables full party functionality.}
 A \code{party} object from the \pkg{partykit} package.
 }
 \description{
-Convert a single tree from a grf (generalized random forests) model to a
-party object for use with partykit visualization and analysis tools.
+Convert a single tree from a \pkg{grf} (generalized random forests) model to a
+party object for use with \pkg{partykit} visualization and analysis tools.
 }
 \details{
 \subsection{GRF tree storage format}{
 
-The grf package stores trees in a nested list structure, typically accessed
+The \pkg{grf} package stores trees in a nested list structure, typically accessed
 via \code{grf::get_tree(obj, tree)}. Each tree is represented as nested lists:
 \itemize{
 \item \code{is_leaf}: Logical, TRUE for terminal nodes
@@ -46,7 +46,7 @@ via \code{grf::get_tree(obj, tree)}. Each tree is represented as nested lists:
 
 \subsection{Node indexing}{
 \itemize{
-\item Internally, grf uses 0-based variable indices
+\item Internally, \pkg{grf} uses 0-based variable indices
 \item User-facing \code{tree} parameter uses 1-based indexing (R convention)
 \item Trees use 0-based indexing internally but we access with 1-based tree number
 }
@@ -56,19 +56,19 @@ via \code{grf::get_tree(obj, tree)}. Each tree is represented as nested lists:
 \itemize{
 \item For numeric variables: left child when feature < threshold, right child
 when feature >= threshold
-\item partykit split created with \code{right = TRUE} (right interval closed)
+\item \pkg{partykit} split created with \code{right = TRUE} (right interval closed)
 }
 }
 
 \subsection{Tree structure}{
 \itemize{
-\item grf provides nested list structure (not flattened)
+\item \pkg{grf} provides nested list structure (not flattened)
 \item This is the most direct representation for recursive conversion
-\item Each node is a list with is_leaf flag and split info
+\item Each node is a list with \code{is_leaf} flag and split info
 }
 
 The party object will use 1-based node IDs and variable indices as required
-by partykit.
+by \pkg{partykit}.
 }
 }
 \examples{

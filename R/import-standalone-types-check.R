@@ -70,7 +70,7 @@
 
 check_bool <- function(
   x,
-  ..,
+  ...,
   allow_na = FALSE,
   allow_null = FALSE,
   arg = caller_arg(x),
@@ -91,7 +91,7 @@ check_bool <- function(
   stop_input_type(
     x,
     c("`TRUE`", "`FALSE`"),
-    ..,
+    ...,
     allow_na = allow_na,
     allow_null = allow_null,
     arg = arg,
@@ -101,7 +101,7 @@ check_bool <- function(
 
 check_string <- function(
   x,
-  ..,
+  ...,
   allow_empty = TRUE,
   allow_na = FALSE,
   allow_null = FALSE,
@@ -123,7 +123,7 @@ check_string <- function(
   stop_input_type(
     x,
     "a single string",
-    ..,
+    ...,
     allow_na = allow_na,
     allow_null = allow_null,
     arg = arg,
@@ -151,7 +151,7 @@ check_string <- function(
 
 check_name <- function(
   x,
-  ..,
+  ...,
   allow_null = FALSE,
   arg = caller_arg(x),
   call = caller_env()
@@ -171,7 +171,7 @@ check_name <- function(
   stop_input_type(
     x,
     "a valid name",
-    ..,
+    ...,
     allow_na = FALSE,
     allow_null = allow_null,
     arg = arg,
@@ -185,7 +185,7 @@ IS_NUMBER_oob <- 2
 
 check_number_decimal <- function(
   x,
-  ..,
+  ...,
   min = NULL,
   max = NULL,
   allow_infinite = TRUE,
@@ -214,7 +214,7 @@ check_number_decimal <- function(
 
   .stop_not_number(
     x,
-    ..,
+    ...,
     exit_code = exit_code,
     allow_decimal = TRUE,
     min = min,
@@ -228,7 +228,7 @@ check_number_decimal <- function(
 
 check_number_whole <- function(
   x,
-  ..,
+  ...,
   min = NULL,
   max = NULL,
   allow_infinite = FALSE,
@@ -257,7 +257,7 @@ check_number_whole <- function(
 
   .stop_not_number(
     x,
-    ..,
+    ...,
     exit_code = exit_code,
     allow_decimal = FALSE,
     min = min,
@@ -271,7 +271,7 @@ check_number_whole <- function(
 
 .stop_not_number <- function(
   x,
-  ..,
+  ...,
   exit_code,
   allow_decimal,
   min,
@@ -305,7 +305,7 @@ check_number_whole <- function(
   stop_input_type(
     x,
     what,
-    ..,
+    ...,
     allow_na = allow_na,
     allow_null = allow_null,
     arg = arg,
@@ -315,7 +315,7 @@ check_number_whole <- function(
 
 check_symbol <- function(
   x,
-  ..,
+  ...,
   allow_null = FALSE,
   arg = caller_arg(x),
   call = caller_env()
@@ -332,7 +332,7 @@ check_symbol <- function(
   stop_input_type(
     x,
     "a symbol",
-    ..,
+    ...,
     allow_na = FALSE,
     allow_null = allow_null,
     arg = arg,
@@ -342,7 +342,7 @@ check_symbol <- function(
 
 check_arg <- function(
   x,
-  ..,
+  ...,
   allow_null = FALSE,
   arg = caller_arg(x),
   call = caller_env()
@@ -359,7 +359,7 @@ check_arg <- function(
   stop_input_type(
     x,
     "an argument name",
-    ..,
+    ...,
     allow_na = FALSE,
     allow_null = allow_null,
     arg = arg,
@@ -369,7 +369,7 @@ check_arg <- function(
 
 check_call <- function(
   x,
-  ..,
+  ...,
   allow_null = FALSE,
   arg = caller_arg(x),
   call = caller_env()
@@ -386,7 +386,7 @@ check_call <- function(
   stop_input_type(
     x,
     "a defused call",
-    ..,
+    ...,
     allow_na = FALSE,
     allow_null = allow_null,
     arg = arg,
@@ -396,7 +396,7 @@ check_call <- function(
 
 check_environment <- function(
   x,
-  ..,
+  ...,
   allow_null = FALSE,
   arg = caller_arg(x),
   call = caller_env()
@@ -413,7 +413,7 @@ check_environment <- function(
   stop_input_type(
     x,
     "an environment",
-    ..,
+    ...,
     allow_na = FALSE,
     allow_null = allow_null,
     arg = arg,
@@ -423,7 +423,7 @@ check_environment <- function(
 
 check_function <- function(
   x,
-  ..,
+  ...,
   allow_null = FALSE,
   arg = caller_arg(x),
   call = caller_env()
@@ -440,7 +440,7 @@ check_function <- function(
   stop_input_type(
     x,
     "a function",
-    ..,
+    ...,
     allow_na = FALSE,
     allow_null = allow_null,
     arg = arg,
@@ -450,7 +450,7 @@ check_function <- function(
 
 check_closure <- function(
   x,
-  ..,
+  ...,
   allow_null = FALSE,
   arg = caller_arg(x),
   call = caller_env()
@@ -467,7 +467,7 @@ check_closure <- function(
   stop_input_type(
     x,
     "an R function",
-    ..,
+    ...,
     allow_na = FALSE,
     allow_null = allow_null,
     arg = arg,
@@ -477,7 +477,7 @@ check_closure <- function(
 
 check_formula <- function(
   x,
-  ..,
+  ...,
   allow_null = FALSE,
   arg = caller_arg(x),
   call = caller_env()
@@ -494,7 +494,7 @@ check_formula <- function(
   stop_input_type(
     x,
     "a formula",
-    ..,
+    ...,
     allow_na = FALSE,
     allow_null = allow_null,
     arg = arg,
@@ -509,7 +509,7 @@ check_formula <- function(
 
 check_character <- function(
   x,
-  ..,
+  ...,
   allow_na = TRUE,
   allow_null = FALSE,
   arg = caller_arg(x),
@@ -536,7 +536,7 @@ check_character <- function(
   stop_input_type(
     x,
     "a character vector",
-    ..,
+    ...,
     allow_null = allow_null,
     arg = arg,
     call = call
@@ -545,7 +545,7 @@ check_character <- function(
 
 check_logical <- function(
   x,
-  ..,
+  ...,
   allow_na = TRUE,
   allow_null = FALSE,
   arg = caller_arg(x),
@@ -570,7 +570,7 @@ check_logical <- function(
   stop_input_type(
     x,
     "a logical vector",
-    ..,
+    ...,
     allow_na = FALSE,
     allow_null = allow_null,
     arg = arg,
@@ -580,7 +580,7 @@ check_logical <- function(
 
 check_data_frame <- function(
   x,
-  ..,
+  ...,
   allow_null = FALSE,
   arg = caller_arg(x),
   call = caller_env()
@@ -597,7 +597,7 @@ check_data_frame <- function(
   stop_input_type(
     x,
     "a data frame",
-    ..,
+    ...,
     allow_null = allow_null,
     arg = arg,
     call = call

@@ -410,3 +410,60 @@ test_that("as.party.lgb.Booster handles varied data patterns", {
   expect_s3_class(p, "party")
   expect_true(length(partykit::nodeids(p)) > 0)
 })
+
+test_that("as.party.lgb.Booster extracts different trees", {
+  skip_if_not_installed("lightgbm")
+
+  data(agaricus.train, package = "lightgbm")
+  train_data <- as.data.frame(as.matrix(agaricus.train$data))
+  train_data$label <- agaricus.train$label
+
+  dtrain <- lightgbm::lgb.Dataset(
+    agaricus.train$data,
+    label = agaricus.train$label
+  )
+  bst <- lightgbm::lgb.train(
+    params = list(objective = "binary", max_depth = 3),
+    data = dtrain,
+    nrounds = 5,
+    verbose = -1
+  )
+
+  p1 <- as.party(bst, tree = 1, data = train_data)
+  p2 <- as.party(bst, tree = 3, data = train_data)
+
+  expect_s3_class(p1, "party")
+  expect_s3_class(p2, "party")
+
+  # Trees should not be identical
+  expect_false(identical(p1$node, p2$node))
+})
+
+test_that("as.party.lgb.Booster does not show asterisks in node summaries", {
+  skip_if_not_installed("lightgbm")
+
+  data(agaricus.train, package = "lightgbm")
+  train_data <- as.data.frame(as.matrix(agaricus.train$data))
+  train_data$label <- agaricus.train$label
+
+  dtrain <- lightgbm::lgb.Dataset(
+    agaricus.train$data,
+    label = agaricus.train$label
+  )
+  bst <- lightgbm::lgb.train(
+    params = list(objective = "binary", max_depth = 3),
+    data = dtrain,
+    nrounds = 3,
+    verbose = -1
+  )
+
+  p <- as.party(bst, tree = 1, data = train_data)
+
+  output <- capture.output(print(p))
+
+  # Check for asterisks in node summaries (after the colon)
+  # Pattern: ": *" or ": * " indicates missing summary
+  has_asterisk_summary <- any(grepl(":\\s*\\*\\s*($|\\()", output))
+
+  expect_false(has_asterisk_summary)
+})

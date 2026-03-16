@@ -122,4 +122,25 @@ test_that("as.party.ranger extracts different trees", {
   # Verify both work
   expect_true(length(partykit::nodeids(p1)) > 0)
   expect_true(length(partykit::nodeids(p2)) > 0)
+
+  # Trees should not be identical
+  expect_false(identical(p1$node, p2$node))
+})
+
+test_that("as.party.ranger does not show asterisks in node summaries", {
+  skip_if_not_installed("ranger")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  rf <- ranger::ranger(species ~ ., data = penguins, num.trees = 5)
+  p <- as.party(rf, tree = 1, data = penguins)
+
+  output <- capture.output(print(p))
+
+  # Check for asterisks in node summaries (after the colon)
+  # Pattern: ": *" or ": * " indicates missing summary
+  has_asterisk_summary <- any(grepl(":\\s*\\*\\s*($|\\()", output))
+
+  expect_false(has_asterisk_summary)
 })

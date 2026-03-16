@@ -23,13 +23,13 @@ predictions.}
 A \code{party} object from the \pkg{partykit} package.
 }
 \description{
-Convert a single tree from a ranger random forest model to a party object
-for use with partykit visualization and analysis tools.
+Convert a single tree from a \pkg{ranger} random forest model to a party object
+for use with \pkg{partykit} visualization and analysis tools.
 }
 \details{
 \subsection{Ranger tree storage format}{
 
-The ranger package stores trees in \code{obj$forest} with parallel vectors:
+The \pkg{ranger} package stores trees in \code{obj$forest} with parallel vectors:
 \itemize{
 \item \code{split.varIDs[[tree]]}: 0-based variable indices for splits
 \item \code{split.values[[tree]]}: threshold values for splits
@@ -41,9 +41,9 @@ The ranger package stores trees in \code{obj$forest} with parallel vectors:
 
 \subsection{Node indexing}{
 \itemize{
-\item Internally, ranger uses 0-based node indices (root is node 0)
+\item Internally, \pkg{ranger} uses 0-based node indices (root is node 0)
 \item User-facing \code{tree} parameter uses 1-based indexing (R convention)
-\item Leaf nodes have split.varIDs entry of NA or large sentinel value
+\item Leaf nodes have \code{split.varIDs} entry of \code{NA} or large sentinel value
 }
 }
 
@@ -51,19 +51,19 @@ The ranger package stores trees in \code{obj$forest} with parallel vectors:
 \itemize{
 \item For numeric variables: left child when feature < threshold, right child
 when feature >= threshold
-\item partykit split created with \code{right = TRUE} (right interval closed)
+\item \pkg{partykit} split created with \code{right = TRUE} (right interval closed)
 }
 }
 
 \subsection{Child node references}{
 \itemize{
-\item \code{child.nodeIDs} is a matrix with 2 columns: left_child, right_child
+\item \code{child.nodeIDs} is a matrix with 2 columns: \code{left_child}, \code{right_child}
 \item Value 0 indicates no child (terminal node)
 \item Both children 0 means current node is terminal
 }
 
 The party object will use 1-based node IDs and variable indices as required
-by partykit.
+by \pkg{partykit}.
 }
 }
 \examples{

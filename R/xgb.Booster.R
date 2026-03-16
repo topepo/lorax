@@ -199,8 +199,8 @@ xgb_get_split_info <- function(parent_id, child_id, tree_dt) {
 
 #' Convert xgb.Booster model to party object
 #'
-#' Convert a single tree from an XGBoost boosted tree model to a party object
-#' for use with partykit visualization and analysis tools.
+#' Convert a single tree from an \pkg{xgboost} boosted tree model to a party object
+#' for use with \pkg{partykit} visualization and analysis tools.
 #'
 #' @param obj An `xgb.Booster` object from the \pkg{xgboost} package.
 #' @param tree Integer specifying which tree to convert (1-based indexing,
@@ -224,7 +224,7 @@ xgb_get_split_info <- function(parent_id, child_id, tree_dt) {
 #'
 #' ## XGBoost tree storage format
 #'
-#' XGBoost stores trees in a tabular format accessible via
+#' \pkg{xgboost} stores trees in a tabular format accessible via
 #' `xgboost::xgb.model.dt.tree()`. Each tree is represented as rows in a table:
 #' - `Tree`: 0-based tree index (e.g., 0, 1, 2,  ...)
 #' - `Node`: 0-based node ID within tree (e.g., "0-0", "0-1" for tree 0)
@@ -237,30 +237,30 @@ xgb_get_split_info <- function(parent_id, child_id, tree_dt) {
 #'
 #' ## Node indexing
 #'
-#' - Internally, XGBoost uses 0-based tree and node indices
+#' - Internally, \pkg{xgboost} uses 0-based tree and node indices
 #' - User-facing `tree` parameter uses 1-based indexing (R convention)
-#' - When tree=1 is requested, we filter to Tree==0 internally
+#' - When `tree=1` is requested, we filter to `Tree==0` internally
 #'
 #' ## Split encoding
 #'
 #' - Yes branch: feature < threshold (left child)
 #' - No branch: feature >= threshold (right child)
-#' - partykit split created with `right = TRUE` (right interval closed)
+#' - \pkg{partykit} split created with `right = TRUE` (right interval closed)
 #'
 #' ## Child node references
 #'
-#' - Yes column: node ID for left child (< condition)
-#' - No column: node ID for right child (>= condition)
-#' - Leaf nodes have Feature == "Leaf"
+#' - `Yes` column: node ID for left child (< condition)
+#' - `No` column: node ID for right child (>= condition)
+#' - Leaf nodes have `Feature == "Leaf"`
 #'
 #' ## Variable names
 #'
-#' - Feature column contains actual feature names (not indices)
+#' - `Feature` column contains actual feature names (not indices)
 #' - Must map to column positions in data.frame
-#' - If numeric indices used (f0, f1,  ...), map to data columns
+#' - If numeric indices used (`f0`, `f1`, ...), map to data columns
 #'
 #' The party object will use 1-based node IDs and variable indices as required
-#' by partykit.
+#' by \pkg{partykit}.
 #'
 #' @examples
 #' if (rlang::is_installed("xgboost")) {

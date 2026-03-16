@@ -24,8 +24,8 @@ that includes both the predictor variables and the response variable.}
 A \code{constparty} object from the \pkg{partykit} package.
 }
 \description{
-Convert a single tree from an XGBoost boosted tree model to a party object
-for use with partykit visualization and analysis tools.
+Convert a single tree from an \pkg{xgboost} boosted tree model to a party object
+for use with \pkg{partykit} visualization and analysis tools.
 }
 \details{
 \subsection{Important note on data}{
@@ -38,7 +38,7 @@ and other visualizations.
 
 \subsection{XGBoost tree storage format}{
 
-XGBoost stores trees in a tabular format accessible via
+\pkg{xgboost} stores trees in a tabular format accessible via
 \code{xgboost::xgb.model.dt.tree()}. Each tree is represented as rows in a table:
 \itemize{
 \item \code{Tree}: 0-based tree index (e.g., 0, 1, 2,  ...)
@@ -54,9 +54,9 @@ XGBoost stores trees in a tabular format accessible via
 
 \subsection{Node indexing}{
 \itemize{
-\item Internally, XGBoost uses 0-based tree and node indices
+\item Internally, \pkg{xgboost} uses 0-based tree and node indices
 \item User-facing \code{tree} parameter uses 1-based indexing (R convention)
-\item When tree=1 is requested, we filter to Tree==0 internally
+\item When \code{tree=1} is requested, we filter to \code{Tree==0} internally
 }
 }
 
@@ -64,27 +64,27 @@ XGBoost stores trees in a tabular format accessible via
 \itemize{
 \item Yes branch: feature < threshold (left child)
 \item No branch: feature >= threshold (right child)
-\item partykit split created with \code{right = TRUE} (right interval closed)
+\item \pkg{partykit} split created with \code{right = TRUE} (right interval closed)
 }
 }
 
 \subsection{Child node references}{
 \itemize{
-\item Yes column: node ID for left child (< condition)
-\item No column: node ID for right child (>= condition)
-\item Leaf nodes have Feature == "Leaf"
+\item \code{Yes} column: node ID for left child (< condition)
+\item \code{No} column: node ID for right child (>= condition)
+\item Leaf nodes have \code{Feature == "Leaf"}
 }
 }
 
 \subsection{Variable names}{
 \itemize{
-\item Feature column contains actual feature names (not indices)
+\item \code{Feature} column contains actual feature names (not indices)
 \item Must map to column positions in data.frame
-\item If numeric indices used (f0, f1,  ...), map to data columns
+\item If numeric indices used (\code{f0}, \code{f1}, ...), map to data columns
 }
 
 The party object will use 1-based node IDs and variable indices as required
-by partykit.
+by \pkg{partykit}.
 }
 }
 \examples{

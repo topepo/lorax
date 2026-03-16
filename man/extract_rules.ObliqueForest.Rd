@@ -66,7 +66,7 @@ with R conventions.
 
 \subsection{Factor Variables and One-Hot Encoding}{
 
-The aorsf package internally converts unordered factor variables to binary
+The \pkg{aorsf} package internally converts unordered factor variables to binary
 indicator (dummy) variables during tree building. However, the extracted
 rules automatically convert these back to factor comparisons for better
 interpretability:
@@ -86,11 +86,11 @@ Factor indicators are not scaled since they are binary 0/1 values.
 
 \subsection{Predictor Scaling and Unscaling}{
 
-The aorsf package can optionally center and scale numeric predictors when
+The \pkg{aorsf} package can optionally center and scale numeric predictors when
 computing linear combinations for splits. This is controlled by the \code{scale_x}
 parameter in \verb{orsf_control_*()} functions (default is \code{TRUE}).
 
-When \code{scale_x = TRUE}, aorsf uses \code{(x - mean) / sd} for numeric predictors
+When \code{scale_x = TRUE}, \pkg{aorsf} uses \code{(x - mean) / sd} for numeric predictors
 during split computations. The extracted rules automatically \strong{unscale} the
 coefficients and thresholds back to the original units, so rules can be
 directly evaluated on the original (unscaled) data.

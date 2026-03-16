@@ -31,7 +31,7 @@ A \code{constparty} object from the \pkg{partykit} package.
 }
 \description{
 Convert a single tree from a BART (Bayesian Additive Regression Trees) model
-to a party object for use with partykit visualization and analysis tools.
+to a party object for use with \pkg{partykit} visualization and analysis tools.
 }
 \details{
 \subsection{Important note on data transformation}{
@@ -46,7 +46,7 @@ variable) via the \code{data} parameter.
 
 \subsection{BART tree storage format}{
 
-The dbarts package stores trees in depth-first traversal order in a
+The \pkg{dbarts} package stores trees in depth-first traversal order in a
 data.frame accessible via \code{obj$fit$getTrees()}. Each row represents one node:
 \itemize{
 \item \code{var}: 1-based variable index for split, or -1 for terminal nodes
@@ -68,7 +68,7 @@ data.frame accessible via \code{obj$fit$getTrees()}. Each row represents one nod
 \subsection{Node indexing}{
 \itemize{
 \item User-facing \code{tree} and \code{chain} parameters use 1-based indexing (R convention)
-\item Variable indices in \code{var} column are 1-based (match obj$varNames)
+\item Variable indices in \code{var} column are 1-based (match \code{obj$varNames})
 \item Value -1 in \code{var} indicates terminal node
 }
 }
@@ -88,7 +88,7 @@ data.frame accessible via \code{obj$fit$getTrees()}. Each row represents one nod
 }
 
 The party object will use 1-based node IDs and variable indices as required
-by partykit.
+by \pkg{partykit}.
 }
 }
 \examples{

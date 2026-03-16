@@ -359,7 +359,7 @@ bart_contains_row <- function(node, target_row) {
 #' Convert BART model to party object
 #'
 #' Convert a single tree from a BART (Bayesian Additive Regression Trees) model
-#' to a party object for use with partykit visualization and analysis tools.
+#' to a party object for use with \pkg{partykit} visualization and analysis tools.
 #'
 #' @param obj A `bart` object from the \pkg{dbarts} package fitted with
 #'   `keeptrees = TRUE`.
@@ -390,7 +390,7 @@ bart_contains_row <- function(node, target_row) {
 #'
 #' ## BART tree storage format
 #'
-#' The dbarts package stores trees in depth-first traversal order in a
+#' The \pkg{dbarts} package stores trees in depth-first traversal order in a
 #' data.frame accessible via `obj$fit$getTrees()`. Each row represents one node:
 #' - `var`: 1-based variable index for split, or -1 for terminal nodes
 #' - `value`: threshold for internal nodes, prediction for terminal nodes
@@ -407,7 +407,7 @@ bart_contains_row <- function(node, target_row) {
 #' ## Node indexing
 #'
 #' - User-facing `tree` and `chain` parameters use 1-based indexing (R convention)
-#' - Variable indices in `var` column are 1-based (match obj$varNames)
+#' - Variable indices in `var` column are 1-based (match `obj$varNames`)
 #' - Value -1 in `var` indicates terminal node
 #'
 #' ## Split encoding
@@ -422,7 +422,7 @@ bart_contains_row <- function(node, target_row) {
 #' - `var` column provides 1-based index into these names
 #'
 #' The party object will use 1-based node IDs and variable indices as required
-#' by partykit.
+#' by \pkg{partykit}.
 #'
 #' @examples
 #' if (rlang::is_installed(c("dbarts", "palmerpenguins"))) {
