@@ -7,7 +7,7 @@
 \method{as.party}{C5.0}(obj, tree = 1L, data = NULL, ...)
 }
 \arguments{
-\item{obj}{A \code{C5.0} object from the C50 package.}
+\item{obj}{A \code{C5.0} object from the \pkg{C50} package.}
 
 \item{tree}{Integer specifying which tree to convert (1-based indexing,
 default is 1). For single tree models, use \code{tree = 1}. For boosted models
@@ -20,7 +20,7 @@ Providing data enables full party functionality.}
 \item{...}{Not currently used.}
 }
 \value{
-A \code{party} object from the partykit package.
+A \code{party} object from the \pkg{partykit} package.
 }
 \description{
 Convert a single tree from a C5.0 decision tree or boosted model to a party
@@ -92,14 +92,14 @@ if (rlang::is_installed(c("C50", "palmerpenguins"))) {
 
   # Single tree model
   c5_tree <- C50::C5.0(species ~ ., data = penguins)
-  party_tree <- as.party(c5_tree, tree = 1, data = penguins)
+  party_tree <- as.party(c5_tree, tree = 1L, data = penguins)
   print(party_tree)
   plot(party_tree)
 
   # Boosted model with multiple trials
   c5_boost <- C50::C5.0(species ~ ., data = penguins, trials = 10)
   # Extract first boosting iteration
-  party_tree1 <- as.party(c5_boost, tree = 1, data = penguins)
+  party_tree1 <- as.party(c5_boost, tree = 1L, data = penguins)
   # Extract fifth boosting iteration
   party_tree5 <- as.party(c5_boost, tree = 5, data = penguins)
 }

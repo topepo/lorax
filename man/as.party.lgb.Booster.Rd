@@ -7,7 +7,7 @@
 \method{as.party}{lgb.Booster}(obj, tree = 1L, data, ...)
 }
 \arguments{
-\item{obj}{An \code{lgb.Booster} object from the lightgbm package.}
+\item{obj}{An \code{lgb.Booster} object from the \pkg{lightgbm} package.}
 
 \item{tree}{Integer specifying which tree to convert (1-based indexing,
 default is 1). For multiclass models with \code{num_class} classes and
@@ -21,7 +21,7 @@ that includes both the predictor variables and the response variable.}
 \item{...}{Not currently used.}
 }
 \value{
-A \code{constparty} object from the partykit package.
+A \code{constparty} object from the \pkg{partykit} package.
 }
 \description{
 Convert a single tree from a LightGBM boosted tree model to a party object
@@ -108,7 +108,7 @@ if (rlang::is_installed("lightgbm")) {
   )
 
   # Convert first tree - data parameter is required
-  party_tree <- as.party(bst, tree = 1, data = train_data)
+  party_tree <- as.party(bst, tree = 1L, data = train_data)
   print(party_tree)
   plot(party_tree)
 }

@@ -114,12 +114,12 @@ obj_type_friendly <- function(x, value = TRUE) {
           "`-Inf`"
         }
       }
-      str_encode <- function(x, width = 30, ...) {
+      str_encode <- function(x, width = 30,  ...) {
         if (nchar(x) > width) {
           x <- substr(x, 1, width - 3)
-          x <- paste0(x, "...")
+          x <- paste0(x, "..")
         }
-        encodeString(x, ...)
+        encodeString(x,  ...)
       }
 
       if (value) {
@@ -252,7 +252,7 @@ vec_type_friendly <- function(x, length = FALSE) {
 
     char = "an internal string",
     promise = "an internal promise",
-    ... = "an internal dots object",
+    .. = "an internal dots object",
     any = "an internal `any` object",
     bytecode = "an internal bytecode object",
 
@@ -307,7 +307,7 @@ obj_type_oo <- function(x) {
 stop_input_type <- function(
   x,
   what,
-  ...,
+  ..,
   allow_na = FALSE,
   allow_null = FALSE,
   show_value = TRUE,
@@ -344,7 +344,7 @@ stop_input_type <- function(
     obj_type_friendly(x, value = show_value)
   )
 
-  abort(message, ..., call = call, arg = arg)
+  abort(message, .., call = call, arg = arg)
 }
 
 oxford_comma <- function(chr, sep = ", ", final = "or") {

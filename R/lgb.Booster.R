@@ -4,18 +4,18 @@
 #' boosted tree model. Each terminal node (leaf) becomes one rule representing
 #' the path from root to that leaf.
 #'
-#' @param x An `lgb.Booster` object from the lightgbm package.
+#' @param x An `lgb.Booster` object from the \pkg{lightgbm} package.
 #' @param tree Integer specifying which tree to extract rules from. Uses
-#'   1-based indexing (default is 1). For multiclass models with `num_class`
+#'   1-based indexing (default is `1L`). For multiclass models with `num_class`
 #'   classes and `nrounds` boosting rounds, there are `num_class * nrounds`
 #'   total trees.
 #' @param ... Not currently used.
 #'
 #' @return A tibble with class `c("rule_set_lgb.Booster", "rule_set")` and
 #'   columns:
-#'   * `tree`: integer, the tree number (matches input parameter)
-#'   * `rules`: list of R expressions, one per terminal node
-#'   * `id`: integer, terminal node ID (1-based)
+#'   * `tree`: integer, the tree number (matches input parameter).
+#'   * `rules`: list of R expressions, one per terminal node.
+#'   * `id`: integer, terminal node ID (1-based).
 #'
 #' @details
 #' LightGBM uses 0-based indexing internally, but this function uses 1-based
@@ -41,7 +41,7 @@
 #' )
 #'
 #' # Extract rules from first tree
-#' rules <- extract_rules(bst, tree = 1)
+#' rules <- extract_rules(bst, tree = 1L)
 #'
 #' # View as text
 #' rule_text(rules$rules[[1]])
@@ -240,7 +240,7 @@ lgb_get_split_info <- function(
 #' Convert a single tree from a LightGBM boosted tree model to a party object
 #' for use with partykit visualization and analysis tools.
 #'
-#' @param obj An `lgb.Booster` object from the lightgbm package.
+#' @param obj An `lgb.Booster` object from the \pkg{lightgbm} package.
 #' @param tree Integer specifying which tree to convert (1-based indexing,
 #'   default is 1). For multiclass models with `num_class` classes and
 #'   `nrounds` boosting rounds, there are `num_class * nrounds` total trees.
@@ -250,7 +250,7 @@ lgb_get_split_info <- function(
 #'   that includes both the predictor variables and the response variable.
 #' @param ... Not currently used.
 #'
-#' @return A `constparty` object from the partykit package.
+#' @return A `constparty` object from the \pkg{partykit} package.
 #'
 #' @details
 #' ## Important note on data
@@ -321,7 +321,7 @@ lgb_get_split_info <- function(
 #'   )
 #'
 #'   # Convert first tree - data parameter is required
-#'   party_tree <- as.party(bst, tree = 1, data = train_data)
+#'   party_tree <- as.party(bst, tree = 1L, data = train_data)
 #'   print(party_tree)
 #'   plot(party_tree)
 #' }

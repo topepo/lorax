@@ -7,15 +7,15 @@
 \method{extract_rules}{bart}(x, tree = 1L, chain = 1L, ...)
 }
 \arguments{
-\item{x}{A \code{bart} object from the dbarts package fitted with
+\item{x}{A \code{bart} object from the \pkg{dbarts} package fitted with
 \code{keeptrees = TRUE}.}
 
 \item{tree}{Integer specifying which tree to extract rules from. Uses
-1-based indexing (default is 1). BART models contain \code{n.trees} trees
+1-based indexing (default is \code{1L}). BART models contain \code{n.trees} trees
 in the ensemble.}
 
 \item{chain}{Integer specifying which MCMC chain to extract from. Uses
-1-based indexing (default is 1). Only relevant for models fitted with
+1-based indexing (default is \code{1L}). Only relevant for models fitted with
 multiple chains.}
 
 \item{...}{Not currently used.}
@@ -24,9 +24,9 @@ multiple chains.}
 A tibble with class \code{c("rule_set_bart", "rule_set")} and
 columns:
 \itemize{
-\item \code{tree}: integer, the tree number (matches input parameter)
-\item \code{rules}: list of R expressions, one per terminal node
-\item \code{id}: integer, terminal node ID (1-based)
+\item \code{tree}: integer, the tree number (matches input parameter).
+\item \code{rules}: list of R expressions, one per terminal node.
+\item \code{id}: integer, terminal node ID (1-based).
 }
 }
 \description{
@@ -55,7 +55,7 @@ fit <- bart(
 )
 
 # Extract rules from first tree
-rules <- extract_rules(fit, tree = 1)
+rules <- extract_rules(fit, tree = 1L)
 
 # View as text
 rule_text(rules$rules[[1]])

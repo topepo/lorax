@@ -4,16 +4,16 @@
 #' aorsf ObliqueForest model. Each rule represents the path from the root node
 #' to a terminal node using oblique (linear combination) splits.
 #'
-#' @param x An `ObliqueForest` object from the aorsf package
+#' @param x An `ObliqueForest` object from the \pkg{aorsf} package
 #' @param tree Integer specifying which tree to extract rules from (1-based).
 #'   Default is `1L` for the first tree. Must be between 1 and the number of
 #'   trees in the forest (`x$n_tree`).
 #' @param ... Not currently used
 #'
 #' @return A tibble with columns:
-#'   * `tree`: integer, the tree number (1-based)
-#'   * `rules`: list of R expressions, one per terminal node
-#'   * `id`: integer, the terminal node ID (1-based for user convenience)
+#'   * `tree`: integer, the tree number (1-based).
+#'   * `rules`: list of R expressions, one per terminal node.
+#'   * `id`: integer, the terminal node ID (1-based for user convenience).
 #'
 #' @details
 #'

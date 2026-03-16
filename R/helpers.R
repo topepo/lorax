@@ -10,8 +10,8 @@
 #'   `TRUE`), contain a single expression (returns unchanged), or multiple
 #'   expressions (combines with operator).
 #' @param operator A character string specifying the logical operator to use:
-#'   * `"&"` (default): combines expressions with AND logic
-#'   * `"|"`: combines expressions with OR logic
+#'   * `"&"` (default): combines expressions with AND logic.
+#'   * `"|"`: combines expressions with OR logic.
 #'
 #' @return An R expression object that combines all input expressions. Returns
 #'   `TRUE` for empty list, the single expression for length-1 list, or a
@@ -118,8 +118,8 @@ validate_exprs <- function(exprs, operator, call = rlang::caller_env()) {
 #' @param digits Integer number of significant digits to use when formatting
 #'   numeric values in the rule. Default is 4.
 #' @param max_width Maximum width for the output when `bullets = FALSE`. If the
-#'   formatted rule exceeds this width, it will be truncated with `...`
-#'   appended. The `...` is included in the width count. Default is `Inf` (no
+#'   formatted rule exceeds this width, it will be truncated with `..`
+#'   appended. The `..` is included in the width count. Default is `Inf` (no
 #'   truncation).
 #' @param key Optional data frame or tibble with columns `original` and `label`
 #'   (both character). When provided, variable names matching values in

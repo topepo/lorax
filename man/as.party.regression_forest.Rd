@@ -23,7 +23,7 @@ placeholder data.frame. Providing data enables full party functionality.}
 \item{...}{Not currently used.}
 }
 \value{
-A \code{party} object from the partykit package.
+A \code{party} object from the \pkg{partykit} package.
 }
 \description{
 Convert a single tree from a grf (generalized random forests) model to a
@@ -85,7 +85,7 @@ if (rlang::is_installed(c("grf", "palmerpenguins"))) {
   )
 
   # Convert first tree
-  party_tree <- as.party(rf, tree = 1, data = penguins)
+  party_tree <- as.party(rf, tree = 1L, data = penguins)
   print(party_tree)
   plot(party_tree)
 
@@ -97,7 +97,7 @@ if (rlang::is_installed(c("grf", "palmerpenguins"))) {
     W = rbinom(nrow(penguins), 1, 0.5),
     num.trees = 10
   )
-  party_tree2 <- as.party(cf, tree = 1, data = penguins)
+  party_tree2 <- as.party(cf, tree = 1L, data = penguins)
 }
 
 }

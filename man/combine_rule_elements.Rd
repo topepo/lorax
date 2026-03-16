@@ -14,8 +14,8 @@ expressions (combines with operator).}
 
 \item{operator}{A character string specifying the logical operator to use:
 \itemize{
-\item \code{"&"} (default): combines expressions with AND logic
-\item \code{"|"}: combines expressions with OR logic
+\item \code{"&"} (default): combines expressions with AND logic.
+\item \code{"|"}: combines expressions with OR logic.
 }}
 }
 \value{

@@ -7,10 +7,10 @@
 \method{extract_rules}{lgb.Booster}(x, tree = 1L, ...)
 }
 \arguments{
-\item{x}{An \code{lgb.Booster} object from the lightgbm package.}
+\item{x}{An \code{lgb.Booster} object from the \pkg{lightgbm} package.}
 
 \item{tree}{Integer specifying which tree to extract rules from. Uses
-1-based indexing (default is 1). For multiclass models with \code{num_class}
+1-based indexing (default is \code{1L}). For multiclass models with \code{num_class}
 classes and \code{nrounds} boosting rounds, there are \code{num_class * nrounds}
 total trees.}
 
@@ -20,9 +20,9 @@ total trees.}
 A tibble with class \code{c("rule_set_lgb.Booster", "rule_set")} and
 columns:
 \itemize{
-\item \code{tree}: integer, the tree number (matches input parameter)
-\item \code{rules}: list of R expressions, one per terminal node
-\item \code{id}: integer, terminal node ID (1-based)
+\item \code{tree}: integer, the tree number (matches input parameter).
+\item \code{rules}: list of R expressions, one per terminal node.
+\item \code{id}: integer, terminal node ID (1-based).
 }
 }
 \description{
@@ -54,7 +54,7 @@ bst <- lgb.train(
 )
 
 # Extract rules from first tree
-rules <- extract_rules(bst, tree = 1)
+rules <- extract_rules(bst, tree = 1L)
 
 # View as text
 rule_text(rules$rules[[1]])

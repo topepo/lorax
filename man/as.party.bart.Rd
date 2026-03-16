@@ -7,7 +7,7 @@
 \method{as.party}{bart}(obj, tree = 1L, chain = 1L, data, ...)
 }
 \arguments{
-\item{obj}{A \code{bart} object from the dbarts package fitted with
+\item{obj}{A \code{bart} object from the \pkg{dbarts} package fitted with
 \code{keeptrees = TRUE}.}
 
 \item{tree}{Integer specifying which tree to convert (1-based indexing,
@@ -27,7 +27,7 @@ predictor variables and the response variable in their original formats
 \item{...}{Not currently used.}
 }
 \value{
-A \code{constparty} object from the partykit package.
+A \code{constparty} object from the \pkg{partykit} package.
 }
 \description{
 Convert a single tree from a BART (Bayesian Additive Regression Trees) model
@@ -110,7 +110,7 @@ if (rlang::is_installed(c("dbarts", "palmerpenguins"))) {
 
   # Convert first tree - data parameter is required
   # Response will be preserved in original format (e.g., factor for classification)
-  party_tree <- as.party(fit, tree = 1, chain = 1, data = train_data)
+  party_tree <- as.party(fit, tree = 1L, chain = 1L, data = train_data)
   print(party_tree)
   plot(party_tree)
 }

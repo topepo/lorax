@@ -7,7 +7,7 @@
 \method{extract_rules}{ObliqueForest}(x, tree = 1L, ...)
 }
 \arguments{
-\item{x}{An \code{ObliqueForest} object from the aorsf package}
+\item{x}{An \code{ObliqueForest} object from the \pkg{aorsf} package}
 
 \item{tree}{Integer specifying which tree to extract rules from (1-based).
 Default is \code{1L} for the first tree. Must be between 1 and the number of
@@ -18,9 +18,9 @@ trees in the forest (\code{x$n_tree}).}
 \value{
 A tibble with columns:
 \itemize{
-\item \code{tree}: integer, the tree number (1-based)
-\item \code{rules}: list of R expressions, one per terminal node
-\item \code{id}: integer, the terminal node ID (1-based for user convenience)
+\item \code{tree}: integer, the tree number (1-based).
+\item \code{rules}: list of R expressions, one per terminal node.
+\item \code{id}: integer, the terminal node ID (1-based for user convenience).
 }
 }
 \description{

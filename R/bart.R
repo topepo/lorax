@@ -4,21 +4,21 @@
 #' (Bayesian Additive Regression Trees) model. Each terminal node (leaf)
 #' becomes one rule representing the path from root to that leaf.
 #'
-#' @param x A `bart` object from the dbarts package fitted with
+#' @param x A `bart` object from the \pkg{dbarts} package fitted with
 #'   `keeptrees = TRUE`.
 #' @param tree Integer specifying which tree to extract rules from. Uses
-#'   1-based indexing (default is 1). BART models contain `n.trees` trees
+#'   1-based indexing (default is `1L`). BART models contain `n.trees` trees
 #'   in the ensemble.
 #' @param chain Integer specifying which MCMC chain to extract from. Uses
-#'   1-based indexing (default is 1). Only relevant for models fitted with
+#'   1-based indexing (default is `1L`). Only relevant for models fitted with
 #'   multiple chains.
 #' @param ... Not currently used.
 #'
 #' @return A tibble with class `c("rule_set_bart", "rule_set")` and
 #'   columns:
-#'   * `tree`: integer, the tree number (matches input parameter)
-#'   * `rules`: list of R expressions, one per terminal node
-#'   * `id`: integer, terminal node ID (1-based)
+#'   * `tree`: integer, the tree number (matches input parameter).
+#'   * `rules`: list of R expressions, one per terminal node.
+#'   * `id`: integer, terminal node ID (1-based).
 #'
 #' @details
 #' The BART model must be fitted with `keeptrees = TRUE` to enable tree
@@ -41,7 +41,7 @@
 #' )
 #'
 #' # Extract rules from first tree
-#' rules <- extract_rules(fit, tree = 1)
+#' rules <- extract_rules(fit, tree = 1L)
 #'
 #' # View as text
 #' rule_text(rules$rules[[1]])
@@ -342,7 +342,7 @@ bart_contains_row <- function(node, target_row) {
 #' Convert a single tree from a BART (Bayesian Additive Regression Trees) model
 #' to a party object for use with partykit visualization and analysis tools.
 #'
-#' @param obj A `bart` object from the dbarts package fitted with
+#' @param obj A `bart` object from the \pkg{dbarts} package fitted with
 #'   `keeptrees = TRUE`.
 #' @param tree Integer specifying which tree to convert (1-based indexing,
 #'   default is 1). BART models contain `n.trees` trees in the ensemble.
@@ -357,7 +357,7 @@ bart_contains_row <- function(node, target_row) {
 #'   (e.g., factors for classification).
 #' @param ... Not currently used.
 #'
-#' @return A `constparty` object from the partykit package.
+#' @return A `constparty` object from the \pkg{partykit} package.
 #'
 #' @details
 #' ## Important note on data transformation
@@ -424,7 +424,7 @@ bart_contains_row <- function(node, target_row) {
 #'
 #'   # Convert first tree - data parameter is required
 #'   # Response will be preserved in original format (e.g., factor for classification)
-#'   party_tree <- as.party(fit, tree = 1, chain = 1, data = train_data)
+#'   party_tree <- as.party(fit, tree = 1L, chain = 1L, data = train_data)
 #'   print(party_tree)
 #'   plot(party_tree)
 #' }
@@ -598,7 +598,7 @@ as.party.bart <- function(obj, tree = 1L, chain = 1L, data, ...) {
       cli::cli_abort(
         c(
           "{.arg data} columns don't match BART's internal representation.",
-          "i" = "BART expects: {.field {var_names[1:min(3, length(var_names))]}}...",
+          "i" = "BART expects: {.field {var_names[1:min(3, length(var_names))]}}..",
           "i" = "Found in data: {.field {names(data)[1:min(3, length(names(data)))]}}"
         )
       )

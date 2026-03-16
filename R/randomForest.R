@@ -3,7 +3,7 @@
 #' Convert a single tree from a randomForest model to a party object for use
 #' with partykit visualization and analysis tools.
 #'
-#' @param obj A `randomForest` object from the randomForest package.
+#' @param obj A `randomForest` object from the \pkg{randomForest} package.
 #' @param tree Integer specifying which tree to convert (1-based indexing,
 #'   default is 1). Must be between 1 and the number of trees in the forest.
 #' @param data Optional data.frame containing the training data. If NULL,
@@ -12,7 +12,7 @@
 #'   predictions.
 #' @param ... Not currently used.
 #'
-#' @return A `party` object from the partykit package.
+#' @return A `party` object from the \pkg{partykit} package.
 #'
 #' @details
 #' ## randomForest tree storage format
@@ -54,7 +54,7 @@
 #'   rf <- randomForest::randomForest(species ~ ., data = penguins, ntree = 10)
 #'
 #'   # Convert first tree
-#'   party_tree <- as.party(rf, tree = 1, data = penguins)
+#'   party_tree <- as.party(rf, tree = 1L, data = penguins)
 #'   print(party_tree)
 #'   plot(party_tree)
 #'

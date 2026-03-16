@@ -12,7 +12,7 @@
 #'   placeholder data.frame. Providing data enables full party functionality.
 #' @param ... Not currently used.
 #'
-#' @return A `party` object from the partykit package.
+#' @return A `party` object from the \pkg{partykit} package.
 #'
 #' @details
 #' ## GRF tree storage format
@@ -61,7 +61,7 @@
 #'   )
 #'
 #'   # Convert first tree
-#'   party_tree <- as.party(rf, tree = 1, data = penguins)
+#'   party_tree <- as.party(rf, tree = 1L, data = penguins)
 #'   print(party_tree)
 #'   plot(party_tree)
 #'
@@ -73,7 +73,7 @@
 #'     W = rbinom(nrow(penguins), 1, 0.5),
 #'     num.trees = 10
 #'   )
-#'   party_tree2 <- as.party(cf, tree = 1, data = penguins)
+#'   party_tree2 <- as.party(cf, tree = 1L, data = penguins)
 #' }
 #'
 #' @export

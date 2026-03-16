@@ -5,14 +5,14 @@
 #' of multiple variables compared to a threshold.
 #'
 #' @param split A named list with four required elements:
-#'   * `columns`: character vector - variable names for the linear combination
-#'   * `values`: numeric vector - coefficients for each variable (same length as
+#'   * `columns`: character vector - variable names for the linear combination.
+#'   * `values`: numeric vector - coefficients for each variable (same length as.
 #'     `columns`)
-#'   * `operator`: character string - one of: `<`, `<=`, `>`, `>=`, `==`
-#'   * `threshold`: numeric scalar - the threshold value for comparison
+#'   * `operator`: character string - one of: `<`, `<=`, `>`, `>=`, `==`.
+#'   * `threshold`: numeric scalar - the threshold value for comparison.
 #'
 #' @return An R expression object that can be evaluated. The expression
-#'   represents: `values[1]*columns[1] + ... + values[n]*columns[n] {operator}
+#'   represents: `values[1]*columns[1] + .. + values[n]*columns[n] {operator}
 #'   threshold`.
 #'
 #' @examples

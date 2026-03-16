@@ -7,7 +7,7 @@
 \method{as.party}{ranger}(obj, tree = 1L, data = NULL, ...)
 }
 \arguments{
-\item{obj}{A \code{ranger} object from the ranger package.}
+\item{obj}{A \code{ranger} object from the \pkg{ranger} package.}
 
 \item{tree}{Integer specifying which tree to convert (1-based indexing,
 default is 1). Must be between 1 and the number of trees in the forest.}
@@ -20,7 +20,7 @@ predictions.}
 \item{...}{Not currently used.}
 }
 \value{
-A \code{party} object from the partykit package.
+A \code{party} object from the \pkg{partykit} package.
 }
 \description{
 Convert a single tree from a ranger random forest model to a party object
@@ -74,7 +74,7 @@ if (rlang::is_installed(c("ranger", "palmerpenguins"))) {
   rf <- ranger::ranger(species ~ ., data = penguins, num.trees = 10)
 
   # Convert first tree
-  party_tree <- as.party(rf, tree = 1, data = penguins)
+  party_tree <- as.party(rf, tree = 1L, data = penguins)
   print(party_tree)
   plot(party_tree)
 

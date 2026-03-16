@@ -1,32 +1,32 @@
 #' Extract rules from an xgb.Booster model
 #'
-#' Extract interpretable decision rules from a single tree in an XGBoost
+#' Extract interpretable decision rules from a single tree in an \pkg{xgboost}
 #' boosted tree model. Each terminal node (leaf) becomes one rule representing
 #' the path from root to that leaf.
 #'
-#' @param x An `xgb.Booster` object from the xgboost package.
+#' @param x An `xgb.Booster` object from the \pkg{xgboost} package.
 #' @param tree Integer specifying which tree to extract rules from. Uses
-#'   1-based indexing (default is 1). For multiclass models with `num_class`
+#'   1-based indexing (default is `1L`). For multiclass models with `num_class`
 #'   classes and `nrounds` boosting rounds, there are `num_class * nrounds`
 #'   total trees.
 #' @param ... Not currently used.
 #'
 #' @return A tibble with class `c("rule_set_xgb.Booster", "rule_set")` and
 #'   columns:
-#'   * `tree`: integer, the tree number (matches input parameter)
-#'   * `rules`: list of R expressions, one per terminal node
-#'   * `id`: integer, terminal node ID (1-based)
+#'   * `tree`: integer, the tree number (matches input parameter).
+#'   * `rules`: list of R expressions, one per terminal node.
+#'   * `id`: integer, terminal node ID (1-based).
 #'
 #' @details
-#' XGBoost uses 0-based indexing internally, but this function uses 1-based
+#' \pkg{xgboost} uses 0-based indexing internally, but this function uses 1-based
 #' indexing for the `tree` parameter and output `id` column (R convention).
 #'
-#' Split conditions in XGBoost follow the pattern: Yes branch when feature <
+#' Split conditions in \pkg{xgboost} follow the pattern: Yes branch when feature <
 #' threshold, No branch when feature >= threshold. Rules are combinations of
 #' these conditions using AND logic.
 #'
-#' Note: This function does not work with XGBoost models containing categorical
-#' features or non-tree boosters (gblinear).
+#' Note: This function does not work with \pkg{xgboost} models containing categorical
+#' features or non-tree boosters (`gblinear`).
 #'
 #' @examples
 #' \dontrun{
@@ -41,7 +41,7 @@
 #' )
 #'
 #' # Extract rules from first tree
-#' rules <- extract_rules(bst, tree = 1)
+#' rules <- extract_rules(bst, tree = 1L)
 #'
 #' # View as text
 #' rule_text(rules$rules[[1]])
@@ -190,7 +190,7 @@ xgb_get_split_info <- function(parent_id, child_id, tree_dt) {
 #' Convert a single tree from an XGBoost boosted tree model to a party object
 #' for use with partykit visualization and analysis tools.
 #'
-#' @param obj An `xgb.Booster` object from the xgboost package.
+#' @param obj An `xgb.Booster` object from the \pkg{xgboost} package.
 #' @param tree Integer specifying which tree to convert (1-based indexing,
 #'   default is 1). For multiclass models with `num_class` classes and
 #'   `nrounds` boosting rounds, there are `num_class * nrounds` total trees.
@@ -200,7 +200,7 @@ xgb_get_split_info <- function(parent_id, child_id, tree_dt) {
 #'   that includes both the predictor variables and the response variable.
 #' @param ... Not currently used.
 #'
-#' @return A `constparty` object from the partykit package.
+#' @return A `constparty` object from the \pkg{partykit} package.
 #'
 #' @details
 #' ## Important note on data
@@ -214,7 +214,7 @@ xgb_get_split_info <- function(parent_id, child_id, tree_dt) {
 #'
 #' XGBoost stores trees in a tabular format accessible via
 #' `xgboost::xgb.model.dt.tree()`. Each tree is represented as rows in a table:
-#' - `Tree`: 0-based tree index (e.g., 0, 1, 2, ...)
+#' - `Tree`: 0-based tree index (e.g., 0, 1, 2,  ...)
 #' - `Node`: 0-based node ID within tree (e.g., "0-0", "0-1" for tree 0)
 #' - `Feature`: Feature name (character) or "Leaf" for terminal nodes
 #' - `Split`: Numeric threshold for splits (NA for leaves)
@@ -245,7 +245,7 @@ xgb_get_split_info <- function(parent_id, child_id, tree_dt) {
 #'
 #' - Feature column contains actual feature names (not indices)
 #' - Must map to column positions in data.frame
-#' - If numeric indices used (f0, f1, ...), map to data columns
+#' - If numeric indices used (f0, f1,  ...), map to data columns
 #'
 #' The party object will use 1-based node IDs and variable indices as required
 #' by partykit.
@@ -269,7 +269,7 @@ xgb_get_split_info <- function(parent_id, child_id, tree_dt) {
 #'   )
 #'
 #'   # Convert first tree - data parameter is required
-#'   party_tree <- as.party(bst, tree = 1, data = train_data)
+#'   party_tree <- as.party(bst, tree = 1L, data = train_data)
 #'   print(party_tree)
 #'   plot(party_tree)
 #' }
@@ -355,7 +355,7 @@ as.party.xgb.Booster <- function(obj, tree = 1L, data, ...) {
   # Validate and extract data
   # Map XGBoost feature names to data columns
   if (all(grepl("^f[0-9]+$", feature_names))) {
-    # XGBoost used default names f0, f1, ... use first n columns
+    # XGBoost used default names f0, f1, .. use first n columns
     if (ncol(data) < length(var_names)) {
       cli::cli_abort(
         "{.arg data} must have at least {length(var_names)} columns."

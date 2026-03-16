@@ -7,7 +7,7 @@
 \method{as.party}{xgb.Booster}(obj, tree = 1L, data, ...)
 }
 \arguments{
-\item{obj}{An \code{xgb.Booster} object from the xgboost package.}
+\item{obj}{An \code{xgb.Booster} object from the \pkg{xgboost} package.}
 
 \item{tree}{Integer specifying which tree to convert (1-based indexing,
 default is 1). For multiclass models with \code{num_class} classes and
@@ -21,7 +21,7 @@ that includes both the predictor variables and the response variable.}
 \item{...}{Not currently used.}
 }
 \value{
-A \code{constparty} object from the partykit package.
+A \code{constparty} object from the \pkg{partykit} package.
 }
 \description{
 Convert a single tree from an XGBoost boosted tree model to a party object
@@ -41,7 +41,7 @@ and other visualizations.
 XGBoost stores trees in a tabular format accessible via
 \code{xgboost::xgb.model.dt.tree()}. Each tree is represented as rows in a table:
 \itemize{
-\item \code{Tree}: 0-based tree index (e.g., 0, 1, 2, ...)
+\item \code{Tree}: 0-based tree index (e.g., 0, 1, 2,  ...)
 \item \code{Node}: 0-based node ID within tree (e.g., "0-0", "0-1" for tree 0)
 \item \code{Feature}: Feature name (character) or "Leaf" for terminal nodes
 \item \code{Split}: Numeric threshold for splits (NA for leaves)
@@ -80,7 +80,7 @@ XGBoost stores trees in a tabular format accessible via
 \itemize{
 \item Feature column contains actual feature names (not indices)
 \item Must map to column positions in data.frame
-\item If numeric indices used (f0, f1, ...), map to data columns
+\item If numeric indices used (f0, f1,  ...), map to data columns
 }
 
 The party object will use 1-based node IDs and variable indices as required
@@ -106,7 +106,7 @@ if (rlang::is_installed("xgboost")) {
   )
 
   # Convert first tree - data parameter is required
-  party_tree <- as.party(bst, tree = 1, data = train_data)
+  party_tree <- as.party(bst, tree = 1L, data = train_data)
   print(party_tree)
   plot(party_tree)
 }
