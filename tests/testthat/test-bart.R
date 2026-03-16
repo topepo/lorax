@@ -328,8 +328,8 @@ test_that("as.party.bart with minimal trees", {
 
   # Very small dataset
   data <- data.frame(
-    x1 = c(1, 2, 3),
-    y = c(1, 2, 3)
+    x1 = rep(1:2, 6),
+    y = rep(1:2, each = 6)
   )
 
   fit <- suppressWarnings(dbarts::bart(
