@@ -44,7 +44,8 @@ test_that("as.party.C5.0 validates tree parameter", {
   c5_model <- C50::C5.0(species ~ ., data = penguins)
 
   expect_snapshot(as.party(c5_model, tree = 0), error = TRUE)
-  expect_snapshot(as.party(c5_model, tree = 5), error = TRUE)
+  # When tree exceeds num_trials, it should warn and use max tree
+  expect_snapshot(as.party(c5_model, tree = 5))
   expect_snapshot(as.party(c5_model, tree = c(1, 2)), error = TRUE)
   expect_snapshot(as.party(c5_model, tree = "1"), error = TRUE)
 })
@@ -78,12 +79,10 @@ test_that("as.party.C5.0 works with boosted models", {
   # Trees should be different
   expect_false(isTRUE(all.equal(p1, p2)))
 
-  # Check tree numbers are out of range
+  # Check tree number validation
   expect_snapshot(as.party(c5_boost, tree = 0, data = penguins), error = TRUE)
-  expect_snapshot(
-    as.party(c5_boost, tree = 11, data = penguins),
-    error = TRUE
-  )
+  # When tree exceeds num_trials, it should warn and use max tree
+  expect_snapshot(as.party(c5_boost, tree = 11, data = penguins))
 })
 
 test_that("as.party.C5.0 extracts different boosted trees", {

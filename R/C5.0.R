@@ -106,9 +106,10 @@ as.party.C5.0 <- function(obj, tree = 1L, data = NULL, ...) {
   # Validate tree against trials
   num_trials <- obj$trials["Actual"]
   if (tree > num_trials) {
-    cli::cli_abort(
-      "{.arg tree} must be between 1 and {num_trials}, not {tree}."
+    cli::cli_warn(
+      "{.arg tree} = {tree} exceeds number of trials ({num_trials}). Using {.arg tree} = {num_trials} instead."
     )
+    tree <- as.integer(num_trials)
   }
 
   # Parse tree text format
