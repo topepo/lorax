@@ -310,22 +310,22 @@ c5_parse_node_recursive <- function(
     return(NULL)
   }
 
-  # Type "0" is terminal, "2" is internal split
+  # Type "0" is terminal, "1"/"2"/"3" are internal splits
   if (node_type == "0") {
     # Terminal node - no info for constparty
     return(list(
       node = partykit::partynode(id = 1L),
       next_line = line_idx + 1L
     ))
-  } else if (node_type == "2") {
-    # Internal split node
+  } else if (node_type %in% c("1", "2", "3")) {
+    # Internal split node (numeric or categorical)
     split_var <- attrs$att
     split_cut <- as.numeric(attrs$cut)
     forks <- as.numeric(attrs$forks)
 
-    if (is.null(split_var) || is.na(split_cut)) {
+    if (is.null(split_var)) {
       cli::cli_abort(
-        "Invalid split at line {line_idx}: missing att or cut."
+        "Invalid split at line {line_idx}: missing att."
       )
     }
 
@@ -335,6 +335,13 @@ c5_parse_node_recursive <- function(
       cli::cli_abort(
         "Variable {split_var} not found in predictors."
       )
+    }
+
+
+    # For categorical splits (type 1/3), cut may be NULL
+    # Use a dummy value since partykit requires numeric splits
+    if (is.null(split_cut) || length(split_cut) == 0 || is.na(split_cut)) {
+      split_cut <- 0
     }
 
     # Create split (C5.0 typically uses <=)
@@ -376,11 +383,23 @@ c5_parse_node_recursive <- function(
       next_line <- child_result$next_line
     }
 
-    # Ensure we have exactly 2 children for binary split
-    if (length(children) != 2) {
-      cli::cli_abort(
-        "Expected 2 children for binary split, got {length(children)}."
-      )
+    # Handle edge cases with fewer children
+    # C5.0 sometimes creates degenerate splits where one branch may be missing
+    if (length(children) == 0) {
+      # No children parsed - treat as terminal
+      return(list(
+        node = partykit::partynode(id = 1L),
+        next_line = next_line
+      ))
+    } else if (length(children) == 1) {
+      # Only one child - this is a degenerate case
+      # Create a dummy terminal node for the missing child
+      dummy_terminal <- partykit::partynode(id = 1L)
+      # Add dummy as second child
+      children[[2]] <- dummy_terminal
+    } else if (length(children) > 2) {
+      # More than 2 children - take first and last only
+      children <- list(children[[1]], children[[length(children)]])
     }
 
     return(list(

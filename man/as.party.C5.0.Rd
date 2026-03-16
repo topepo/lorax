@@ -13,9 +13,9 @@
 default is 1). For single tree models, use \code{tree = 1}. For boosted models
 with \code{trials > 1}, this selects which boosting iteration to extract.}
 
-\item{data}{Optional data.frame containing the training data. If NULL,
-will attempt to reconstruct from model, or create a placeholder.
-Providing data enables full party functionality.}
+\item{data}{Data.frame containing the training data, including both predictors
+and response variable. Required for proper party object creation with fitted
+values and node summaries.}
 
 \item{...}{Not currently used.}
 }

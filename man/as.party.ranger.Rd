@@ -12,10 +12,9 @@
 \item{tree}{Integer specifying which tree to convert (1-based indexing,
 default is 1). Must be between 1 and the number of trees in the forest.}
 
-\item{data}{Optional data.frame containing the training data. If NULL,
-a placeholder data.frame will be created with correct variable names but
-no observations. Providing data enables full party functionality including
-predictions.}
+\item{data}{Data.frame containing the training data, including both predictors
+and response variable. Required for proper party object creation with fitted
+values and node summaries.}
 
 \item{...}{Not currently used.}
 }
