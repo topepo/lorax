@@ -48,7 +48,6 @@
 #' @examples
 #' \dontrun{
 #' library(ranger)
-#' library(partykit)
 #'
 #' rf <- ranger(species ~ ., data = penguins, num.trees = 10)
 #'

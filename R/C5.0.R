@@ -63,7 +63,6 @@
 #' @examples
 #' \dontrun{
 #' library(C50)
-#' library(partykit)
 #'
 #' # Single tree model
 #' c5_tree <- C5.0(species ~ ., data = penguins)

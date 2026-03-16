@@ -50,10 +50,9 @@
 #' @examples
 #' \dontrun{
 #' library(grf)
-#' library(partykit)
 #'
 #' # Regression forest
-#' rf <- regression_forest(X = penguins[, c("bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g")], Y = penguins$bill_length_mm, num.trees = 10)
+#' rf <- regression_forest(X = penguins[, ], Y = penguins$bill_length_mm, num.trees = 10)
 #'
 #' # Convert first tree
 #' party_tree <- as.party(rf, tree = 1)
@@ -61,7 +60,7 @@
 #' plot(party_tree)
 #'
 #' # Can also work with other grf forest types
-#' cf <- causal_forest(X = penguins[, c("bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g")], Y = penguins$bill_length_mm,
+#' cf <- causal_forest(X = penguins[, 3:6], Y = penguins$bill_length_mm,
 #'                     W = rbinom(150, 1, 0.5), num.trees = 10)
 #' party_tree2 <- as.party(cf, tree = 1)
 #' }

@@ -49,7 +49,6 @@
 #' @examples
 #' \dontrun{
 #' library(randomForest)
-#' library(partykit)
 #'
 #' rf <- randomForest(species ~ ., data = penguins, ntree = 10)
 #'

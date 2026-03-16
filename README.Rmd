@@ -41,7 +41,6 @@ library(tibble)
 library(lorax)
 library(ranger)
 library(palmerpenguins)
-library(partykit)
 
 set.seed(822)
 rngr_fit <- ranger(species ~ ., data = penguins, max.depth = 3, num.trees = 10)

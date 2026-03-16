@@ -305,7 +305,6 @@ lgb_get_split_info <- function(
 #' @examples
 #' \dontrun{
 #' library(lightgbm)
-#' library(partykit)
 #'
 #' data(agaricus.train, package = "lightgbm")
 #' dtrain <- lgb.Dataset(agaricus.train$data, label = agaricus.train$label)

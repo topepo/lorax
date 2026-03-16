@@ -34,10 +34,6 @@ library(palmerpenguins)
 #> The following objects are masked from 'package:datasets':
 #> 
 #>     penguins, penguins_raw
-library(partykit)
-#> Loading required package: grid
-#> Loading required package: libcoin
-#> Loading required package: mvtnorm
 
 set.seed(822)
 rngr_fit <- ranger(species ~ ., data = penguins, max.depth = 3, num.trees = 10)

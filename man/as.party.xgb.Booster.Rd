@@ -90,7 +90,6 @@ by partykit.
 \examples{
 \dontrun{
 library(xgboost)
-library(partykit)
 
 data(agaricus.train, package = "xgboost")
 dtrain <- xgb.DMatrix(agaricus.train$data, label = agaricus.train$label)
