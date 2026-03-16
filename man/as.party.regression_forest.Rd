@@ -77,6 +77,7 @@ if (rlang::is_installed(c("grf", "palmerpenguins"))) {
   penguins <- na.omit(penguins)
 
   # Regression forest
+  set.seed(2847)
   rf <- grf::regression_forest(
     X = penguins[, c("bill_length_mm", "bill_depth_mm",
                      "flipper_length_mm", "body_mass_g")],
@@ -90,6 +91,7 @@ if (rlang::is_installed(c("grf", "palmerpenguins"))) {
   plot(party_tree)
 
   # Can also work with other grf forest types
+  set.seed(5193)
   cf <- grf::causal_forest(
     X = penguins[, c("bill_length_mm", "bill_depth_mm",
                      "flipper_length_mm", "body_mass_g")],

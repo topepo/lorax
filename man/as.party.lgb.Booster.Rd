@@ -101,6 +101,7 @@ if (rlang::is_installed("lightgbm")) {
 
   dtrain <- lightgbm::lgb.Dataset(agaricus.train$data, label = agaricus.train$label)
 
+  set.seed(7264)
   bst <- lightgbm::lgb.train(
     params = list(objective = "binary", max_depth = 3),
     data = dtrain,
@@ -118,8 +119,9 @@ if (rlang::is_installed("lightgbm")) {
   reg_data <- mtcars
   dtrain_reg <- lightgbm::lgb.Dataset(as.matrix(mtcars[, -1]), label = mtcars$mpg)
 
+  set.seed(6381)
   bst_reg <- lightgbm::lgb.train(
-    params = list(objective = "regression", max_depth = 3),
+    params = list(objective = "regression", max_depth = 3, min_data_in_leaf = 1),
     data = dtrain_reg,
     nrounds = 3,
     verbose = -1

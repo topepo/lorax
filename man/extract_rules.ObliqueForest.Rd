@@ -110,6 +110,7 @@ regardless of the \code{scale_x} setting. To determine if scaling was used, chec
 if (rlang::is_installed(c("aorsf", "palmerpenguins"))) {
   # Classification example
   penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
+  set.seed(2847)
   forest <- aorsf::orsf(species ~ ., data = penguins, n_tree = 3)
 
   # Extract rules from first tree (default)
@@ -123,6 +124,7 @@ if (rlang::is_installed(c("aorsf", "palmerpenguins"))) {
 
   # Regression example
   data(mtcars)
+  set.seed(5193)
   forest_reg <- aorsf::orsf(mpg ~ ., data = mtcars, n_tree = 3)
   rules_reg <- extract_rules(forest_reg, tree = 1L)
 }

@@ -38,6 +38,7 @@
 #'   train_data <- penguins[, c("bill_length_mm", "bill_depth_mm",
 #'                              "flipper_length_mm", "body_mass_g", "species")]
 #'
+#'   set.seed(2847)
 #'   fit <- dbarts::bart(
 #'     x.train = train_data[, 1:4],
 #'     y.train = train_data$species,
@@ -54,6 +55,7 @@
 #'
 #'   # Regression example
 #'   data(mtcars)
+#'   set.seed(5193)
 #'   fit_reg <- dbarts::bart(
 #'     x.train = mtcars[, -1],
 #'     y.train = mtcars$mpg,
@@ -432,6 +434,7 @@ bart_contains_row <- function(node, target_row) {
 #'   train_data <- penguins[, c("bill_length_mm", "bill_depth_mm",
 #'                              "flipper_length_mm", "body_mass_g", "species")]
 #'
+#'   set.seed(2847)
 #'   fit <- dbarts::bart(
 #'     x.train = train_data[, 1:4],
 #'     y.train = train_data$species,
@@ -448,6 +451,7 @@ bart_contains_row <- function(node, target_row) {
 #'
 #'   # Regression example
 #'   data(mtcars)
+#'   set.seed(5193)
 #'   fit_reg <- dbarts::bart(
 #'     x.train = mtcars[, -1],
 #'     y.train = mtcars$mpg,

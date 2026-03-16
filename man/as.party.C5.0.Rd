@@ -91,12 +91,14 @@ if (rlang::is_installed(c("C50", "palmerpenguins"))) {
   penguins <- na.omit(penguins)
 
   # Single tree model
+  set.seed(2847)
   c5_tree <- C50::C5.0(species ~ ., data = penguins)
   party_tree <- as.party(c5_tree, tree = 1L, data = penguins)
   print(party_tree)
   plot(party_tree)
 
   # Boosted model with multiple trials
+  set.seed(5193)
   c5_boost <- C50::C5.0(species ~ ., data = penguins, trials = 3)
   # Extract first boosting iteration
   party_tree1 <- as.party(c5_boost, tree = 1L, data = penguins)

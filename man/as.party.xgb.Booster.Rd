@@ -97,6 +97,7 @@ if (rlang::is_installed("xgboost")) {
 
   dtrain <- xgboost::xgb.DMatrix(agaricus.train$data, label = agaricus.train$label)
 
+  set.seed(3691)
   bst <- xgboost::xgb.train(
     data = dtrain,
     max_depth = 3,
@@ -115,6 +116,7 @@ if (rlang::is_installed("xgboost")) {
   reg_data <- mtcars
   dtrain_reg <- xgboost::xgb.DMatrix(as.matrix(mtcars[, -1]), label = mtcars$mpg)
 
+  set.seed(9158)
   bst_reg <- xgboost::xgb.train(
     data = dtrain_reg,
     max_depth = 3,

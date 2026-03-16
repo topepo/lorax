@@ -42,17 +42,17 @@ Note: This function does not work with \pkg{xgboost} models containing categoric
 features or non-tree boosters (\code{gblinear}).
 }
 \examples{
-\dontrun{
-library(xgboost)
-data(agaricus.train, package = "xgboost")
+if (rlang::is_installed("xgboost")) {
+  data(agaricus.train, package = "xgboost")
 
-# Binary classification
-bst <- xgb.train(
-  data = xgb.DMatrix(agaricus.train$data, label = agaricus.train$label),
-  nrounds = 3,
-  max_depth = 3,
-  objective = "binary:logistic"
-)
+  # Binary classification
+  set.seed(2847)
+  bst <- xgboost::xgb.train(
+    data = xgboost::xgb.DMatrix(agaricus.train$data, label = agaricus.train$label),
+    nrounds = 3,
+    max_depth = 3,
+    objective = "binary:logistic"
+  )
 
 # Extract rules from first tree
 rules <- extract_rules(bst, tree = 1L)
@@ -60,15 +60,16 @@ rules <- extract_rules(bst, tree = 1L)
 # View as text
 rule_text(rules$rules[[1]])
 
-# Regression example
-data(mtcars)
-bst_reg <- xgb.train(
-  data = xgb.DMatrix(as.matrix(mtcars[, -1]), label = mtcars$mpg),
-  nrounds = 3,
-  max_depth = 3,
-  objective = "reg:squarederror"
-)
-rules_reg <- extract_rules(bst_reg, tree = 1L)
+  # Regression example
+  data(mtcars)
+  set.seed(8472)
+  bst_reg <- xgboost::xgb.train(
+    data = xgboost::xgb.DMatrix(as.matrix(mtcars[, -1]), label = mtcars$mpg),
+    nrounds = 3,
+    max_depth = 3,
+    objective = "reg:squarederror"
+  )
+  rules_reg <- extract_rules(bst_reg, tree = 1L)
 }
 
 }

@@ -68,5 +68,5 @@
       as.party(fit, tree = 1, chain = 1, data = penguins)
     Condition
       Error in `as.party()`:
-      ! BART model must be fitted with `keeptrees = TRUE` to extract trees.
+      ! dbarts model must be fitted with `keeptrees = TRUE` to extract trees.
 

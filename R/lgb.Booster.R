@@ -33,6 +33,7 @@
 #'   # Binary classification
 #'   data(agaricus.train, package = "lightgbm")
 #'   dtrain <- lightgbm::lgb.Dataset(agaricus.train$data, label = agaricus.train$label)
+#'   set.seed(2847)
 #'   bst <- lightgbm::lgb.train(
 #'     params = list(objective = "binary", max_depth = 3),
 #'     data = dtrain,
@@ -49,8 +50,9 @@
 #'   # Regression example
 #'   data(mtcars)
 #'   dtrain_reg <- lightgbm::lgb.Dataset(as.matrix(mtcars[, -1]), label = mtcars$mpg)
+#'   set.seed(5193)
 #'   bst_reg <- lightgbm::lgb.train(
-#'     params = list(objective = "regression", max_depth = 3),
+#'     params = list(objective = "regression", max_depth = 3, min_data_in_leaf = 1),
 #'     data = dtrain_reg,
 #'     nrounds = 3,
 #'     verbose = -1
@@ -325,6 +327,7 @@ lgb_get_split_info <- function(
 #'
 #'   dtrain <- lightgbm::lgb.Dataset(agaricus.train$data, label = agaricus.train$label)
 #'
+#'   set.seed(7264)
 #'   bst <- lightgbm::lgb.train(
 #'     params = list(objective = "binary", max_depth = 3),
 #'     data = dtrain,
@@ -342,8 +345,9 @@ lgb_get_split_info <- function(
 #'   reg_data <- mtcars
 #'   dtrain_reg <- lightgbm::lgb.Dataset(as.matrix(mtcars[, -1]), label = mtcars$mpg)
 #'
+#'   set.seed(6381)
 #'   bst_reg <- lightgbm::lgb.train(
-#'     params = list(objective = "regression", max_depth = 3),
+#'     params = list(objective = "regression", max_depth = 3, min_data_in_leaf = 1),
 #'     data = dtrain_reg,
 #'     nrounds = 3,
 #'     verbose = -1

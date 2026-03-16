@@ -52,6 +52,7 @@ if (rlang::is_installed(c("dbarts", "palmerpenguins"))) {
   train_data <- penguins[, c("bill_length_mm", "bill_depth_mm",
                              "flipper_length_mm", "body_mass_g", "species")]
 
+  set.seed(2847)
   fit <- dbarts::bart(
     x.train = train_data[, 1:4],
     y.train = train_data$species,
@@ -68,6 +69,7 @@ if (rlang::is_installed(c("dbarts", "palmerpenguins"))) {
 
   # Regression example
   data(mtcars)
+  set.seed(5193)
   fit_reg <- dbarts::bart(
     x.train = mtcars[, -1],
     y.train = mtcars$mpg,

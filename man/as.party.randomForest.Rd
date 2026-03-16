@@ -73,6 +73,7 @@ if (rlang::is_installed(c("randomForest", "palmerpenguins"))) {
   data(penguins, package = "palmerpenguins")
   penguins <- na.omit(penguins)
 
+  set.seed(2847)
   rf <- randomForest::randomForest(species ~ ., data = penguins, ntree = 3)
 
   # Convert first tree
@@ -85,6 +86,7 @@ if (rlang::is_installed(c("randomForest", "palmerpenguins"))) {
 
   # Regression example
   data(mtcars)
+  set.seed(5193)
   rf_reg <- randomForest::randomForest(mpg ~ ., data = mtcars, ntree = 3)
   party_tree_reg <- as.party(rf_reg, tree = 1L, data = mtcars)
   print(party_tree_reg)
