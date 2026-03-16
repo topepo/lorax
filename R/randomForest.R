@@ -1,7 +1,7 @@
 #' Convert randomForest model to party object
 #'
-#' Convert a single tree from a randomForest model to a party object for use
-#' with partykit visualization and analysis tools.
+#' Convert a single tree from a \pkg{randomForest} model to a party object for use
+#' with \pkg{partykit} visualization and analysis tools.
 #'
 #' @param obj A `randomForest` object from the \pkg{randomForest} package.
 #' @param tree Integer specifying which tree to convert (1-based indexing,
@@ -17,7 +17,7 @@
 #' @details
 #' ## randomForest tree storage format
 #'
-#' The randomForest package stores trees in `obj$forest` as parallel matrices:
+#' The \pkg{randomForest} package stores trees in `obj$forest` as parallel matrices:
 #' - `leftDaughter[i, tree]`: 1-based row index of left child (0 = no child)
 #' - `rightDaughter[i, tree]`: 1-based row index of right child (0 = no child)
 #' - `bestvar[i, tree]`: 1-based variable index for split (0 for terminal)
@@ -27,7 +27,7 @@
 #'
 #' ## Node indexing
 #'
-#' - randomForest uses 1-based row indices for nodes (root is row 1)
+#' - \pkg{randomForest} uses 1-based row indices for nodes (root is row 1)
 #' - Value 0 in leftDaughter/rightDaughter indicates no child
 #' - User-facing `tree` parameter uses 1-based indexing (R convention)
 #'
@@ -35,13 +35,13 @@
 #'
 #' - For numeric variables: left child when feature <= threshold, right child
 #'   when feature > threshold
-#' - Note: randomForest uses <= for left (different from ranger's <)
+#' - Note: \pkg{randomForest} uses <= for left (different from ranger's <)
 #' - partykit split created with `right = FALSE` to match this
 #'
 #' ## Terminal node identification
 #'
-#' - nodestatus == -1 indicates terminal node
-#' - Alternatively: bestvar == 0 or both daughters == 0
+#' - `nodestatus == -1` indicates terminal node
+#' - Alternatively: `bestvar == 0` or both `daughters == 0`
 #'
 #' The party object will use 1-based node IDs and variable indices as required
 #' by partykit.
@@ -187,12 +187,13 @@ as.party.randomForest <- function(obj, tree = 1L, data = NULL, ...) {
     # Compute which terminal node each observation belongs to
     fitted_ids <- compute_fitted_node_ids(root_node, orig_data)
 
-    # Get response if available from call
-    response <- extract_response_from_call(
-      obj,
-      response_param = "y",
-      expected_length = nrow(orig_data)
-    )
+    # Get response from randomForest object
+    # randomForest stores the response directly in obj$y
+    response <- if (!is.null(obj$y) && length(obj$y) == nrow(orig_data)) {
+      obj$y
+    } else {
+      NULL
+    }
 
     fitted <- create_fitted_dataframe(fitted_ids, response)
   }

@@ -17,7 +17,7 @@
 #' @details
 #' ## C5.0 tree storage format
 #'
-#' The C50 package stores trees in a custom text format in `obj$tree`. This
+#' The \pkg{C50} package stores trees in a custom text format in `obj$tree`. This
 #' format uses indented lines with key-value pairs:
 #' - `type="2"`: Internal node with split
 #' - `type="0"`: Terminal/leaf node
@@ -29,8 +29,8 @@
 #'
 #' ## Boosting and trials
 #'
-#' - Single tree models (trials = 1): Only tree = 1 is valid
-#' - Boosted models (trials > 1): Multiple sequential trees available
+#' - Single tree models (`trials = 1`): Only `tree = 1` is valid
+#' - Boosted models (`trials > 1`): Multiple sequential trees available
 #' - The `tree` parameter maps to trial/iteration number
 #' - Each boosting trial produces one tree
 #'
@@ -45,19 +45,19 @@
 #'
 #' - For numeric: typically left/low when <= threshold, right/high when > threshold
 #' - C5.0 may use ternary splits with separate handling of missing values
-#' - partykit uses binary splits, so we simplify to binary when needed
+#' - \pkg{partykit} uses binary splits, so we simplify to binary when needed
 #'
 #' ## Variable names
 #'
 #' - `obj$predictors` contains ordered list of predictor variable names
 #' - `att` attribute in tree text references these by name
-#' - Map to 1-based indices for partykit
+#' - Map to 1-based indices for \pkg{partykit}
 #'
 #' ## Important limitations
 #'
-#' - C5.0's text format is complex and may vary by version
+#' - \pkg{C50}'s text format is complex and may vary by version
 #' - Ternary splits with missing value branches simplified to binary
-#' - Rule-based models (obj$rules != "") not supported
+#' - Rule-based models (`obj$rules != ""`) not supported
 #' - Categorical variable splits may need special handling
 #'
 #' @examples
@@ -222,12 +222,16 @@ as.party.C5.0 <- function(obj, tree = 1L, data = NULL, ...) {
       orig_data[, var_names, drop = FALSE]
     )
 
-    # Get response if available from call
-    response <- extract_response_from_call(
-      obj,
-      response_param = "y",
-      expected_length = nrow(orig_data)
-    )
+    # Get response from data
+    # C5.0 has Terms which we can use to extract response
+    response <- NULL
+    if (!is.null(obj$Terms)) {
+      # Get response name from terms
+      response_name <- all.vars(obj$Terms)[attr(obj$Terms, "response")]
+      if (length(response_name) > 0 && response_name %in% names(orig_data)) {
+        response <- orig_data[[response_name]]
+      }
+    }
 
     fitted <- create_fitted_dataframe(fitted_ids, response)
   }
