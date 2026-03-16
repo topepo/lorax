@@ -61,21 +61,22 @@
 #' - Categorical variable splits may need special handling
 #'
 #' @examples
-#' \dontrun{
-#' library(C50)
+#' if (rlang::is_installed(c("C50", "palmerpenguins"))) {
+#'   data(penguins, package = "palmerpenguins")
+#'   penguins <- na.omit(penguins)
 #'
-#' # Single tree model
-#' c5_tree <- C5.0(species ~ ., data = penguins)
-#' party_tree <- as.party(c5_tree, tree = 1, data = penguins)
-#' print(party_tree)
-#' plot(party_tree)
+#'   # Single tree model
+#'   c5_tree <- C50::C5.0(species ~ ., data = penguins)
+#'   party_tree <- as.party(c5_tree, tree = 1, data = penguins)
+#'   print(party_tree)
+#'   plot(party_tree)
 #'
-#' # Boosted model with multiple trials
-#' c5_boost <- C5.0(species ~ ., data = penguins, trials = 10)
-#' # Extract first boosting iteration
-#' party_tree1 <- as.party(c5_boost, tree = 1, data = penguins)
-#' # Extract fifth boosting iteration
-#' party_tree5 <- as.party(c5_boost, tree = 5, data = penguins)
+#'   # Boosted model with multiple trials
+#'   c5_boost <- C50::C5.0(species ~ ., data = penguins, trials = 10)
+#'   # Extract first boosting iteration
+#'   party_tree1 <- as.party(c5_boost, tree = 1, data = penguins)
+#'   # Extract fifth boosting iteration
+#'   party_tree5 <- as.party(c5_boost, tree = 5, data = penguins)
 #' }
 #'
 #' @export

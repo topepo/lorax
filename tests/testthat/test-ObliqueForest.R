@@ -1,3 +1,6 @@
+skip_if_not_installed("aorsf")
+skip_if_not_installed("palmerpenguins")
+
 library(aorsf)
 
 # Test data setup

@@ -47,18 +47,19 @@
 #' by partykit.
 #'
 #' @examples
-#' \dontrun{
-#' library(randomForest)
+#' if (rlang::is_installed(c("randomForest", "palmerpenguins"))) {
+#'   data(penguins, package = "palmerpenguins")
+#'   penguins <- na.omit(penguins)
 #'
-#' rf <- randomForest(species ~ ., data = penguins, ntree = 10)
+#'   rf <- randomForest::randomForest(species ~ ., data = penguins, ntree = 10)
 #'
-#' # Convert first tree
-#' party_tree <- as.party(rf, tree = 1, data = penguins)
-#' print(party_tree)
-#' plot(party_tree)
+#'   # Convert first tree
+#'   party_tree <- as.party(rf, tree = 1, data = penguins)
+#'   print(party_tree)
+#'   plot(party_tree)
 #'
-#' # Predictions from party object
-#' predict(party_tree, newdata = penguins[1:5, ])
+#'   # Predictions from party object
+#'   predict(party_tree, newdata = penguins[1:5, ])
 #' }
 #'
 #' @export

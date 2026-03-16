@@ -1,3 +1,5 @@
+skip_if_not_installed("palmerpenguins")
+
 library(partykit)
 
 # Test data setup

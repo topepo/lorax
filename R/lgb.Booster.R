@@ -303,22 +303,26 @@ lgb_get_split_info <- function(
 #' by partykit.
 #'
 #' @examples
-#' \dontrun{
-#' library(lightgbm)
+#' if (rlang::is_installed("lightgbm")) {
+#'   data(agaricus.train, package = "lightgbm")
 #'
-#' data(agaricus.train, package = "lightgbm")
-#' dtrain <- lgb.Dataset(agaricus.train$data, label = agaricus.train$label)
+#'   # Prepare data with response column
+#'   train_data <- as.data.frame(as.matrix(agaricus.train$data))
+#'   train_data$label <- agaricus.train$label
 #'
-#' bst <- lgb.train(
-#'   params = list(objective = "binary", max_depth = 3),
-#'   data = dtrain,
-#'   nrounds = 5
-#' )
+#'   dtrain <- lightgbm::lgb.Dataset(agaricus.train$data, label = agaricus.train$label)
 #'
-#' # Convert first tree
-#' party_tree <- as.party(bst, tree = 1)
-#' print(party_tree)
-#' plot(party_tree)
+#'   bst <- lightgbm::lgb.train(
+#'     params = list(objective = "binary", max_depth = 3),
+#'     data = dtrain,
+#'     nrounds = 5,
+#'     verbose = -1
+#'   )
+#'
+#'   # Convert first tree - data parameter is required
+#'   party_tree <- as.party(bst, tree = 1, data = train_data)
+#'   print(party_tree)
+#'   plot(party_tree)
 #' }
 #'
 #' @export
@@ -472,9 +476,11 @@ as.party.lgb.Booster <- function(obj, tree = 1L, data, ...) {
 
   # Create terms object
   if (length(var_names) > 0) {
+    # Quote variable names with backticks to handle special characters
+    quoted_names <- paste0("`", var_names, "`")
     formula <- stats::as.formula(paste(
       "~",
-      paste(var_names, collapse = " + ")
+      paste(quoted_names, collapse = " + ")
     ))
     terms <- stats::terms(formula, data = orig_data)
   } else {

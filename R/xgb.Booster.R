@@ -250,23 +250,27 @@ xgb_get_split_info <- function(parent_id, child_id, tree_dt) {
 #' by partykit.
 #'
 #' @examples
-#' \dontrun{
-#' library(xgboost)
+#' if (rlang::is_installed("xgboost")) {
+#'   data(agaricus.train, package = "xgboost")
 #'
-#' data(agaricus.train, package = "xgboost")
-#' dtrain <- xgb.DMatrix(agaricus.train$data, label = agaricus.train$label)
+#'   # Prepare data with response column
+#'   train_data <- as.data.frame(as.matrix(agaricus.train$data))
+#'   train_data$label <- agaricus.train$label
 #'
-#' bst <- xgb.train(
-#'   data = dtrain,
-#'   max_depth = 3,
-#'   nrounds = 5,
-#'   objective = "binary:logistic"
-#' )
+#'   dtrain <- xgboost::xgb.DMatrix(agaricus.train$data, label = agaricus.train$label)
 #'
-#' # Convert first tree
-#' party_tree <- as.party(bst, tree = 1)
-#' print(party_tree)
-#' plot(party_tree)
+#'   bst <- xgboost::xgb.train(
+#'     data = dtrain,
+#'     max_depth = 3,
+#'     nrounds = 5,
+#'     objective = "binary:logistic",
+#'     verbose = 0
+#'   )
+#'
+#'   # Convert first tree - data parameter is required
+#'   party_tree <- as.party(bst, tree = 1, data = train_data)
+#'   print(party_tree)
+#'   plot(party_tree)
 #' }
 #'
 #' @export
@@ -396,9 +400,11 @@ as.party.xgb.Booster <- function(obj, tree = 1L, data, ...) {
 
   # Create terms object
   if (length(var_names) > 0) {
+    # Quote variable names with backticks to handle special characters
+    quoted_names <- paste0("`", var_names, "`")
     formula <- stats::as.formula(paste(
       "~",
-      paste(var_names, collapse = " + ")
+      paste(quoted_names, collapse = " + ")
     ))
     terms <- stats::terms(formula, data = orig_data)
   } else {

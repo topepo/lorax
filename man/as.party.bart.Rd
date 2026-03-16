@@ -93,25 +93,26 @@ by partykit.
 }
 \examples{
 if (rlang::is_installed(c("dbarts", "palmerpenguins"))) {
- # Prepare data with response column
- train_data <- penguins[, c("bill_length_mm", "bill_depth_mm",
-                            "flipper_length_mm", "body_mass_g", "species")]
+  data(penguins, package = "palmerpenguins")
+  penguins <- na.omit(penguins)
 
- fit <- bart(
-  x.train = train_data[, 1:4],
-  y.train = train_data$species,
-  keeptrees = TRUE,
-  verbose = FALSE,
-  ntree = 2
- )
+  # Prepare data with response column
+  train_data <- penguins[, c("bill_length_mm", "bill_depth_mm",
+                             "flipper_length_mm", "body_mass_g", "species")]
 
- # Convert first tree - data parameter is required
- # Response will be preserved in original format (e.g., factor for classification)
- party_tree <- as.party(fit, tree = 1, chain = 1, data = train_data)
- print(party_tree)
- plot(party_tree)
-}
-\dontrun{
+  fit <- dbarts::bart(
+    x.train = train_data[, 1:4],
+    y.train = train_data$species,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 2
+  )
+
+  # Convert first tree - data parameter is required
+  # Response will be preserved in original format (e.g., factor for classification)
+  party_tree <- as.party(fit, tree = 1, chain = 1, data = train_data)
+  print(party_tree)
+  plot(party_tree)
 }
 
 }

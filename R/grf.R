@@ -48,21 +48,32 @@
 #' by partykit.
 #'
 #' @examples
-#' \dontrun{
-#' library(grf)
+#' if (rlang::is_installed(c("grf", "palmerpenguins"))) {
+#'   data(penguins, package = "palmerpenguins")
+#'   penguins <- na.omit(penguins)
 #'
-#' # Regression forest
-#' rf <- regression_forest(X = penguins[, ], Y = penguins$bill_length_mm, num.trees = 10)
+#'   # Regression forest
+#'   rf <- grf::regression_forest(
+#'     X = penguins[, c("bill_length_mm", "bill_depth_mm",
+#'                      "flipper_length_mm", "body_mass_g")],
+#'     Y = penguins$bill_length_mm,
+#'     num.trees = 10
+#'   )
 #'
-#' # Convert first tree
-#' party_tree <- as.party(rf, tree = 1)
-#' print(party_tree)
-#' plot(party_tree)
+#'   # Convert first tree
+#'   party_tree <- as.party(rf, tree = 1, data = penguins)
+#'   print(party_tree)
+#'   plot(party_tree)
 #'
-#' # Can also work with other grf forest types
-#' cf <- causal_forest(X = penguins[, 3:6], Y = penguins$bill_length_mm,
-#'                     W = rbinom(150, 1, 0.5), num.trees = 10)
-#' party_tree2 <- as.party(cf, tree = 1)
+#'   # Can also work with other grf forest types
+#'   cf <- grf::causal_forest(
+#'     X = penguins[, c("bill_length_mm", "bill_depth_mm",
+#'                      "flipper_length_mm", "body_mass_g")],
+#'     Y = penguins$bill_length_mm,
+#'     W = rbinom(nrow(penguins), 1, 0.5),
+#'     num.trees = 10
+#'   )
+#'   party_tree2 <- as.party(cf, tree = 1, data = penguins)
 #' }
 #'
 #' @export

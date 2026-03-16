@@ -67,18 +67,19 @@ by partykit.
 }
 }
 \examples{
-\dontrun{
-library(ranger)
+if (rlang::is_installed(c("ranger", "palmerpenguins"))) {
+  data(penguins, package = "palmerpenguins")
+  penguins <- na.omit(penguins)
 
-rf <- ranger(species ~ ., data = penguins, num.trees = 10)
+  rf <- ranger::ranger(species ~ ., data = penguins, num.trees = 10)
 
-# Convert first tree
-party_tree <- as.party(rf, tree = 1, data = penguins)
-print(party_tree)
-plot(party_tree)
+  # Convert first tree
+  party_tree <- as.party(rf, tree = 1, data = penguins)
+  print(party_tree)
+  plot(party_tree)
 
-# Predictions from party object
-predict(party_tree, newdata = penguins[1:5, ])
+  # Predictions from party object
+  predict(party_tree, newdata = penguins[1:5, ])
 }
 
 }
