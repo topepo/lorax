@@ -178,7 +178,12 @@ as.party.C5.0 <- function(obj, tree = 1L, data = NULL, ...) {
   } else {
     # Single tree model: parse the entire tree text
     # tree_start_idx not needed since there's only one tree
-    root_node <- c5_parse_tree_lines(tree_lines, var_names, obj$levels, orig_data)
+    root_node <- c5_parse_tree_lines(
+      tree_lines,
+      var_names,
+      obj$levels,
+      orig_data
+    )
   }
 
   if (is.null(root_node)) {
@@ -439,7 +444,10 @@ c5_parse_node_recursive <- function(
       # Numeric ternary split: simplify to binary by keeping first and last
       # (middle child is typically for missing values)
       if (length(all_children) >= 2) {
-        children <- list(all_children[[1]], all_children[[length(all_children)]])
+        children <- list(
+          all_children[[1]],
+          all_children[[length(all_children)]]
+        )
       } else {
         children <- all_children
       }
@@ -542,7 +550,13 @@ c5_parse_attributes <- function(line) {
 # @param data Data.frame with training data (for factor levels)
 #
 # @return Integer line index where the tree starts, or NULL if not found
-c5_find_tree_start <- function(tree_lines, tree_num, var_names, class_levels, data) {
+c5_find_tree_start <- function(
+  tree_lines,
+  tree_num,
+  var_names,
+  class_levels,
+  data
+) {
   # Skip header lines (id and entries lines)
   current_line <- 1
   while (

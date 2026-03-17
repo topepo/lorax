@@ -405,3 +405,110 @@ test_that("as.party.bart does not show asterisks in node summaries", {
 
   expect_false(has_asterisk_summary)
 })
+
+test_that("reformat_data_bart works with numeric predictors", {
+  skip_if_not_installed("dbarts")
+
+  data <- get_regression_data(n = 50)
+
+  reformatted <- reformat_data_bart(y ~ x1 + x2, data = data)
+
+  expect_s3_class(reformatted, "data.frame")
+  expect_equal(nrow(reformatted), 50)
+  expect_equal(ncol(reformatted), 3)
+  expect_equal(names(reformatted), c("x1", "x2", "y"))
+  expect_true(is.numeric(reformatted$x1))
+  expect_true(is.numeric(reformatted$x2))
+  expect_true(is.numeric(reformatted$y))
+})
+
+test_that("reformat_data_bart expands factor predictors", {
+  skip_if_not_installed("dbarts")
+
+  data <- data.frame(
+    y = rnorm(30),
+    x1 = rnorm(30),
+    f1 = factor(rep(c("A", "B", "C"), 10))
+  )
+
+  reformatted <- reformat_data_bart(y ~ x1 + f1, data = data)
+
+  expect_s3_class(reformatted, "data.frame")
+  expect_equal(nrow(reformatted), 30)
+  expect_true(ncol(reformatted) > 3)
+  expect_true("x1" %in% names(reformatted))
+  expect_true("y" %in% names(reformatted))
+  expect_true(any(grepl("^f1\\.", names(reformatted))))
+  expect_true(is.numeric(reformatted$x1))
+  expect_true(is.numeric(reformatted$y))
+})
+
+test_that("reformat_data_bart preserves response variable format", {
+  skip_if_not_installed("dbarts")
+
+  # Factor response
+  data_factor <- data.frame(
+    y = factor(rep(c("A", "B"), 15)),
+    x1 = rnorm(30),
+    x2 = rnorm(30)
+  )
+
+  reformatted_factor <- reformat_data_bart(y ~ x1 + x2, data = data_factor)
+  expect_true(is.factor(reformatted_factor$y))
+  expect_equal(levels(reformatted_factor$y), c("A", "B"))
+
+  # Numeric response
+  data_numeric <- data.frame(
+    y = rnorm(30),
+    x1 = rnorm(30),
+    x2 = rnorm(30)
+  )
+
+  reformatted_numeric <- reformat_data_bart(y ~ x1 + x2, data = data_numeric)
+  expect_true(is.numeric(reformatted_numeric$y))
+})
+
+test_that("reformat_data_bart works with as.party.bart", {
+  skip_if_not_installed("dbarts")
+  skip_if_not_installed("palmerpenguins")
+
+  data("penguins", package = "palmerpenguins", envir = environment())
+  penguins <- na.omit(get("penguins", envir = environment()))
+
+  # Fit model with factor predictor
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = penguins[, c("bill_length_mm", "bill_depth_mm", "island")],
+    y.train = penguins$species,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 2
+  ))
+
+  # Use reformat_data_bart for as.party
+  reformatted <- reformat_data_bart(
+    species ~ bill_length_mm + bill_depth_mm + island,
+    data = penguins
+  )
+
+  p <- as.party(fit, tree = 1, data = reformatted)
+
+  expect_s3_class(p, "party")
+  expect_s3_class(p$node, "partynode")
+  expect_true(length(partykit::nodeids(p)) > 1)
+})
+
+test_that("reformat_data_bart validates inputs", {
+  skip_if_not_installed("dbarts")
+
+  data <- data.frame(x = 1:10, y = rnorm(10))
+
+  expect_snapshot(
+    reformat_data_bart("not a formula", data),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    reformat_data_bart(y ~ x, "not a data.frame"),
+    error = TRUE
+  )
+})

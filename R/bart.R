@@ -354,6 +354,94 @@ bart_contains_row <- function(node, target_row) {
     bart_contains_row(node$right, target_row)
 }
 
+#' Reformat data for BART party conversion
+#'
+#' Converts training data into the format expected by [as.party.bart()]. BART
+#' internally expands factor predictors into dummy variables, and this function
+#' applies the same transformation so the data matches BART's internal
+#' representation.
+#'
+#' @param formula A formula specifying the model structure (e.g., `y ~ x1 + x2`).
+#'   The response variable should be on the left side, and predictors on the
+#'   right.
+#' @param data A data.frame containing the variables in the formula.
+#'
+#' @return A data.frame with:
+#'   - Predictor columns expanded to match BART's internal format (factors
+#'     converted to dummy variables)
+#'   - Response variable in its original format (preserved as factor for
+#'     classification, numeric for regression)
+#'
+#' @details
+#' BART models expand factor predictors into dummy variables using one-hot
+#' encoding. When you call [as.party.bart()], you need to provide data that
+#' matches this internal representation. This function handles the conversion
+#' automatically.
+#'
+#' The function uses [dbarts::makeModelMatrixFromDataFrame()] to ensure the
+#' expansion matches exactly what BART does internally.
+#'
+#' @examples
+#' \dontrun{
+#' if (rlang::is_installed(c("dbarts", "palmerpenguins"))) {
+#'   data(penguins, package = "palmerpenguins")
+#'   penguins <- na.omit(penguins)
+#'
+#'   # Fit BART model
+#'   set.seed(123)
+#'   fit <- dbarts::bart(
+#'     x.train = penguins[, c("bill_length_mm", "bill_depth_mm", "island")],
+#'     y.train = penguins$species,
+#'     keeptrees = TRUE,
+#'     verbose = FALSE
+#'   )
+#'
+#'   # Reformat data to match BART's internal representation
+#'   reformatted <- reformat_data_bart(
+#'     species ~ bill_length_mm + bill_depth_mm + island,
+#'     data = penguins
+#'   )
+#'
+#'   # Use reformatted data with as.party
+#'   party_tree <- as.party(fit, tree = 1, data = reformatted)
+#' }
+#' }
+#'
+#' @export
+reformat_data_bart <- function(formula, data) {
+  rlang::check_installed("dbarts")
+
+  # Validate inputs
+  if (!inherits(formula, "formula")) {
+    cli::cli_abort("{.arg formula} must be a formula object.")
+  }
+
+  if (!is.data.frame(data)) {
+    cli::cli_abort("{.arg data} must be a data.frame.")
+  }
+
+  # Create model frame to get variables
+  mf <- stats::model.frame(formula, data = data)
+
+  # Extract response
+  response <- stats::model.response(mf)
+  response_name <- names(mf)[1]
+
+  # Get predictor variables (everything except response)
+  predictor_names <- names(mf)[-1]
+  predictor_data <- mf[, predictor_names, drop = FALSE]
+
+  # Expand predictors using dbarts method
+  # This matches exactly what BART does internally
+  expanded <- dbarts::makeModelMatrixFromDataFrame(predictor_data)
+
+  # Convert to data.frame and add response
+  result <- as.data.frame(expanded)
+  result[[response_name]] <- response
+
+  result
+}
+
 # ------------------------------------------------------------------------------
 
 #' Convert BART model to party object
@@ -580,17 +668,49 @@ as.party.bart <- function(obj, tree = 1L, chain = 1L, data, ...) {
     )
   }
 
-  # Check if var_names match columns in user's data
-  if (!all(var_names %in% names(data))) {
-    # BART likely expanded factors - need to expand user's data
-    # Use dbarts' internal expansion by passing through the data
+  # Identify response and predictor columns from user's data
+  all_cols <- names(data)
+  response_name <- NULL
+  predictor_cols <- NULL
 
-    # Find which columns from user's data were used as predictors
-    # (all except response)
-    all_cols <- names(data)
+  # Check if var_names match columns in data (simple case - no factor expansion needed)
+  if (all(var_names %in% all_cols)) {
+    # var_names are directly in data - no factor expansion
+    predictor_cols <- var_names
+    response_cols <- setdiff(all_cols, var_names)
 
-    # Try to identify response column
-    response_name <- NULL
+    if (length(response_cols) == 0) {
+      cli::cli_abort(
+        "{.arg data} must contain the response variable in addition to predictors."
+      )
+    }
+
+    # Try to identify response from call
+    if (!is.null(obj$call) && "y.train" %in% names(obj$call)) {
+      y_expr <- deparse(obj$call$y.train)
+      if (grepl("\\$|\\[\\[", y_expr)) {
+        col_match <- regmatches(
+          y_expr,
+          regexpr("(?<=\\$|\\[\\[\"|\\[\\[')\\w+", y_expr, perl = TRUE)
+        )
+        if (length(col_match) > 0 && col_match %in% response_cols) {
+          response_name <- col_match
+        }
+      }
+    }
+
+    # If we couldn't identify from call, use first non-predictor column
+    if (is.null(response_name)) {
+      response_name <- response_cols[1]
+      if (length(response_cols) > 1) {
+        cli::cli_warn(
+          "Could not identify response. Using first non-predictor column: {.field {response_name}}."
+        )
+      }
+    }
+  } else {
+    # var_names not in data - factors likely need expansion
+    # Try to identify response from call first
     if (!is.null(obj$call) && "y.train" %in% names(obj$call)) {
       y_expr <- deparse(obj$call$y.train)
       if (grepl("\\$|\\[\\[", y_expr)) {
@@ -604,86 +724,39 @@ as.party.bart <- function(obj, tree = 1L, chain = 1L, data, ...) {
       }
     }
 
-    # Separate predictors and response
-    if (!is.null(response_name)) {
-      predictor_cols <- setdiff(all_cols, response_name)
-    } else {
-      # Assume last column is response as a fallback
-      predictor_cols <- all_cols[-length(all_cols)]
+    # If we couldn't identify response, assume last column
+    if (is.null(response_name)) {
       response_name <- all_cols[length(all_cols)]
     }
 
-    # Expand the predictors to match BART's format
-    predictor_data <- data[, predictor_cols, drop = FALSE]
+    # Predictors are all columns except response
+    predictor_cols <- setdiff(all_cols, response_name)
+  }
 
-    # Use dbarts' makeModelMatrixFromDataFrame to expand factors the same way
-    expanded <- dbarts::makeModelMatrixFromDataFrame(predictor_data)
+  # Build formula for reformat_data_bart
+  formula_str <- paste(
+    response_name,
+    "~",
+    paste(predictor_cols, collapse = " + ")
+  )
+  formula <- stats::as.formula(formula_str)
 
-    # Check if expansion matches
-    if (
-      ncol(expanded) == length(var_names) &&
-        all(colnames(expanded) == var_names)
-    ) {
-      # Success! Use expanded data
-      party_data <- as.data.frame(expanded)
-      # Add response column in original format
-      party_data[[response_name]] <- data[[response_name]]
-    } else {
-      cli::cli_abort(
-        c(
-          "{.arg data} columns don't match BART's internal representation.",
-          "i" = "BART expects: {.field {var_names[1:min(3, length(var_names))]}}..",
-          "i" = "Found in data: {.field {names(data)[1:min(3, length(names(data)))]}}"
-        )
+  # Use reformat_data_bart to handle factor expansion automatically
+  party_data <- reformat_data_bart(formula, data)
+
+  # Verify that expansion matches BART's internal representation
+  expanded_var_names <- setdiff(names(party_data), response_name)
+  if (
+    length(expanded_var_names) != length(var_names) ||
+      !all(expanded_var_names == var_names)
+  ) {
+    cli::cli_abort(
+      c(
+        "{.arg data} columns don't match BART's internal representation.",
+        "i" = "BART expects: {.field {var_names[1:min(3, length(var_names))]}}...",
+        "i" = "Found after expansion: {.field {expanded_var_names[1:min(3, length(expanded_var_names))]}}..."
       )
-    }
-  } else {
-    # Simple case: data columns match var_names directly
-    response_cols <- setdiff(names(data), var_names)
-
-    if (length(response_cols) == 0) {
-      cli::cli_abort(
-        "{.arg data} must contain the response variable in addition to predictors."
-      )
-    }
-
-    # Determine response name
-    if (length(response_cols) == 1) {
-      response_name <- response_cols[1]
-    } else {
-      # Multiple candidates - try to identify from call
-      if (!is.null(obj$call) && "y.train" %in% names(obj$call)) {
-        y_expr <- deparse(obj$call$y.train)
-        if (grepl("\\$|\\[\\[", y_expr)) {
-          col_match <- regmatches(
-            y_expr,
-            regexpr("(?<=\\$|\\[\\[\"|\\[\\[')\\w+", y_expr, perl = TRUE)
-          )
-          if (length(col_match) > 0 && col_match %in% response_cols) {
-            response_name <- col_match
-          } else {
-            cli::cli_warn(
-              "Could not identify response. Using first non-predictor column: {.field {response_cols[1]}}."
-            )
-            response_name <- response_cols[1]
-          }
-        } else {
-          cli::cli_warn(
-            "Could not identify response. Using first non-predictor column: {.field {response_cols[1]}}."
-          )
-          response_name <- response_cols[1]
-        }
-      } else {
-        cli::cli_warn(
-          "Could not identify response. Using first non-predictor column: {.field {response_cols[1]}}."
-        )
-        response_name <- response_cols[1]
-      }
-    }
-
-    # Build party_data with predictors and response
-    party_data <- data[, var_names, drop = FALSE]
-    party_data[[response_name]] <- data[[response_name]]
+    )
   }
 
   # Create terms object

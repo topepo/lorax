@@ -70,3 +70,19 @@
       Error in `as.party()`:
       ! dbarts model must be fitted with `keeptrees = TRUE` to extract trees.
 
+# reformat_data_bart validates inputs
+
+    Code
+      reformat_data_bart("not a formula", data)
+    Condition
+      Error in `reformat_data_bart()`:
+      ! `formula` must be a formula object.
+
+---
+
+    Code
+      reformat_data_bart(y ~ x, "not a data.frame")
+    Condition
+      Error in `reformat_data_bart()`:
+      ! `data` must be a data.frame.
+

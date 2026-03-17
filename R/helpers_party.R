@@ -327,11 +327,105 @@ compute_fitted_node_ids <- function(node, data) {
     return(integer(0))
   }
 
-  node_ids <- integer(nrow(data))
+  n_obs <- nrow(data)
+  node_ids <- integer(n_obs)
 
-  # Traverse tree for each observation
-  for (i in seq_len(nrow(data))) {
-    node_ids[i] <- traverse_to_terminal(node, data[i, , drop = FALSE])
+  # Vectorized traversal: process all observations at once
+  traverse_vectorized(node, data, seq_len(n_obs), node_ids)
+}
+
+# Vectorized helper to traverse tree for multiple observations at once
+#
+# @param node Current partynode
+# @param data Full data.frame with all observations
+# @param obs_indices Integer vector of row indices to process at this node
+# @param node_ids Integer vector to store results (modified in place)
+#
+# @return Updated node_ids vector
+traverse_vectorized <- function(node, data, obs_indices, node_ids) {
+  if (length(obs_indices) == 0) {
+    return(node_ids)
+  }
+
+  # Check if terminal
+  kids <- partykit::kids_node(node)
+  if (is.null(kids) || length(kids) == 0) {
+    # Terminal node - assign all observations to this node ID
+    node_ids[obs_indices] <- partykit::id_node(node)
+    return(node_ids)
+  }
+
+  # Get split info
+  split <- partykit::split_node(node)
+  if (is.null(split)) {
+    node_ids[obs_indices] <- partykit::id_node(node)
+    return(node_ids)
+  }
+
+  # Determine which child each observation goes to
+  varid <- partykit::varid_split(split)
+  var_values <- data[obs_indices, varid]
+
+  # Handle missing values
+  is_missing <- is.na(var_values)
+  left_indices <- integer(0)
+  right_indices <- integer(0)
+
+  if (any(is_missing)) {
+    # Missing values default to left child
+    left_indices <- obs_indices[is_missing]
+  }
+
+  if (!all(is_missing)) {
+    # Get split direction for non-missing values
+    breaks <- partykit::breaks_split(split)
+    index <- partykit::index_split(split)
+    right <- partykit::right_split(split)
+
+    non_missing_indices <- obs_indices[!is_missing]
+    non_missing_values <- var_values[!is_missing]
+
+    if (!is.null(breaks)) {
+      # Numeric split
+      if (is.factor(non_missing_values)) {
+        # Factor variable: convert to numeric for comparison
+        var_numeric <- as.numeric(non_missing_values)
+      } else {
+        var_numeric <- non_missing_values
+      }
+
+      if (right) {
+        # Right interval closed: left when < breaks, right when >= breaks
+        goes_left <- var_numeric < breaks
+      } else {
+        # Left interval closed: left when <= breaks, right when > breaks
+        goes_left <- var_numeric <= breaks
+      }
+
+      left_indices <- c(left_indices, non_missing_indices[goes_left])
+      right_indices <- non_missing_indices[!goes_left]
+    } else {
+      # Categorical split with index
+      level_idx <- match(
+        as.character(non_missing_values),
+        levels(data[, varid])
+      )
+      # Handle NA from match or out of bounds
+      valid <- !is.na(level_idx) & level_idx <= length(index)
+      child_idx <- rep(1L, length(level_idx))
+      child_idx[valid] <- index[level_idx[valid]]
+
+      left_indices <- c(left_indices, non_missing_indices[child_idx == 1L])
+      right_indices <- non_missing_indices[child_idx == 2L]
+    }
+  }
+
+  # Recursively process each group
+  if (length(left_indices) > 0) {
+    node_ids <- traverse_vectorized(kids[[1]], data, left_indices, node_ids)
+  }
+  if (length(right_indices) > 0) {
+    node_ids <- traverse_vectorized(kids[[2]], data, right_indices, node_ids)
   }
 
   node_ids
