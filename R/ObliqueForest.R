@@ -4,16 +4,16 @@
 #' aorsf ObliqueForest model. Each rule represents the path from the root node
 #' to a terminal node using oblique (linear combination) splits.
 #'
-#' @param x An `ObliqueForest` object from the aorsf package
+#' @param x An `ObliqueForest` object from the \pkg{aorsf} package
 #' @param tree Integer specifying which tree to extract rules from (1-based).
 #'   Default is `1L` for the first tree. Must be between 1 and the number of
 #'   trees in the forest (`x$n_tree`).
 #' @param ... Not currently used
 #'
 #' @return A tibble with columns:
-#'   * `tree`: integer, the tree number (1-based)
-#'   * `rules`: list of R expressions, one per terminal node
-#'   * `id`: integer, the terminal node ID (1-based for user convenience)
+#'   * `tree`: integer, the tree number (1-based).
+#'   * `rules`: list of R expressions, one per terminal node.
+#'   * `id`: integer, the terminal node ID (1-based for user convenience).
 #'
 #' @details
 #'
@@ -47,7 +47,7 @@
 #'
 #' ## Factor Variables and One-Hot Encoding
 #'
-#' The aorsf package internally converts unordered factor variables to binary
+#' The \pkg{aorsf} package internally converts unordered factor variables to binary
 #' indicator (dummy) variables during tree building. However, the extracted
 #' rules automatically convert these back to factor comparisons for better
 #' interpretability:
@@ -65,11 +65,11 @@
 #'
 #' ## Predictor Scaling and Unscaling
 #'
-#' The aorsf package can optionally center and scale numeric predictors when
+#' The \pkg{aorsf} package can optionally center and scale numeric predictors when
 #' computing linear combinations for splits. This is controlled by the `scale_x`
 #' parameter in `orsf_control_*()` functions (default is `TRUE`).
 #'
-#' When `scale_x = TRUE`, aorsf uses `(x - mean) / sd` for numeric predictors
+#' When `scale_x = TRUE`, \pkg{aorsf} uses `(x - mean) / sd` for numeric predictors
 #' during split computations. The extracted rules automatically **unscale** the
 #' coefficients and thresholds back to the original units, so rules can be
 #' directly evaluated on the original (unscaled) data.
@@ -85,23 +85,31 @@
 #' `x$control$lincomb_scale`.
 #'
 #' @examples
-#' \dontrun{
-#' library(aorsf)
-#' penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
-#' forest <- orsf(species ~ ., data = penguins, n_tree = 10)
+#' if (rlang::is_installed(c("aorsf", "palmerpenguins"))) {
+#'   # Classification example
+#'   penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
+#'   set.seed(2847)
+#'   forest <- aorsf::orsf(species ~ ., data = penguins, n_tree = 3)
 #'
-#' # Extract rules from first tree (default)
-#' rules <- extract_rules(forest)
+#'   # Extract rules from first tree (default)
+#'   rules <- extract_rules(forest)
 #'
-#' # View rules as text
-#' rules$rules[[1]] |> rule_text(bullets = TRUE) |> cat("\n")
+#'   # View rules as text
+#'   rules$rules[[1]] |> rule_text(bullets = TRUE) |> cat("\n")
 #'
-#' # Extract rules from different tree
-#' rules5 <- extract_rules(forest, tree = 5)
+#'   # Extract rules from different tree
+#'   rules3 <- extract_rules(forest, tree = 3L)
+#'
+#'   # Regression example
+#'   data(mtcars)
+#'   set.seed(5193)
+#'   forest_reg <- aorsf::orsf(mpg ~ ., data = mtcars, n_tree = 3)
+#'   rules_reg <- extract_rules(forest_reg, tree = 1L)
 #' }
 #'
 #' @export
 extract_rules.ObliqueForest <- function(x, tree = 1L, ...) {
+  rlang::check_installed("aorsf")
   # Validate tree argument (1-based for user convenience)
   if (!is.numeric(tree) || length(tree) != 1 || tree != as.integer(tree)) {
     cli::cli_abort("{.arg tree} must be a single integer.")
@@ -139,7 +147,7 @@ extract_rules.ObliqueForest <- function(x, tree = 1L, ...) {
     rules = rules_list,
     id = as.integer(terminal_ids) + 1L # Convert from 0-indexed to 1-indexed
   ) |>
-    dplyr::arrange(.data$id) |>
+    dplyr::arrange(id) |>
     tibble::new_tibble(class = c("rule_set_ObliqueForest", "rule_set"))
 }
 

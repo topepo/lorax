@@ -7,15 +7,15 @@
 \method{extract_rules}{bart}(x, tree = 1L, chain = 1L, ...)
 }
 \arguments{
-\item{x}{A \code{bart} object from the dbarts package fitted with
+\item{x}{A \code{bart} object from the \pkg{dbarts} package fitted with
 \code{keeptrees = TRUE}.}
 
 \item{tree}{Integer specifying which tree to extract rules from. Uses
-1-based indexing (default is 1). BART models contain \code{n.trees} trees
+1-based indexing (default is \code{1L}). BART models contain \code{n.trees} trees
 in the ensemble.}
 
 \item{chain}{Integer specifying which MCMC chain to extract from. Uses
-1-based indexing (default is 1). Only relevant for models fitted with
+1-based indexing (default is \code{1L}). Only relevant for models fitted with
 multiple chains.}
 
 \item{...}{Not currently used.}
@@ -24,9 +24,9 @@ multiple chains.}
 A tibble with class \code{c("rule_set_bart", "rule_set")} and
 columns:
 \itemize{
-\item \code{tree}: integer, the tree number (matches input parameter)
-\item \code{rules}: list of R expressions, one per terminal node
-\item \code{id}: integer, terminal node ID (1-based)
+\item \code{tree}: integer, the tree number (matches input parameter).
+\item \code{rules}: list of R expressions, one per terminal node.
+\item \code{id}: integer, terminal node ID (1-based).
 }
 }
 \description{
@@ -44,21 +44,40 @@ threshold, right child when feature >= threshold. Rules are combinations
 of these conditions using AND logic.
 }
 \examples{
-\dontrun{
-library(dbarts)
+if (rlang::is_installed(c("dbarts", "palmerpenguins"))) {
+  # Classification example
+  data(penguins, package = "palmerpenguins")
+  penguins <- na.omit(penguins)
 
-fit <- bart(
-  y ~ .,
-  data = data,
-  keeptrees = TRUE,
-  verbose = FALSE
-)
+  train_data <- penguins[, c("bill_length_mm", "bill_depth_mm",
+                             "flipper_length_mm", "body_mass_g", "species")]
 
-# Extract rules from first tree
-rules <- extract_rules(fit, tree = 1)
+  set.seed(2847)
+  fit <- dbarts::bart(
+    x.train = train_data[, 1:4],
+    y.train = train_data$species,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 2
+  )
 
-# View as text
-rule_text(rules$rules[[1]])
+  # Extract rules from first tree
+  rules <- extract_rules(fit, tree = 1L)
+
+  # View as text
+  rule_text(rules$rules[[1]])
+
+  # Regression example
+  data(mtcars)
+  set.seed(5193)
+  fit_reg <- dbarts::bart(
+    x.train = mtcars[, -1],
+    y.train = mtcars$mpg,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 2
+  )
+  rules_reg <- extract_rules(fit_reg, tree = 1L)
 }
 
 }

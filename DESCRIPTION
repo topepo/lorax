@@ -20,9 +20,13 @@ Imports:
     tibble
 Suggests:
     aorsf,
+    C50,
     dbarts,
+    grf,
     lightgbm,
     palmerpenguins,
+    randomForest,
+    ranger,
     rpart,
     spelling,
     testthat (>= 3.0.0),

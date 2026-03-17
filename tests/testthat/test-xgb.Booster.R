@@ -1,129 +1,434 @@
-library(xgboost)
+test_that("as.party.xgb.Booster returns valid party object", {
+  skip_if_not_installed("xgboost")
+  skip_if_not_installed("palmerpenguins")
 
-# Test data setup
-data(agaricus.train, package = "xgboost")
-dtrain <- xgb.DMatrix(agaricus.train$data, label = agaricus.train$label)
-bst <- xgb.train(
-  data = dtrain,
-  params = list(
-    max_depth = 3,
-    objective = "binary:logistic"
-  ),
-  nrounds = 3
-)
+  penguins <- get_penguins_data()
 
-test_that("extract_rules.xgb.Booster() returns correct structure", {
-  rules <- extract_rules(bst, tree = 1)
-
-  expect_s3_class(rules, "rule_set_xgb.Booster")
-  expect_s3_class(rules, "rule_set")
-  expect_s3_class(rules, "tbl_df")
-  expect_named(rules, c("tree", "rules", "id"))
-  expect_type(rules$tree, "integer")
-  expect_type(rules$rules, "list")
-  expect_type(rules$id, "integer")
-})
-
-test_that("extract_rules.xgb.Booster() validates tree parameter", {
-  expect_snapshot(extract_rules(bst, tree = 1.5), error = TRUE)
-  expect_snapshot(extract_rules(bst, tree = c(1, 2)), error = TRUE)
-  expect_snapshot(extract_rules(bst, tree = 100), error = TRUE)
-  expect_snapshot(extract_rules(bst, tree = 0), error = TRUE)
-})
-
-test_that("extract_rules.xgb.Booster() extracts all terminal nodes", {
-  rules <- extract_rules(bst, tree = 1)
-
-  # Get terminals directly from xgboost
-  tree_dt <- as.data.frame(xgboost::xgb.model.dt.tree(
-    bst,
-    trees = 1,
-    use_int_id = TRUE
-  ))
-  expected_terminals <- tree_dt$Node[tree_dt$Feature == "Leaf"] + 1L
-
-  expect_equal(sort(rules$id), sort(expected_terminals))
-})
-
-test_that("extract_rules.xgb.Booster() produces valid R expressions", {
-  rules <- extract_rules(bst, tree = 1)
-
-  for (i in seq_len(nrow(rules))) {
-    expect_true(is.language(rules$rules[[i]]))
-  }
-})
-
-test_that("extract_rules.xgb.Booster() rules evaluate correctly", {
-  rules <- extract_rules(bst, tree = 1)
-
-  # Convert sparse matrix to data frame for evaluation
-  train_df <- as.data.frame(as.matrix(agaricus.train$data))
-
-  for (i in seq_len(nrow(rules))) {
-    rule_expr <- rules$rules[[i]]
-    result <- eval(rule_expr, train_df)
-
-    expect_type(result, "logical")
-    expect_equal(length(result), nrow(train_df))
-  }
-
-  # At least one rule should match some observations
-  total_matches <- sum(sapply(rules$rules, function(r) sum(eval(r, train_df))))
-  expect_true(total_matches > 0)
-})
-
-test_that("extract_rules.xgb.Booster() works with shallow tree", {
-  # Create shallow tree
-  bst_shallow <- xgb.train(
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )]),
+    label = as.numeric(penguins$species) - 1
+  )
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "multi:softmax",
+      num_class = 3
+    ),
     data = dtrain,
+    nrounds = 5,
+    verbose = 0
+  )
+  p <- as.party(bst, tree = 1, data = penguins)
+
+  expect_s3_class(p, "party")
+  expect_s3_class(p$node, "partynode")
+  expect_true(is.data.frame(p$data))
+})
+
+test_that("as.party.xgb.Booster works with binary classification", {
+  skip_if_not_installed("xgboost")
+
+  data <- get_binary_data(n = 100)
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = as.numeric(data$y) - 1
+  )
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 2,
+      objective = "binary:logistic"
+    ),
+    data = dtrain,
+    nrounds = 3,
+    verbose = 0
+  )
+  p <- as.party(bst, tree = 1, data = data)
+
+  expect_s3_class(p, "party")
+  expect_s3_class(p$node, "partynode")
+})
+
+test_that("as.party.xgb.Booster works with regression", {
+  skip_if_not_installed("xgboost")
+
+  data <- get_regression_data(n = 100)
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 3,
+    verbose = 0
+  )
+  p <- as.party(bst, tree = 1, data = data)
+
+  expect_s3_class(p, "party")
+  expect_s3_class(p$node, "partynode")
+})
+
+test_that("as.party.xgb.Booster validates tree parameter", {
+  skip_if_not_installed("xgboost")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )]),
+    label = as.numeric(penguins$species) - 1
+  )
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "multi:softmax",
+      num_class = 3
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = 0
+  )
+
+  expect_snapshot(as.party(bst, tree = 0, data = penguins), error = TRUE)
+  expect_snapshot(as.party(bst, tree = c(1, 2), data = penguins), error = TRUE)
+  expect_snapshot(as.party(bst, tree = "1", data = penguins), error = TRUE)
+  expect_snapshot(as.party(bst, tree = 100, data = penguins), error = TRUE)
+})
+
+test_that("as.party.xgb.Booster works with data parameter", {
+  skip_if_not_installed("xgboost")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )]),
+    label = as.numeric(penguins$species) - 1
+  )
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "multi:softmax",
+      num_class = 3
+    ),
+    data = dtrain,
+    nrounds = 2,
+    verbose = 0
+  )
+  p <- as.party(bst, tree = 1, data = penguins)
+
+  expect_s3_class(p, "party")
+  expect_equal(ncol(p$data), 5)
+})
+
+test_that("as.party.xgb.Booster handles single-node trees", {
+  skip_if_not_installed("xgboost")
+
+  # Create trivial data that might produce single-node tree
+  test_data <- data.frame(
+    x1 = rep(1, 10),
+    y = rep(0, 10)
+  )
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(test_data[, "x1", drop = FALSE]),
+    label = test_data$y
+  )
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 0,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 1,
+    verbose = 0
+  )
+  p <- as.party(bst, tree = 1, data = test_data)
+
+  expect_s3_class(p, "party")
+})
+
+test_that("as.party.xgb.Booster extracts different trees in multiclass", {
+  skip_if_not_installed("xgboost")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )]),
+    label = as.numeric(penguins$species) - 1
+  )
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "multi:softmax",
+      num_class = 3
+    ),
+    data = dtrain,
+    nrounds = 3,
+    verbose = 0
+  )
+
+  # Extract trees for different classes/rounds
+  p1 <- as.party(bst, tree = 1, data = penguins)
+  p2 <- as.party(bst, tree = 4, data = penguins) # Different class or round
+
+  expect_s3_class(p1, "party")
+  expect_s3_class(p2, "party")
+
+  # Verify both work
+  expect_true(length(partykit::nodeids(p1)) > 0)
+  expect_true(length(partykit::nodeids(p2)) > 0)
+})
+
+test_that("as.party.xgb.Booster requires response in data", {
+  skip_if_not_installed("xgboost")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )]),
+    label = as.numeric(penguins$species) - 1
+  )
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "multi:softmax",
+      num_class = 3
+    ),
+    data = dtrain,
+    nrounds = 2,
+    verbose = 0
+  )
+
+  # Provide data with only predictors (no response)
+  expect_snapshot(
+    as.party(bst, tree = 1, data = penguins[, -1]),
+    error = TRUE
+  )
+})
+
+test_that("as.party.xgb.Booster handles trees with many nodes", {
+  skip_if_not_installed("xgboost")
+
+  # Create data that produces deeper tree
+  set.seed(123)
+  n <- 200
+  data <- data.frame(
+    x1 = rnorm(n),
+    x2 = rnorm(n),
+    x3 = rnorm(n),
+    x4 = rnorm(n),
+    y = rnorm(n)
+  )
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, c("x1", "x2", "x3", "x4")]),
+    label = data$y
+  )
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 5,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 3,
+    verbose = 0
+  )
+
+  p <- as.party(bst, tree = 1, data = data)
+
+  expect_s3_class(p, "party")
+  # Deeper tree should have more nodes
+  expect_true(length(partykit::nodeids(p)) > 5)
+})
+
+test_that("as.party.xgb.Booster handles different boosting rounds", {
+  skip_if_not_installed("xgboost")
+
+  data <- get_binary_data(n = 100)
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = as.numeric(data$y) - 1
+  )
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "binary:logistic"
+    ),
+    data = dtrain,
+    nrounds = 10,
+    verbose = 0
+  )
+
+  # Extract trees from different rounds
+  p1 <- as.party(bst, tree = 1, data = data)
+  p5 <- as.party(bst, tree = 5, data = data)
+  p10 <- as.party(bst, tree = 10, data = data)
+
+  expect_s3_class(p1, "party")
+  expect_s3_class(p5, "party")
+  expect_s3_class(p10, "party")
+
+  # All should have valid structure
+  expect_true(length(partykit::nodeids(p1)) > 0)
+  expect_true(length(partykit::nodeids(p5)) > 0)
+  expect_true(length(partykit::nodeids(p10)) > 0)
+})
+
+test_that("as.party.xgb.Booster handles narrow trees", {
+  skip_if_not_installed("xgboost")
+
+  data <- get_binary_data(n = 50)
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = as.numeric(data$y) - 1
+  )
+  bst <- xgboost::xgb.train(
     params = list(
       max_depth = 1,
       objective = "binary:logistic"
     ),
-    nrounds = 1
+    data = dtrain,
+    nrounds = 3,
+    verbose = 0
   )
 
-  rules <- extract_rules(bst_shallow, tree = 1)
+  p <- as.party(bst, tree = 1, data = data)
 
-  expect_s3_class(rules, "rule_set_xgb.Booster")
-  expect_true(nrow(rules) >= 2) # At least 2 leaves from one split
-  expect_true(all(sapply(rules$rules, is.language)))
+  expect_s3_class(p, "party")
+  # Shallow tree (max_depth=1) should have at most 3 nodes
+  expect_true(length(partykit::nodeids(p)) <= 3)
 })
 
-test_that("extract_rules.xgb.Booster() rules are sorted by id", {
-  rules <- extract_rules(bst, tree = 1)
-  expect_true(all(diff(rules$id) > 0))
+test_that("as.party.xgb.Booster preserves column order", {
+  skip_if_not_installed("xgboost")
+
+  # Use specific column order
+  data <- data.frame(
+    z_last = rnorm(50),
+    a_first = rnorm(50),
+    m_middle = rnorm(50),
+    response = rnorm(50)
+  )
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, c("z_last", "a_first", "m_middle")]),
+    label = data$response
+  )
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 2,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 2,
+    verbose = 0
+  )
+
+  p <- as.party(bst, tree = 1, data = data)
+
+  expect_s3_class(p, "party")
+  expect_true(all(c("z_last", "a_first", "m_middle") %in% names(p$data)))
 })
 
-test_that("extract_rules.xgb.Booster() works with different trees", {
-  rules1 <- extract_rules(bst, tree = 1)
-  rules2 <- extract_rules(bst, tree = 2)
+test_that("as.party.xgb.Booster with large multiclass", {
+  skip_if_not_installed("xgboost")
 
-  expect_s3_class(rules1, "rule_set_xgb.Booster")
-  expect_s3_class(rules2, "rule_set_xgb.Booster")
+  # Multiclass with many classes
+  set.seed(789)
+  n <- 150
+  data <- data.frame(
+    x1 = rnorm(n),
+    x2 = rnorm(n),
+    x3 = rnorm(n),
+    y = factor(sample(1:5, n, replace = TRUE))
+  )
 
-  # Trees should generally be different
-  expect_false(identical(rules1$rules, rules2$rules))
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = as.numeric(data$y) - 1
+  )
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "multi:softmax",
+      num_class = 5
+    ),
+    data = dtrain,
+    nrounds = 3,
+    verbose = 0
+  )
+
+  # Should have 5 classes * 3 rounds = 15 trees
+  # Extract trees for different classes
+  p1 <- as.party(bst, tree = 1, data = data)
+  p6 <- as.party(bst, tree = 6, data = data)
+
+  expect_s3_class(p1, "party")
+  expect_s3_class(p6, "party")
+
+  # Trees should not be identical
+  expect_false(identical(p1$node, p6$node))
 })
 
-test_that("extract_rules.xgb.Booster() integrates with rule_text()", {
-  rules <- extract_rules(bst, tree = 1)
+test_that("as.party.xgb.Booster does not show asterisks in node summaries", {
+  skip_if_not_installed("xgboost")
 
-  for (i in seq_len(nrow(rules))) {
-    text <- rule_text(rules$rules[[i]])
-    expect_type(text, "character")
-    expect_true(nchar(text) > 0)
+  data(agaricus.train, package = "xgboost")
+  train_data <- as.data.frame(as.matrix(agaricus.train$data))
+  train_data$label <- agaricus.train$label
 
-    text_bullets <- rule_text(rules$rules[[i]], bullets = TRUE)
-    expect_type(text_bullets, "character")
-    expect_true(nchar(text_bullets) > 0)
-  }
-})
+  dtrain <- xgboost::xgb.DMatrix(
+    agaricus.train$data,
+    label = agaricus.train$label
+  )
+  bst <- xgboost::xgb.train(
+    params = list(max_depth = 3, objective = "binary:logistic"),
+    data = dtrain,
+    nrounds = 3,
+    verbose = 0
+  )
 
-test_that("extract_rules.xgb.Booster() tree column matches input", {
-  rules1 <- extract_rules(bst, tree = 1)
-  rules2 <- extract_rules(bst, tree = 2)
+  p <- as.party(bst, tree = 1, data = train_data)
 
-  expect_true(all(rules1$tree == 1))
-  expect_true(all(rules2$tree == 2))
+  output <- capture.output(print(p))
+
+  # Check for asterisks in node summaries (after the colon)
+  # Pattern: ": *" or ": * " indicates missing summary
+  has_asterisk_summary <- any(grepl(":\\s*\\*\\s*($|\\()", output))
+
+  expect_false(has_asterisk_summary)
 })

@@ -26,8 +26,8 @@ returns as a single line.}
 numeric values in the rule. Default is 4.}
 
 \item{max_width}{Maximum width for the output when \code{bullets = FALSE}. If the
-formatted rule exceeds this width, it will be truncated with \code{...}
-appended. The \code{...} is included in the width count. Default is \code{Inf} (no
+formatted rule exceeds this width, it will be truncated with \code{..}
+appended. The \code{..} is included in the width count. Default is \code{Inf} (no
 truncation).}
 
 \item{key}{Optional data frame or tibble with columns \code{original} and \code{label}

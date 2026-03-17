@@ -20,7 +20,7 @@ extract_rules.party <- function(x, ...) {
     id = as.integer(terminal_ids),
     rules = rules_list
   ) |>
-    dplyr::arrange(.data$id) |>
+    dplyr::arrange(id) |>
     tibble::new_tibble(class = c("rule_set_party", "rule_set"))
 }
 

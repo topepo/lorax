@@ -7,7 +7,7 @@
 \method{extract_rules}{ObliqueForest}(x, tree = 1L, ...)
 }
 \arguments{
-\item{x}{An \code{ObliqueForest} object from the aorsf package}
+\item{x}{An \code{ObliqueForest} object from the \pkg{aorsf} package}
 
 \item{tree}{Integer specifying which tree to extract rules from (1-based).
 Default is \code{1L} for the first tree. Must be between 1 and the number of
@@ -18,9 +18,9 @@ trees in the forest (\code{x$n_tree}).}
 \value{
 A tibble with columns:
 \itemize{
-\item \code{tree}: integer, the tree number (1-based)
-\item \code{rules}: list of R expressions, one per terminal node
-\item \code{id}: integer, the terminal node ID (1-based for user convenience)
+\item \code{tree}: integer, the tree number (1-based).
+\item \code{rules}: list of R expressions, one per terminal node.
+\item \code{id}: integer, the terminal node ID (1-based for user convenience).
 }
 }
 \description{
@@ -66,7 +66,7 @@ with R conventions.
 
 \subsection{Factor Variables and One-Hot Encoding}{
 
-The aorsf package internally converts unordered factor variables to binary
+The \pkg{aorsf} package internally converts unordered factor variables to binary
 indicator (dummy) variables during tree building. However, the extracted
 rules automatically convert these back to factor comparisons for better
 interpretability:
@@ -86,11 +86,11 @@ Factor indicators are not scaled since they are binary 0/1 values.
 
 \subsection{Predictor Scaling and Unscaling}{
 
-The aorsf package can optionally center and scale numeric predictors when
+The \pkg{aorsf} package can optionally center and scale numeric predictors when
 computing linear combinations for splits. This is controlled by the \code{scale_x}
 parameter in \verb{orsf_control_*()} functions (default is \code{TRUE}).
 
-When \code{scale_x = TRUE}, aorsf uses \code{(x - mean) / sd} for numeric predictors
+When \code{scale_x = TRUE}, \pkg{aorsf} uses \code{(x - mean) / sd} for numeric predictors
 during split computations. The extracted rules automatically \strong{unscale} the
 coefficients and thresholds back to the original units, so rules can be
 directly evaluated on the original (unscaled) data.
@@ -107,19 +107,26 @@ regardless of the \code{scale_x} setting. To determine if scaling was used, chec
 }
 }
 \examples{
-\dontrun{
-library(aorsf)
-penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
-forest <- orsf(species ~ ., data = penguins, n_tree = 10)
+if (rlang::is_installed(c("aorsf", "palmerpenguins"))) {
+  # Classification example
+  penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
+  set.seed(2847)
+  forest <- aorsf::orsf(species ~ ., data = penguins, n_tree = 3)
 
-# Extract rules from first tree (default)
-rules <- extract_rules(forest)
+  # Extract rules from first tree (default)
+  rules <- extract_rules(forest)
 
-# View rules as text
-rules$rules[[1]] |> rule_text(bullets = TRUE) |> cat("\n")
+  # View rules as text
+  rules$rules[[1]] |> rule_text(bullets = TRUE) |> cat("\n")
 
-# Extract rules from different tree
-rules5 <- extract_rules(forest, tree = 5)
+  # Extract rules from different tree
+  rules3 <- extract_rules(forest, tree = 3L)
+
+  # Regression example
+  data(mtcars)
+  set.seed(5193)
+  forest_reg <- aorsf::orsf(mpg ~ ., data = mtcars, n_tree = 3)
+  rules_reg <- extract_rules(forest_reg, tree = 1L)
 }
 
 }

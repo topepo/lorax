@@ -1,0 +1,252 @@
+test_that("as.party.C5.0 returns valid party object for single tree", {
+  skip_if_not_installed("C50")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  c5_model <- C50::C5.0(species ~ ., data = penguins)
+  p <- as.party(c5_model, tree = 1, data = penguins)
+
+  expect_s3_class(p, "party")
+  expect_s3_class(p$node, "partynode")
+  expect_true(is.data.frame(p$data))
+})
+
+test_that("as.party.C5.0 works with binary classification", {
+  skip_if_not_installed("C50")
+
+  data <- get_binary_data(n = 100)
+
+  c5_model <- C50::C5.0(y ~ ., data = data)
+  p <- as.party(c5_model, tree = 1, data = data)
+
+  expect_s3_class(p, "party")
+  expect_s3_class(p$node, "partynode")
+})
+
+test_that("as.party.C5.0 works with iris data", {
+  skip_if_not_installed("C50")
+
+  iris_data <- get_iris_data()
+
+  c5_model <- C50::C5.0(Species ~ ., data = iris_data)
+  p <- as.party(c5_model, tree = 1, data = iris_data)
+
+  expect_s3_class(p, "party")
+  expect_s3_class(p$node, "partynode")
+})
+
+test_that("as.party.C5.0 validates tree parameter", {
+  skip_if_not_installed("C50")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+  c5_model <- C50::C5.0(species ~ ., data = penguins)
+
+  expect_snapshot(as.party(c5_model, tree = 0, data = penguins), error = TRUE)
+  # When tree exceeds num_trials, it should warn and use max tree
+  expect_snapshot(as.party(c5_model, tree = 5, data = penguins))
+  expect_snapshot(
+    as.party(c5_model, tree = c(1, 2), data = penguins),
+    error = TRUE
+  )
+  expect_snapshot(as.party(c5_model, tree = "1", data = penguins), error = TRUE)
+})
+
+test_that("as.party.C5.0 requires data parameter", {
+  skip_if_not_installed("C50")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+  c5_model <- C50::C5.0(species ~ ., data = penguins)
+
+  expect_snapshot(as.party(c5_model, tree = 1), error = TRUE)
+})
+
+test_that("as.party.C5.0 works with boosted models", {
+  skip_if_not_installed("C50")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+  c5_boost <- C50::C5.0(species ~ ., data = penguins, trials = 10)
+
+  # Extract first and second trees
+  p1 <- as.party(c5_boost, tree = 1, data = penguins)
+  p2 <- as.party(c5_boost, tree = 2, data = penguins)
+
+  expect_s3_class(p1, "party")
+  expect_s3_class(p2, "party")
+
+  # Trees should be different
+  expect_false(isTRUE(all.equal(p1, p2)))
+
+  # Check tree number validation
+  expect_snapshot(as.party(c5_boost, tree = 0, data = penguins), error = TRUE)
+  # When tree exceeds num_trials, it should warn and use max tree
+  expect_snapshot(as.party(c5_boost, tree = 11, data = penguins))
+})
+
+test_that("as.party.C5.0 extracts different boosted trees", {
+  skip_if_not_installed("C50")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+  c5_boost <- C50::C5.0(species ~ ., data = penguins, trials = 5)
+
+  # Extract multiple trees
+  p1 <- as.party(c5_boost, tree = 1, data = penguins)
+  p2 <- as.party(c5_boost, tree = 2, data = penguins)
+  p3 <- as.party(c5_boost, tree = 5, data = penguins)
+
+  # All should be valid
+  expect_s3_class(p1, "party")
+  expect_s3_class(p2, "party")
+  expect_s3_class(p3, "party")
+
+  # Get root splits to verify they're different
+  split1 <- partykit::split_node(p1$node)
+  split2 <- partykit::split_node(p2$node)
+
+  # At least one property should differ (varid or threshold)
+  varid1 <- partykit::varid_split(split1)
+  varid2 <- partykit::varid_split(split2)
+  breaks1 <- partykit::breaks_split(split1)
+  breaks2 <- partykit::breaks_split(split2)
+
+  # Trees should not be identical
+  expect_false(
+    identical(varid1, varid2) &&
+      identical(breaks1, breaks2) &&
+      identical(p1$node, p2$node)
+  )
+})
+
+test_that("as.party.C5.0 rejects rule-based models", {
+  skip_if_not_installed("C50")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+  c5_rules <- C50::C5.0(species ~ ., data = penguins, rules = TRUE)
+
+  expect_snapshot(as.party(c5_rules, tree = 1, data = penguins), error = TRUE)
+})
+
+test_that("as.party.C5.0 does not show asterisks in node summaries", {
+  skip_if_not_installed("C50")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  c5_model <- C50::C5.0(species ~ ., data = penguins)
+  p <- as.party(c5_model, tree = 1, data = penguins)
+
+  output <- capture.output(print(p))
+
+  # Check for asterisks in node summaries (after the colon)
+  # Pattern: ": *" or ": * " indicates missing summary
+  has_asterisk_summary <- any(grepl(":\\s*\\*\\s*($|\\()", output))
+
+  expect_false(has_asterisk_summary)
+})
+
+test_that("as.party.C5.0 properly assigns all observations to terminal nodes", {
+  skip_if_not_installed("C50")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  c5_model <- C50::C5.0(species ~ ., data = penguins)
+  p <- as.party(c5_model, tree = 1, data = penguins)
+
+  # Get fitted node IDs
+  fitted_ids <- p$fitted[["(fitted)"]]
+
+  # Check that we have the right number of observations
+  expect_equal(length(fitted_ids), nrow(penguins))
+
+  # Check that all fitted IDs are terminal nodes
+  terminal_nodes <- partykit::nodeids(p, terminal = TRUE)
+  expect_true(all(fitted_ids %in% terminal_nodes))
+
+  # Count observations per node
+  obs_per_node <- table(fitted_ids)
+
+  # Sum should equal total observations (no observations lost)
+  expect_equal(sum(obs_per_node), nrow(penguins))
+
+  # All used terminal nodes should have at least one observation
+  expect_true(all(obs_per_node > 0))
+})
+
+test_that("as.party.C5.0 properly routes observations through categorical splits", {
+  skip_if_not_installed("C50")
+
+  # Use wa_trees data which has categorical variables and multiway splits
+  wa_trees <- get_wa_trees_data()
+
+  c5_model <- C50::C5.0(class ~ ., data = wa_trees)
+  p <- as.party(c5_model, tree = 1, data = wa_trees)
+
+  # Get fitted node IDs
+  fitted_ids <- p$fitted[["(fitted)"]]
+
+  # Check that we have the right number of observations
+  expect_equal(length(fitted_ids), nrow(wa_trees))
+
+  # Check that all fitted IDs are terminal nodes
+  terminal_nodes <- partykit::nodeids(p, terminal = TRUE)
+  expect_true(all(fitted_ids %in% terminal_nodes))
+
+  # Count observations per node
+  obs_per_node <- table(fitted_ids)
+
+  # Sum should equal total observations (no observations lost)
+  expect_equal(sum(obs_per_node), nrow(wa_trees))
+
+  # Verify no non-empty nodes have NA predictions
+  # (empty nodes with n=0 are OK and expected for some categorical splits)
+  used_nodes <- unique(fitted_ids)
+  for (node_id in used_nodes) {
+    node_obs_count <- sum(fitted_ids == node_id)
+    expect_true(node_obs_count > 0)
+  }
+})
+
+test_that("as.party.C5.0 handles multiway categorical splits correctly", {
+  skip_if_not_installed("C50")
+
+  # Use wa_trees which has a 4-way county split
+  wa_trees <- get_wa_trees_data()
+
+  c5_model <- C50::C5.0(class ~ ., data = wa_trees)
+  p <- as.party(c5_model, tree = 1, data = wa_trees)
+
+  # Find a node with a categorical split
+  # The root's right child (precip_annual >= 418) should split on county
+  root <- p$node
+  kids <- partykit::kids_node(root)
+
+  # Assuming second child is the high precipitation branch
+  if (length(kids) >= 2) {
+    node2 <- kids[[2]]
+    split2 <- partykit::split_node(node2)
+
+    if (!is.null(split2)) {
+      # Check if this is a categorical split
+      breaks <- partykit::breaks_split(split2)
+
+      # If breaks is NULL, it's categorical
+      if (is.null(breaks)) {
+        # Should have multiple children (multiway split)
+        node2_kids <- partykit::kids_node(node2)
+        expect_true(length(node2_kids) > 2)
+
+        # Index vector should exist and map all factor levels
+        index <- partykit::index_split(split2)
+        expect_true(length(index) > 0)
+        expect_true(all(index >= 1))
+        expect_true(all(index <= length(node2_kids)))
+      }
+    }
+  }
+})

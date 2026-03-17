@@ -7,10 +7,10 @@
 \method{extract_rules}{xgb.Booster}(x, tree = 1L, ...)
 }
 \arguments{
-\item{x}{An \code{xgb.Booster} object from the xgboost package.}
+\item{x}{An \code{xgb.Booster} object from the \pkg{xgboost} package.}
 
 \item{tree}{Integer specifying which tree to extract rules from. Uses
-1-based indexing (default is 1). For multiclass models with \code{num_class}
+1-based indexing (default is \code{1L}). For multiclass models with \code{num_class}
 classes and \code{nrounds} boosting rounds, there are \code{num_class * nrounds}
 total trees.}
 
@@ -20,44 +20,56 @@ total trees.}
 A tibble with class \code{c("rule_set_xgb.Booster", "rule_set")} and
 columns:
 \itemize{
-\item \code{tree}: integer, the tree number (matches input parameter)
-\item \code{rules}: list of R expressions, one per terminal node
-\item \code{id}: integer, terminal node ID (1-based)
+\item \code{tree}: integer, the tree number (matches input parameter).
+\item \code{rules}: list of R expressions, one per terminal node.
+\item \code{id}: integer, terminal node ID (1-based).
 }
 }
 \description{
-Extract interpretable decision rules from a single tree in an XGBoost
+Extract interpretable decision rules from a single tree in an \pkg{xgboost}
 boosted tree model. Each terminal node (leaf) becomes one rule representing
 the path from root to that leaf.
 }
 \details{
-XGBoost uses 0-based indexing internally, but this function uses 1-based
+\pkg{xgboost} uses 0-based indexing internally, but this function uses 1-based
 indexing for the \code{tree} parameter and output \code{id} column (R convention).
 
-Split conditions in XGBoost follow the pattern: Yes branch when feature <
+Split conditions in \pkg{xgboost} follow the pattern: Yes branch when feature <
 threshold, No branch when feature >= threshold. Rules are combinations of
 these conditions using AND logic.
 
-Note: This function does not work with XGBoost models containing categorical
-features or non-tree boosters (gblinear).
+Note: This function does not work with \pkg{xgboost} models containing categorical
+features or non-tree boosters (\code{gblinear}).
 }
 \examples{
-\dontrun{
-library(xgboost)
-data(agaricus.train, package = "xgboost")
+if (rlang::is_installed("xgboost")) {
+  data(agaricus.train, package = "xgboost")
 
-bst <- xgb.train(
-  data = xgb.DMatrix(agaricus.train$data, label = agaricus.train$label),
-  nrounds = 5,
-  max_depth = 3,
-  objective = "binary:logistic"
-)
+  # Binary classification
+  set.seed(2847)
+  bst <- xgboost::xgb.train(
+    data = xgboost::xgb.DMatrix(agaricus.train$data, label = agaricus.train$label),
+    nrounds = 3,
+    max_depth = 3,
+    objective = "binary:logistic"
+  )
 
 # Extract rules from first tree
-rules <- extract_rules(bst, tree = 1)
+rules <- extract_rules(bst, tree = 1L)
 
 # View as text
 rule_text(rules$rules[[1]])
+
+  # Regression example
+  data(mtcars)
+  set.seed(8472)
+  bst_reg <- xgboost::xgb.train(
+    data = xgboost::xgb.DMatrix(as.matrix(mtcars[, -1]), label = mtcars$mpg),
+    nrounds = 3,
+    max_depth = 3,
+    objective = "reg:squarederror"
+  )
+  rules_reg <- extract_rules(bst_reg, tree = 1L)
 }
 
 }

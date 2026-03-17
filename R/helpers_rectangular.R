@@ -5,10 +5,10 @@
 #' [extract_rules()] to construct paths to terminal nodes.
 #'
 #' @param split A named list with three required elements:
-#'   * `column`: character string - variable name for the split
-#'   * `value`: numeric, character, or character vector - the split
+#'   * `column`: character string - variable name for the split.
+#'   * `value`: numeric, character, or character vector - the split.
 #'     threshold/value(s)
-#'   * `operator`: character string - one of: `<`, `<=`, `>`, `>=`, `==`,
+#'   * `operator`: character string - one of: `<`, `<=`, `>`, `>=`, `==`,.
 #'     `%in%`
 #'
 #' @return An R expression object that can be evaluated.

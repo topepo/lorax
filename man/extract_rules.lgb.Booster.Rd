@@ -7,10 +7,10 @@
 \method{extract_rules}{lgb.Booster}(x, tree = 1L, ...)
 }
 \arguments{
-\item{x}{An \code{lgb.Booster} object from the lightgbm package.}
+\item{x}{An \code{lgb.Booster} object from the \pkg{lightgbm} package.}
 
 \item{tree}{Integer specifying which tree to extract rules from. Uses
-1-based indexing (default is 1). For multiclass models with \code{num_class}
+1-based indexing (default is \code{1L}). For multiclass models with \code{num_class}
 classes and \code{nrounds} boosting rounds, there are \code{num_class * nrounds}
 total trees.}
 
@@ -20,9 +20,9 @@ total trees.}
 A tibble with class \code{c("rule_set_lgb.Booster", "rule_set")} and
 columns:
 \itemize{
-\item \code{tree}: integer, the tree number (matches input parameter)
-\item \code{rules}: list of R expressions, one per terminal node
-\item \code{id}: integer, terminal node ID (1-based)
+\item \code{tree}: integer, the tree number (matches input parameter).
+\item \code{rules}: list of R expressions, one per terminal node.
+\item \code{id}: integer, terminal node ID (1-based).
 }
 }
 \description{
@@ -31,33 +31,46 @@ boosted tree model. Each terminal node (leaf) becomes one rule representing
 the path from root to that leaf.
 }
 \details{
-LightGBM uses 0-based indexing internally, but this function uses 1-based
+\pkg{lightgbm} uses 0-based indexing internally, but this function uses 1-based
 indexing for the \code{tree} parameter and output \code{id} column (R convention).
 
-Split conditions in LightGBM follow the pattern: left child when feature <=
+Split conditions in \pkg{lightgbm} follow the pattern: left child when feature <=
 threshold, right child when feature > threshold. Rules are combinations of
 these conditions using AND logic.
 
-Note: This function does not work with LightGBM models containing categorical
+Note: This function does not work with \pkg{lightgbm} models containing categorical
 features.
 }
 \examples{
-\dontrun{
-library(lightgbm)
-data(agaricus.train, package = "lightgbm")
+if (rlang::is_installed("lightgbm")) {
+  # Binary classification
+  data(agaricus.train, package = "lightgbm")
+  dtrain <- lightgbm::lgb.Dataset(agaricus.train$data, label = agaricus.train$label)
+  set.seed(2847)
+  bst <- lightgbm::lgb.train(
+    params = list(objective = "binary", max_depth = 3),
+    data = dtrain,
+    nrounds = 3,
+    verbose = -1
+  )
 
-dtrain <- lgb.Dataset(agaricus.train$data, label = agaricus.train$label)
-bst <- lgb.train(
-  params = list(objective = "binary", max_depth = 3),
-  data = dtrain,
-  nrounds = 5
-)
+  # Extract rules from first tree
+  rules <- extract_rules(bst, tree = 1L)
 
-# Extract rules from first tree
-rules <- extract_rules(bst, tree = 1)
+  # View as text
+  rule_text(rules$rules[[1]])
 
-# View as text
-rule_text(rules$rules[[1]])
+  # Regression example
+  data(mtcars)
+  dtrain_reg <- lightgbm::lgb.Dataset(as.matrix(mtcars[, -1]), label = mtcars$mpg)
+  set.seed(5193)
+  bst_reg <- lightgbm::lgb.train(
+    params = list(objective = "regression", max_depth = 3, min_data_in_leaf = 1),
+    data = dtrain_reg,
+    nrounds = 3,
+    verbose = -1
+  )
+  rules_reg <- extract_rules(bst_reg, tree = 1L)
 }
 
 }

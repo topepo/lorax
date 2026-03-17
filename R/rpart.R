@@ -1,5 +1,6 @@
 #' @export
 extract_rules.rpart <- function(x, ...) {
+  rlang::check_installed("rpart")
   terminal_ids <- rpart_get_terminal_nodes(x)
 
   rules_list <- lapply(terminal_ids, function(node_id) {
@@ -20,7 +21,7 @@ extract_rules.rpart <- function(x, ...) {
     id = as.integer(terminal_ids),
     rules = rules_list
   ) |>
-    dplyr::arrange(.data$id) |>
+    dplyr::arrange(id) |>
     tibble::new_tibble(class = c("rule_set_rpart", "rule_set"))
 }
 

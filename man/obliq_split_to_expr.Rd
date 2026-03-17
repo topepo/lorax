@@ -9,16 +9,16 @@ obliq_split_to_expr(split)
 \arguments{
 \item{split}{A named list with four required elements:
 \itemize{
-\item \code{columns}: character vector - variable names for the linear combination
-\item \code{values}: numeric vector - coefficients for each variable (same length as
+\item \code{columns}: character vector - variable names for the linear combination.
+\item \code{values}: numeric vector - coefficients for each variable (same length as.
 \code{columns})
-\item \code{operator}: character string - one of: \code{<}, \code{<=}, \code{>}, \code{>=}, \code{==}
-\item \code{threshold}: numeric scalar - the threshold value for comparison
+\item \code{operator}: character string - one of: \code{<}, \code{<=}, \code{>}, \code{>=}, \code{==}.
+\item \code{threshold}: numeric scalar - the threshold value for comparison.
 }}
 }
 \value{
 An R expression object that can be evaluated. The expression
-represents: \verb{values[1]*columns[1] + ... + values[n]*columns[n] \{operator\} threshold}.
+represents: \verb{values[1]*columns[1] + .. + values[n]*columns[n] \{operator\} threshold}.
 }
 \description{
 This function converts an oblique split condition (linear combination) from a
