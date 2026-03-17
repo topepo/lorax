@@ -2,6 +2,7 @@ CMD
 Codecov
 GRF
 LightGBM
+Multiway
 ORCID
 ObliqueForest
 PBC
@@ -17,8 +18,11 @@ interpretability
 leftDaughter
 lgb
 multiclass
+multiway
 partykit
 partykit's
+partysplit
+pre
 randomForest
 rightDaughter
 tibble

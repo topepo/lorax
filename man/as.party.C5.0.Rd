@@ -35,7 +35,7 @@ format uses indented lines with key-value pairs:
 \item \code{type="2"}: Internal node with split
 \item \code{type="0"}: Terminal/leaf node
 \item \code{att="VariableName"}: Attribute/variable to split on
-\item \code{forks="3"}: Number of branches (typically 2 for binary, 3 for ternary)
+\item \code{forks="n"}: Number of branches (2+ for numeric, can be 4+ for categorical)
 \item \code{cut="threshold"}: Numeric threshold for split
 \item \code{class="ClassName"}: Predicted class
 \item \code{freq="n1,n2,n3"}: Frequency of each class at node
@@ -53,18 +53,19 @@ format uses indented lines with key-value pairs:
 
 \subsection{Tree structure}{
 \itemize{
-\item Trees use indentation to indicate hierarchy (similar to Python)
-\item Child nodes are indented relative to parent
-\item Ternary splits: <= threshold, missing, > threshold
-\item Binary splits: <= threshold vs > threshold
+\item Trees stored as sequential lines in pre-order (parent, then children)
+\item No indentation used - hierarchy determined by fork counts
+\item Numeric ternary splits: <= threshold, missing, > threshold
+\item Categorical multiway splits: one branch per level group
 }
 }
 
 \subsection{Split encoding}{
 \itemize{
-\item For numeric: typically left/low when <= threshold, right/high when > threshold
-\item C5.0 may use ternary splits with separate handling of missing values
-\item \pkg{partykit} uses binary splits, so we simplify to binary when needed
+\item Numeric splits: typically binary (<=, >) or ternary (<=, missing, >)
+\item Ternary numeric splits are simplified to binary by omitting the missing branch
+\item Categorical splits: can have 2+ branches, one for each level group
+\item Multiway categorical splits are preserved in the party object
 }
 }
 
@@ -79,9 +80,9 @@ format uses indented lines with key-value pairs:
 \subsection{Important limitations}{
 \itemize{
 \item \pkg{C50}'s text format is complex and may vary by version
-\item Ternary splits with missing value branches simplified to binary
+\item Ternary numeric splits simplified to binary (missing value branch omitted)
 \item Rule-based models (\code{obj$rules != ""}) not supported
-\item Categorical variable splits may need special handling
+\item Some terminal nodes may have n=0 (empty branches where no observations fall)
 }
 }
 }

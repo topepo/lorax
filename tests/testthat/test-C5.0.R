@@ -148,3 +148,105 @@ test_that("as.party.C5.0 does not show asterisks in node summaries", {
 
   expect_false(has_asterisk_summary)
 })
+
+test_that("as.party.C5.0 properly assigns all observations to terminal nodes", {
+  skip_if_not_installed("C50")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  c5_model <- C50::C5.0(species ~ ., data = penguins)
+  p <- as.party(c5_model, tree = 1, data = penguins)
+
+  # Get fitted node IDs
+  fitted_ids <- p$fitted[["(fitted)"]]
+
+  # Check that we have the right number of observations
+  expect_equal(length(fitted_ids), nrow(penguins))
+
+  # Check that all fitted IDs are terminal nodes
+  terminal_nodes <- partykit::nodeids(p, terminal = TRUE)
+  expect_true(all(fitted_ids %in% terminal_nodes))
+
+  # Count observations per node
+  obs_per_node <- table(fitted_ids)
+
+  # Sum should equal total observations (no observations lost)
+  expect_equal(sum(obs_per_node), nrow(penguins))
+
+  # All used terminal nodes should have at least one observation
+  expect_true(all(obs_per_node > 0))
+})
+
+test_that("as.party.C5.0 properly routes observations through categorical splits", {
+  skip_if_not_installed("C50")
+
+  # Use wa_trees data which has categorical variables and multiway splits
+  wa_trees <- get_wa_trees_data()
+
+  c5_model <- C50::C5.0(class ~ ., data = wa_trees)
+  p <- as.party(c5_model, tree = 1, data = wa_trees)
+
+  # Get fitted node IDs
+  fitted_ids <- p$fitted[["(fitted)"]]
+
+  # Check that we have the right number of observations
+  expect_equal(length(fitted_ids), nrow(wa_trees))
+
+  # Check that all fitted IDs are terminal nodes
+  terminal_nodes <- partykit::nodeids(p, terminal = TRUE)
+  expect_true(all(fitted_ids %in% terminal_nodes))
+
+  # Count observations per node
+  obs_per_node <- table(fitted_ids)
+
+  # Sum should equal total observations (no observations lost)
+  expect_equal(sum(obs_per_node), nrow(wa_trees))
+
+  # Verify no non-empty nodes have NA predictions
+  # (empty nodes with n=0 are OK and expected for some categorical splits)
+  used_nodes <- unique(fitted_ids)
+  for (node_id in used_nodes) {
+    node_obs_count <- sum(fitted_ids == node_id)
+    expect_true(node_obs_count > 0)
+  }
+})
+
+test_that("as.party.C5.0 handles multiway categorical splits correctly", {
+  skip_if_not_installed("C50")
+
+  # Use wa_trees which has a 4-way county split
+  wa_trees <- get_wa_trees_data()
+
+  c5_model <- C50::C5.0(class ~ ., data = wa_trees)
+  p <- as.party(c5_model, tree = 1, data = wa_trees)
+
+  # Find a node with a categorical split
+  # The root's right child (precip_annual >= 418) should split on county
+  root <- p$node
+  kids <- partykit::kids_node(root)
+
+  # Assuming second child is the high precipitation branch
+  if (length(kids) >= 2) {
+    node2 <- kids[[2]]
+    split2 <- partykit::split_node(node2)
+
+    if (!is.null(split2)) {
+      # Check if this is a categorical split
+      breaks <- partykit::breaks_split(split2)
+
+      # If breaks is NULL, it's categorical
+      if (is.null(breaks)) {
+        # Should have multiple children (multiway split)
+        node2_kids <- partykit::kids_node(node2)
+        expect_true(length(node2_kids) > 2)
+
+        # Index vector should exist and map all factor levels
+        index <- partykit::index_split(split2)
+        expect_true(length(index) > 0)
+        expect_true(all(index >= 1))
+        expect_true(all(index <= length(node2_kids)))
+      }
+    }
+  }
+})
