@@ -347,3 +347,528 @@ test_that("assign_node_ids can start from custom ID", {
   expect_equal(result$node$kids[[2]]$id, 12L)
   expect_equal(result$next_id, 13L)
 })
+
+# validate_and_select_data tests ----
+
+test_that("validate_and_select_data selects predictor columns", {
+  data <- data.frame(
+    x1 = 1:10,
+    x2 = 11:20,
+    x3 = 21:30,
+    y = 31:40
+  )
+
+  result <- validate_and_select_data(data, c("x1", "x2"))
+
+  expect_equal(ncol(result), 4) # x1, x2, plus x3, y preserved
+  expect_true(all(c("x1", "x2") %in% names(result)))
+})
+
+test_that("validate_and_select_data preserves extra columns by default", {
+  data <- data.frame(
+    x1 = 1:5,
+    x2 = 6:10,
+    y = 11:15,
+    z = 16:20
+  )
+
+  result <- validate_and_select_data(data, c("x1", "x2"), preserve_extra = TRUE)
+
+  expect_equal(ncol(result), 4)
+  expect_true(all(c("x1", "x2", "y", "z") %in% names(result)))
+})
+
+test_that("validate_and_select_data can exclude extra columns", {
+  data <- data.frame(
+    x1 = 1:5,
+    x2 = 6:10,
+    y = 11:15,
+    z = 16:20
+  )
+
+  result <- validate_and_select_data(
+    data,
+    c("x1", "x2"),
+    preserve_extra = FALSE
+  )
+
+  expect_equal(ncol(result), 2)
+  expect_equal(names(result), c("x1", "x2"))
+})
+
+test_that("validate_and_select_data validates required variables", {
+  data <- data.frame(x1 = 1:5, x2 = 6:10)
+
+  expect_snapshot(
+    validate_and_select_data(data, c("x1", "x3")),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    validate_and_select_data(data, c("missing", "also_missing")),
+    error = TRUE
+  )
+})
+
+test_that("validate_and_select_data preserves column order", {
+  data <- data.frame(
+    b = 1:5,
+    a = 6:10,
+    c = 11:15
+  )
+
+  result <- validate_and_select_data(data, c("b", "a"), preserve_extra = TRUE)
+
+  expect_equal(names(result), c("b", "a", "c"))
+})
+
+# create_fitted_dataframe tests ----
+
+test_that("create_fitted_dataframe creates basic structure", {
+  fitted_ids <- c(1L, 2L, 1L, 3L, 2L)
+
+  result <- create_fitted_dataframe(fitted_ids)
+
+  expect_s3_class(result, "data.frame")
+  expect_equal(nrow(result), 5)
+  expect_equal(ncol(result), 1)
+  expect_equal(names(result), "(fitted)")
+  expect_equal(result[["(fitted)"]], fitted_ids)
+})
+
+test_that("create_fitted_dataframe includes response when provided", {
+  fitted_ids <- c(1L, 2L, 1L, 3L, 2L)
+  response <- c(10, 20, 15, 30, 25)
+
+  result <- create_fitted_dataframe(fitted_ids, response)
+
+  expect_equal(nrow(result), 5)
+  expect_equal(ncol(result), 2)
+  expect_equal(names(result), c("(fitted)", "(response)"))
+  expect_equal(result[["(fitted)"]], fitted_ids)
+  expect_equal(result[["(response)"]], response)
+})
+
+test_that("create_fitted_dataframe preserves response type", {
+  fitted_ids <- c(1L, 2L, 1L)
+
+  # Factor response
+  response_factor <- factor(c("A", "B", "A"))
+  result1 <- create_fitted_dataframe(fitted_ids, response_factor)
+  expect_true(is.factor(result1[["(response)"]]))
+  expect_equal(levels(result1[["(response)"]]), c("A", "B"))
+
+  # Numeric response
+  response_numeric <- c(1.5, 2.5, 3.5)
+  result2 <- create_fitted_dataframe(fitted_ids, response_numeric)
+  expect_true(is.numeric(result2[["(response)"]]))
+
+  # Character response
+  response_char <- c("x", "y", "z")
+  result3 <- create_fitted_dataframe(fitted_ids, response_char)
+  expect_true(is.character(result3[["(response)"]]))
+})
+
+test_that("create_fitted_dataframe handles empty input", {
+  fitted_ids <- integer(0)
+
+  result <- create_fitted_dataframe(fitted_ids)
+
+  expect_equal(nrow(result), 0)
+  expect_equal(ncol(result), 1)
+  expect_equal(names(result), "(fitted)")
+})
+
+test_that("create_fitted_dataframe errors on mismatched lengths", {
+  fitted_ids <- c(1L, 2L, 3L)
+  response <- c(10, 20) # Wrong length
+
+  # Should error due to mismatched lengths
+  expect_error(
+    create_fitted_dataframe(fitted_ids, response),
+    "differing number of rows"
+  )
+})
+
+# validate_party_node_info tests ----
+
+test_that("validate_party_node_info with valid party object", {
+  node <- partykit::partynode(id = 1L)
+  data <- data.frame(x = 1:5, y = 6:10)
+
+  party_obj <- create_party_object(
+    node = node,
+    data = data,
+    fitted = data.frame(
+      "(fitted)" = rep(1L, 5),
+      "(response)" = data$y,
+      check.names = FALSE
+    )
+  )
+
+  # Silent mode - should return TRUE
+  result <- validate_party_node_info(party_obj, action = "silent")
+  expect_true(result)
+
+  # Error mode - should not error
+  expect_no_error(validate_party_node_info(party_obj, action = "error"))
+})
+
+test_that("validate_party_node_info detects missing response", {
+  node <- partykit::partynode(id = 1L)
+  data <- data.frame(x = 1:5, y = 6:10)
+
+  party_obj <- create_party_object(
+    node = node,
+    data = data,
+    fitted = data.frame("(fitted)" = rep(1L, 5), check.names = FALSE)
+  )
+
+  # Silent mode - should return FALSE
+  result <- validate_party_node_info(party_obj, action = "silent")
+  expect_false(result)
+
+  # Error mode - should error
+  expect_snapshot(
+    validate_party_node_info(party_obj, action = "error"),
+    error = TRUE
+  )
+
+  # Warn mode - should warn
+  expect_warning(
+    validate_party_node_info(party_obj, action = "warn"),
+    "asterisks"
+  )
+})
+
+test_that("validate_party_node_info handles party without fitted", {
+  node <- partykit::partynode(id = 1L)
+  data <- data.frame(x = 1:5, y = 6:10)
+
+  party_obj <- create_party_object(node = node, data = data)
+
+  # Without fitted data, validation should pass
+  result <- validate_party_node_info(party_obj, action = "silent")
+  expect_true(result)
+})
+
+# build_partynode_from_tabular tests ----
+
+test_that("build_partynode_from_tabular builds terminal node", {
+  # Create tabular tree with single terminal node
+  tree_df <- data.frame(
+    node_id = 0L,
+    left_child = -1L,
+    right_child = -1L,
+    split_var = -1L,
+    split_val = NA_real_,
+    prediction = 5.0
+  )
+
+  node <- build_partynode_from_tabular(
+    tree_df = tree_df,
+    node_id = 0L,
+    node_id_col = "node_id",
+    left_child_col = "left_child",
+    right_child_col = "right_child",
+    split_var_col = "split_var",
+    split_val_col = "split_val",
+    is_leaf_col = NULL,
+    prediction_col = "prediction",
+    var_names = c("x1", "x2"),
+    zero_indexed = TRUE
+  )
+
+  expect_s3_class(node, "partynode")
+  expect_equal(node$id, 1L)
+  expect_null(partykit::kids_node(node))
+})
+
+test_that("build_partynode_from_tabular builds tree with split", {
+  # Create simple tree: root splits, two leaves
+  tree_df <- data.frame(
+    node_id = c(0L, 1L, 2L),
+    left_child = c(1L, -1L, -1L),
+    right_child = c(2L, -1L, -1L),
+    split_var = c(0L, -1L, -1L),
+    split_val = c(5.5, NA, NA),
+    prediction = c(NA, 1.0, 2.0)
+  )
+
+  node <- build_partynode_from_tabular(
+    tree_df = tree_df,
+    node_id = 0L,
+    node_id_col = "node_id",
+    left_child_col = "left_child",
+    right_child_col = "right_child",
+    split_var_col = "split_var",
+    split_val_col = "split_val",
+    is_leaf_col = NULL,
+    prediction_col = "prediction",
+    var_names = c("x1", "x2"),
+    zero_indexed = TRUE
+  )
+
+  expect_s3_class(node, "partynode")
+  expect_false(is.null(partykit::split_node(node)))
+  kids <- partykit::kids_node(node)
+  expect_length(kids, 2)
+})
+
+test_that("build_partynode_from_tabular uses is_leaf_col when provided", {
+  tree_df <- data.frame(
+    node_id = c(0L, 1L, 2L),
+    left_child = c(1L, NA, NA),
+    right_child = c(2L, NA, NA),
+    split_var = c(0L, NA, NA),
+    split_val = c(5.5, NA, NA),
+    is_leaf = c(FALSE, TRUE, TRUE),
+    prediction = c(NA, 1.0, 2.0)
+  )
+
+  node <- build_partynode_from_tabular(
+    tree_df = tree_df,
+    node_id = 0L,
+    node_id_col = "node_id",
+    left_child_col = "left_child",
+    right_child_col = "right_child",
+    split_var_col = "split_var",
+    split_val_col = "split_val",
+    is_leaf_col = "is_leaf",
+    is_leaf_value = TRUE,
+    prediction_col = "prediction",
+    var_names = c("x1", "x2"),
+    zero_indexed = TRUE
+  )
+
+  expect_s3_class(node, "partynode")
+  kids <- partykit::kids_node(node)
+  expect_length(kids, 2)
+})
+
+test_that("build_partynode_from_tabular handles 1-indexed node IDs", {
+  # 1-indexed: use 0 for no child instead of -1
+  tree_df <- data.frame(
+    node_id = c(1L, 2L, 3L),
+    left_child = c(2L, 0L, 0L),
+    right_child = c(3L, 0L, 0L),
+    split_var = c(1L, 0L, 0L),
+    split_val = c(5.5, NA, NA),
+    prediction = c(NA, 1.0, 2.0)
+  )
+
+  node <- build_partynode_from_tabular(
+    tree_df = tree_df,
+    node_id = 1L,
+    node_id_col = "node_id",
+    left_child_col = "left_child",
+    right_child_col = "right_child",
+    split_var_col = "split_var",
+    split_val_col = "split_val",
+    is_leaf_col = NULL,
+    prediction_col = "prediction",
+    var_names = c("x1", "x2"),
+    zero_indexed = FALSE
+  )
+
+  expect_s3_class(node, "partynode")
+  kids <- partykit::kids_node(node)
+  expect_length(kids, 2)
+})
+
+test_that("build_partynode_from_tabular handles variable names", {
+  tree_df <- data.frame(
+    node_id = c(0L, 1L, 2L),
+    left_child = c(1L, -1L, -1L),
+    right_child = c(2L, -1L, -1L),
+    split_var = c("height", NA, NA), # Character variable name
+    split_val = c(170.5, NA, NA),
+    prediction = c(NA, 1.0, 2.0)
+  )
+
+  node <- build_partynode_from_tabular(
+    tree_df = tree_df,
+    node_id = 0L,
+    node_id_col = "node_id",
+    left_child_col = "left_child",
+    right_child_col = "right_child",
+    split_var_col = "split_var",
+    split_val_col = "split_val",
+    is_leaf_col = NULL,
+    prediction_col = "prediction",
+    var_names = c("height", "weight", "age"),
+    zero_indexed = TRUE
+  )
+
+  expect_s3_class(node, "partynode")
+  split <- partykit::split_node(node)
+  expect_equal(partykit::varid_split(split), 1L) # height is first
+})
+
+test_that("build_partynode_from_tabular errors on missing node", {
+  tree_df <- data.frame(
+    node_id = c(0L, 1L),
+    left_child = c(1L, -1L),
+    right_child = c(2L, -1L),
+    split_var = c(0L, -1L),
+    split_val = c(5.5, NA),
+    prediction = c(NA, 1.0)
+  )
+
+  expect_snapshot(
+    build_partynode_from_tabular(
+      tree_df = tree_df,
+      node_id = 0L,
+      node_id_col = "node_id",
+      left_child_col = "left_child",
+      right_child_col = "right_child",
+      split_var_col = "split_var",
+      split_val_col = "split_val",
+      is_leaf_col = NULL,
+      prediction_col = "prediction",
+      var_names = c("x1", "x2"),
+      zero_indexed = TRUE
+    ),
+    error = TRUE
+  )
+})
+
+test_that("build_partynode_from_tabular handles large variable index", {
+  # Note: partykit doesn't validate varid against data columns
+  # This creates a split with an out-of-bounds varid, which will error
+  # only when used with actual data
+  tree_df <- data.frame(
+    node_id = c(0L, 1L, 2L),
+    left_child = c(1L, -1L, -1L),
+    right_child = c(2L, -1L, -1L),
+    split_var = c(5L, -1L, -1L),
+    split_val = c(5.5, NA, NA),
+    prediction = c(NA, 1.0, 2.0)
+  )
+
+  node <- build_partynode_from_tabular(
+    tree_df = tree_df,
+    node_id = 0L,
+    node_id_col = "node_id",
+    left_child_col = "left_child",
+    right_child_col = "right_child",
+    split_var_col = "split_var",
+    split_val_col = "split_val",
+    is_leaf_col = NULL,
+    prediction_col = "prediction",
+    var_names = c("x1", "x2"),
+    zero_indexed = TRUE
+  )
+
+  # Should create node with varid = 6 (5 + 1)
+  expect_s3_class(node, "partynode")
+  split <- partykit::split_node(node)
+  expect_equal(partykit::varid_split(split), 6L)
+})
+
+test_that("build_partynode_from_tabular errors on missing variable name", {
+  tree_df <- data.frame(
+    node_id = c(0L, 1L, 2L),
+    left_child = c(1L, -1L, -1L),
+    right_child = c(2L, -1L, -1L),
+    split_var = c("missing_var", NA, NA),
+    split_val = c(5.5, NA, NA),
+    prediction = c(NA, 1.0, 2.0)
+  )
+
+  expect_snapshot(
+    build_partynode_from_tabular(
+      tree_df = tree_df,
+      node_id = 0L,
+      node_id_col = "node_id",
+      left_child_col = "left_child",
+      right_child_col = "right_child",
+      split_var_col = "split_var",
+      split_val_col = "split_val",
+      is_leaf_col = NULL,
+      prediction_col = "prediction",
+      var_names = c("x1", "x2"),
+      zero_indexed = TRUE
+    ),
+    error = TRUE
+  )
+})
+
+# traverse_vectorized tests ----
+
+test_that("traverse_vectorized handles empty observation set", {
+  node <- partykit::partynode(id = 1L)
+  data <- data.frame(x = 1:10)
+  obs_indices <- integer(0)
+  node_ids <- integer(10)
+
+  result <- traverse_vectorized(node, data, obs_indices, node_ids)
+
+  expect_equal(result, node_ids)
+})
+
+test_that("traverse_vectorized assigns terminal node correctly", {
+  terminal <- partykit::partynode(id = 5L)
+  data <- data.frame(x = 1:10)
+  obs_indices <- c(1L, 3L, 5L)
+  node_ids <- integer(10)
+
+  result <- traverse_vectorized(terminal, data, obs_indices, node_ids)
+
+  expect_equal(result[1], 5L)
+  expect_equal(result[3], 5L)
+  expect_equal(result[5], 5L)
+  expect_equal(result[c(2, 4, 6, 7, 8, 9, 10)], rep(0L, 7))
+})
+
+test_that("traverse_vectorized splits observations correctly", {
+  split <- build_partysplit(1, 5.0, right = TRUE)
+  left <- partykit::partynode(id = 2L)
+  right <- partykit::partynode(id = 3L)
+  node <- partykit::partynode(id = 1L, split = split, kids = list(left, right))
+
+  data <- data.frame(x = c(1, 3, 5, 7, 9))
+  obs_indices <- 1:5
+  node_ids <- integer(5)
+
+  result <- traverse_vectorized(node, data, obs_indices, node_ids)
+
+  # Values < 5 should go left (node 2), >= 5 should go right (node 3)
+  expect_equal(result[1:2], c(2L, 2L)) # 1, 3 < 5
+  expect_equal(result[3:5], c(3L, 3L, 3L)) # 5, 7, 9 >= 5
+})
+
+test_that("traverse_vectorized handles missing values", {
+  split <- build_partysplit(1, 5.0, right = TRUE)
+  left <- partykit::partynode(id = 2L)
+  right <- partykit::partynode(id = 3L)
+  node <- partykit::partynode(id = 1L, split = split, kids = list(left, right))
+
+  data <- data.frame(x = c(1, NA, 7, NA, 3))
+  obs_indices <- 1:5
+  node_ids <- integer(5)
+
+  result <- traverse_vectorized(node, data, obs_indices, node_ids)
+
+  # Missing values should go left (node 2)
+  expect_equal(result[c(2, 4)], c(2L, 2L)) # NA values
+  expect_equal(result[c(1, 5)], c(2L, 2L)) # 1, 3 < 5
+  expect_equal(result[3], 3L) # 7 >= 5
+})
+
+test_that("traverse_vectorized handles factor variables", {
+  skip_if_not_installed("randomForest")
+
+  # Create model with factor variable
+  data <- data.frame(
+    y = factor(c("A", "B", "A", "B", "A", "B")),
+    x = factor(c("low", "high", "low", "high", "med", "med"))
+  )
+  rf <- randomForest::randomForest(y ~ x, data = data, ntree = 1)
+  p <- as.party(rf, tree = 1, data = data)
+
+  # Test vectorized traversal
+  fitted_ids <- compute_fitted_node_ids(p$node, data[, "x", drop = FALSE])
+  expect_equal(length(fitted_ids), 6)
+  expect_true(all(fitted_ids >= 1))
+})

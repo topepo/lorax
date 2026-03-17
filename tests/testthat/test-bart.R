@@ -512,3 +512,333 @@ test_that("reformat_data_bart validates inputs", {
     error = TRUE
   )
 })
+
+# extract_rules.bart tests ----
+
+test_that("extract_rules.bart returns valid rule_set object", {
+  skip_if_not_installed("dbarts")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )],
+    y.train = penguins$species,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 3
+  ))
+
+  rules <- extract_rules(fit, tree = 1L)
+
+  expect_s3_class(rules, "rule_set_bart")
+  expect_s3_class(rules, "rule_set")
+  expect_s3_class(rules, "tbl_df")
+  expect_equal(ncol(rules), 3)
+  expect_equal(names(rules), c("tree", "rules", "id"))
+  expect_true(all(rules$tree == 1L))
+  expect_true(is.list(rules$rules))
+  expect_true(all(sapply(rules$rules, is.language)))
+  expect_true(is.integer(rules$id))
+  expect_true(all(rules$id >= 1))
+})
+
+test_that("extract_rules.bart works with regression data", {
+  skip_if_not_installed("dbarts")
+
+  data <- get_regression_data(n = 50)
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = data[, c("x1", "x2")],
+    y.train = data$y,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 2
+  ))
+
+  rules <- extract_rules(fit, tree = 1L)
+
+  expect_s3_class(rules, "rule_set_bart")
+  expect_true(nrow(rules) >= 1)
+  expect_equal(rules$tree[1], 1L)
+})
+
+test_that("extract_rules.bart extracts different trees correctly", {
+  skip_if_not_installed("dbarts")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )],
+    y.train = penguins$species,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 5
+  ))
+
+  rules1 <- extract_rules(fit, tree = 1L)
+  rules2 <- extract_rules(fit, tree = 2L)
+  rules3 <- extract_rules(fit, tree = 5L)
+
+  expect_equal(rules1$tree[1], 1L)
+  expect_equal(rules2$tree[1], 2L)
+  expect_equal(rules3$tree[1], 5L)
+
+  expect_true(all(rules1$tree == 1L))
+  expect_true(all(rules2$tree == 2L))
+  expect_true(all(rules3$tree == 5L))
+})
+
+test_that("extract_rules.bart handles single-node trees", {
+  skip_if_not_installed("dbarts")
+
+  # Very small dataset that might produce single-node trees
+  data <- data.frame(
+    x1 = rep(1:2, 3),
+    x2 = rep(1:3, 2),
+    y = rep(1:2, 3)
+  )
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = data[, c("x1", "x2")],
+    y.train = data$y,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 10,
+    ndpost = 1
+  ))
+
+  # Try multiple trees - at least one might be single-node
+  for (tree_num in 1:10) {
+    rules <- extract_rules(fit, tree = tree_num)
+    expect_s3_class(rules, "rule_set_bart")
+    expect_true(nrow(rules) >= 1)
+
+    # If single node, should have TRUE rule (logical, not expression)
+    if (nrow(rules) == 1) {
+      expect_identical(rules$rules[[1]], TRUE)
+    }
+  }
+})
+
+test_that("extract_rules.bart produces valid rule expressions", {
+  skip_if_not_installed("dbarts")
+
+  data <- get_regression_data(n = 100)
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = data[, c("x1", "x2")],
+    y.train = data$y,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 3
+  ))
+
+  rules <- extract_rules(fit, tree = 1L)
+
+  # Each rule should be either an expression or TRUE (for single-node trees)
+  for (i in seq_len(nrow(rules))) {
+    rule <- rules$rules[[i]]
+    expect_true(is.language(rule) || identical(rule, TRUE))
+
+    # Should be able to deparse it
+    rule_str <- deparse(rule)
+    expect_type(rule_str, "character")
+    expect_true(nchar(rule_str[1]) > 0)
+  }
+})
+
+test_that("extract_rules.bart rule text output works", {
+  skip_if_not_installed("dbarts")
+
+  data <- get_regression_data(n = 50)
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = data[, c("x1", "x2")],
+    y.train = data$y,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 2
+  ))
+
+  rules <- extract_rules(fit, tree = 1L)
+
+  # rule_text should work on extracted rules
+  for (i in seq_len(nrow(rules))) {
+    text <- rule_text(rules$rules[[i]])
+    expect_type(text, "character")
+    expect_true(nchar(text) > 0)
+  }
+})
+
+test_that("extract_rules.bart validates tree parameter", {
+  skip_if_not_installed("dbarts")
+
+  data <- get_regression_data(n = 30)
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = data[, c("x1", "x2")],
+    y.train = data$y,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 3
+  ))
+
+  # Non-integer
+  expect_snapshot(
+    extract_rules(fit, tree = 1.5),
+    error = TRUE
+  )
+
+  # Character
+  expect_snapshot(
+    extract_rules(fit, tree = "1"),
+    error = TRUE
+  )
+
+  # Vector
+  expect_snapshot(
+    extract_rules(fit, tree = c(1, 2)),
+    error = TRUE
+  )
+
+  # Less than 1
+  expect_snapshot(
+    extract_rules(fit, tree = 0),
+    error = TRUE
+  )
+
+  # Greater than max
+  expect_snapshot(
+    extract_rules(fit, tree = 10),
+    error = TRUE
+  )
+})
+
+test_that("extract_rules.bart validates chain parameter", {
+  skip_if_not_installed("dbarts")
+
+  data <- get_regression_data(n = 30)
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = data[, c("x1", "x2")],
+    y.train = data$y,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 3
+  ))
+
+  # Non-integer
+  expect_snapshot(
+    extract_rules(fit, tree = 1, chain = 1.5),
+    error = TRUE
+  )
+
+  # Character
+  expect_snapshot(
+    extract_rules(fit, tree = 1, chain = "1"),
+    error = TRUE
+  )
+
+  # Vector
+  expect_snapshot(
+    extract_rules(fit, tree = 1, chain = c(1, 2)),
+    error = TRUE
+  )
+
+  # Less than 1
+  expect_snapshot(
+    extract_rules(fit, tree = 1, chain = 0),
+    error = TRUE
+  )
+
+  # Invalid for single-chain model
+  expect_snapshot(
+    extract_rules(fit, tree = 1, chain = 2),
+    error = TRUE
+  )
+})
+
+test_that("extract_rules.bart requires keeptrees = TRUE", {
+  skip_if_not_installed("dbarts")
+
+  data <- get_regression_data(n = 30)
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = data[, c("x1", "x2")],
+    y.train = data$y,
+    keeptrees = FALSE,
+    verbose = FALSE,
+    ntree = 3
+  ))
+
+  expect_snapshot(
+    extract_rules(fit, tree = 1),
+    error = TRUE
+  )
+})
+
+test_that("extract_rules.bart preserves variable names", {
+  skip_if_not_installed("dbarts")
+
+  data <- data.frame(
+    height = rnorm(50),
+    weight = rnorm(50),
+    age = rnorm(50),
+    outcome = rnorm(50)
+  )
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = data[, c("height", "weight", "age")],
+    y.train = data$outcome,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 3
+  ))
+
+  rules <- extract_rules(fit, tree = 1L)
+
+  # Check that rule text contains variable names
+  rule_strings <- sapply(rules$rules, function(r) {
+    paste(deparse(r), collapse = " ")
+  })
+
+  # At least one rule should reference at least one variable
+  has_vars <- any(
+    grepl("height|weight|age", rule_strings)
+  )
+  expect_true(has_vars)
+})
+
+test_that("extract_rules.bart sequential IDs are correct", {
+  skip_if_not_installed("dbarts")
+
+  data <- get_regression_data(n = 100)
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = data[, c("x1", "x2")],
+    y.train = data$y,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 3
+  ))
+
+  rules <- extract_rules(fit, tree = 1L)
+
+  # IDs should be sequential starting from 1
+  expect_equal(rules$id, seq_len(nrow(rules)))
+
+  # IDs should be sorted
+  expect_true(all(diff(rules$id) == 1))
+})
