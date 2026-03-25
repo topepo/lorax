@@ -107,6 +107,23 @@
 #'   rules_reg <- extract_rules(forest_reg, tree = 1L)
 #' }
 #'
+# Internal helper: extract rule for a single terminal node
+oblique_extract_node_rule <- function(node_id, tree, x) {
+  path <- oblique_build_node_path(node_id, tree, x$forest)
+
+  split_exprs <- list()
+  for (i in seq_along(path)[-length(path)]) {
+    parent_id <- path[i]
+    child_id <- path[i + 1]
+    split_info <- oblique_get_split_info(parent_id, child_id, tree, x)
+    expr <- obliq_split_to_expr(split_info)
+    # Replace indicator variables with factor comparisons for interpretability
+    split_exprs[[i]] <- oblique_replace_indicators(expr, x)
+  }
+
+  combine_rule_elements(split_exprs)
+}
+
 #' @export
 extract_rules.ObliqueForest <- function(x, tree = 1L, ...) {
   rlang::check_installed("aorsf")
@@ -126,21 +143,12 @@ extract_rules.ObliqueForest <- function(x, tree = 1L, ...) {
   terminal_ids <- oblique_get_terminal_nodes(tree, x$forest)
 
   # Extract rules for each terminal node (using 0-indexed IDs internally)
-  rules_list <- lapply(terminal_ids, function(node_id) {
-    path <- oblique_build_node_path(node_id, tree, x$forest)
-
-    split_exprs <- list()
-    for (i in seq_along(path)[-length(path)]) {
-      parent_id <- path[i]
-      child_id <- path[i + 1]
-      split_info <- oblique_get_split_info(parent_id, child_id, tree, x)
-      expr <- obliq_split_to_expr(split_info)
-      # Replace indicator variables with factor comparisons for interpretability
-      split_exprs[[i]] <- oblique_replace_indicators(expr, x)
-    }
-
-    combine_rule_elements(split_exprs)
-  })
+  rules_list <- lapply(
+    terminal_ids,
+    oblique_extract_node_rule,
+    tree = tree,
+    x = x
+  )
 
   tibble::tibble(
     tree = as.integer(tree),

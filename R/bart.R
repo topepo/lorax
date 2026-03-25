@@ -163,27 +163,13 @@ extract_rules.bart <- function(x, tree = 1L, chain = 1L, ...) {
   terminal_rows <- which(tree_df$var == -1)
 
   # Build rules for each terminal node
-  rules_list <- lapply(terminal_rows, function(leaf_row) {
-    # Build path from root to this terminal node
-    path <- bart_build_node_path(leaf_row, tree_hierarchy)
-
-    # Extract split conditions along the path
-    split_exprs <- list()
-    for (i in seq_along(path)[-length(path)]) {
-      parent_row <- path[i]
-      child_row <- path[i + 1]
-      split_info <- bart_get_split_info(
-        parent_row,
-        child_row,
-        tree_df,
-        x,
-        tree_hierarchy
-      )
-      split_exprs[[i]] <- rect_split_to_expr(split_info)
-    }
-
-    combine_rule_elements(split_exprs)
-  })
+  rules_list <- lapply(
+    terminal_rows,
+    bart_extract_leaf_rule,
+    tree_hierarchy = tree_hierarchy,
+    tree_df = tree_df,
+    x = x
+  )
 
   # Return tibble with 1-based sequential IDs
   tibble::tibble(
@@ -193,6 +179,29 @@ extract_rules.bart <- function(x, tree = 1L, chain = 1L, ...) {
   ) |>
     dplyr::arrange(id) |>
     tibble::new_tibble(class = c("rule_set_bart", "rule_set"))
+}
+
+# Internal helper: extract rule for a single terminal node
+bart_extract_leaf_rule <- function(leaf_row, tree_hierarchy, tree_df, x) {
+  # Build path from root to this terminal node
+  path <- bart_build_node_path(leaf_row, tree_hierarchy)
+
+  # Extract split conditions along the path
+  split_exprs <- list()
+  for (i in seq_along(path)[-length(path)]) {
+    parent_row <- path[i]
+    child_row <- path[i + 1]
+    split_info <- bart_get_split_info(
+      parent_row,
+      child_row,
+      tree_df,
+      x,
+      tree_hierarchy
+    )
+    split_exprs[[i]] <- rect_split_to_expr(split_info)
+  }
+
+  combine_rule_elements(split_exprs)
 }
 
 # Internal helper to rebuild tree hierarchy from depth-first format

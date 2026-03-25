@@ -1,20 +1,23 @@
+# Internal helper: extract rule for a single terminal node
+party_extract_node_rule <- function(node_id, x) {
+  path <- party_build_node_path(node_id, x)
+
+  split_exprs <- list()
+  for (i in seq_along(path)[-length(path)]) {
+    parent_id <- path[i]
+    child_id <- path[i + 1]
+    split_info <- party_get_split_info(parent_id, child_id, x)
+    split_exprs[[i]] <- rect_split_to_expr(split_info)
+  }
+
+  combine_rule_elements(split_exprs)
+}
+
 #' @export
 extract_rules.party <- function(x, ...) {
   terminal_ids <- partykit::nodeids(x, terminal = TRUE)
 
-  rules_list <- lapply(terminal_ids, function(node_id) {
-    path <- party_build_node_path(node_id, x)
-
-    split_exprs <- list()
-    for (i in seq_along(path)[-length(path)]) {
-      parent_id <- path[i]
-      child_id <- path[i + 1]
-      split_info <- party_get_split_info(parent_id, child_id, x)
-      split_exprs[[i]] <- rect_split_to_expr(split_info)
-    }
-
-    combine_rule_elements(split_exprs)
-  })
+  rules_list <- lapply(terminal_ids, party_extract_node_rule, x = x)
 
   tibble::tibble(
     id = as.integer(terminal_ids),
@@ -126,6 +129,19 @@ party_get_split_info <- function(parent_id, child_id, x) {
   }
 }
 
+# Internal helper: extract variable name from a node
+party_extract_var_name <- function(node, x) {
+  sp <- partykit::split_node(node)
+
+  # Only extract variable if split exists (some non-terminal nodes may not have splits)
+  if (!is.null(sp)) {
+    var_idx <- partykit::varid_split(sp)
+    names(x$data)[var_idx]
+  } else {
+    character(0)
+  }
+}
+
 #' @rdname active_predictors
 #' @export
 active_predictors.party <- function(x, ...) {
@@ -140,17 +156,7 @@ active_predictors.party <- function(x, ...) {
     active_vars <- character(0)
   } else {
     nodes <- partykit::nodeapply(x, ids = non_terminal_ids, by_node = TRUE)
-    active_vars_list <- lapply(nodes, function(node) {
-      sp <- partykit::split_node(node)
-
-      # Only extract variable if split exists (some non-terminal nodes may not have splits)
-      if (!is.null(sp)) {
-        var_idx <- partykit::varid_split(sp)
-        names(x$data)[var_idx]
-      } else {
-        character(0)
-      }
-    })
+    active_vars_list <- lapply(nodes, party_extract_var_name, x = x)
 
     # Combine all variables
     active_vars <- unique(unlist(active_vars_list, use.names = FALSE))
