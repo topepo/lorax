@@ -31,7 +31,23 @@ extract_rules <- function(x, ...) {
 #' @return A tibble with list column `active_predictors` containing a character
 #' vector of predictors.
 #'
+#' @examples
+#' if (rlang::is_installed(c("rpart", "palmerpenguins"))) {
+#'   data(penguins, package = "palmerpenguins")
+#'   penguins <- na.omit(penguins)
+#'
+#'   # Fit a tree
+#'   tree <- rpart::rpart(species ~ ., data = penguins)
+#'   tree
+#'
+#'   # Extract active predictors
+#'   active_predictors(tree)
+#'
+#'   # Only primary splits are included - competing and surrogate splits
+#'   # are excluded since they don't affect predictions
+#' }
+#'
 #' @export
 active_predictors <- function(x, ...) {
- UseMethod("active_predictors")
+  UseMethod("active_predictors")
 }
