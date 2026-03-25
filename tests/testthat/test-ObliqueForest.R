@@ -1,13 +1,8 @@
-skip_if_not_installed("aorsf")
-skip_if_not_installed("palmerpenguins")
-
-library(aorsf)
-
-# Test data setup
-penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
-forest <- orsf(species ~ ., data = penguins, n_tree = 10)
-
 test_that("extract_rules.ObliqueForest() returns correct structure", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
   rules <- extract_rules(forest)
 
   expect_s3_class(rules, "rule_set_ObliqueForest")
@@ -20,6 +15,10 @@ test_that("extract_rules.ObliqueForest() returns correct structure", {
 })
 
 test_that("extract_rules.ObliqueForest() validates tree argument", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
   expect_snapshot(extract_rules(forest, tree = "1"), error = TRUE)
   expect_snapshot(extract_rules(forest, tree = c(1, 2)), error = TRUE)
   expect_snapshot(extract_rules(forest, tree = 1.5), error = TRUE)
@@ -28,6 +27,10 @@ test_that("extract_rules.ObliqueForest() validates tree argument", {
 })
 
 test_that("extract_rules.ObliqueForest() extracts all terminal nodes", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
   rules <- extract_rules(forest, tree = 1)
 
   # Get terminal nodes from forest structure (0-indexed internally)
@@ -37,6 +40,10 @@ test_that("extract_rules.ObliqueForest() extracts all terminal nodes", {
 })
 
 test_that("extract_rules.ObliqueForest() produces valid R expressions", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
   rules <- extract_rules(forest, tree = 1)
 
   for (i in seq_len(nrow(rules))) {
@@ -45,15 +52,19 @@ test_that("extract_rules.ObliqueForest() produces valid R expressions", {
 })
 
 test_that("extract_rules.ObliqueForest() rules evaluate correctly with numeric data", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
   # Use regression forest with numeric predictors only
   # (avoids factor one-hot encoding issues)
+  penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
   penguins_numeric <- penguins[, c(
     "bill_length_mm",
     "bill_depth_mm",
     "flipper_length_mm",
     "body_mass_g"
   )]
-  reg_forest <- orsf(body_mass_g ~ ., data = penguins_numeric, n_tree = 5)
+  reg_forest <- aorsf::orsf(body_mass_g ~ ., data = penguins_numeric, n_tree = 5)
   rules <- extract_rules(reg_forest, tree = 1)
 
   # Check that all rules are valid expressions that evaluate to logical vectors
@@ -78,6 +89,10 @@ test_that("extract_rules.ObliqueForest() rules evaluate correctly with numeric d
 })
 
 test_that("extract_rules.ObliqueForest() works with different trees", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
   rules1 <- extract_rules(forest, tree = 1)
   rules5 <- extract_rules(forest, tree = 5)
 
@@ -88,6 +103,10 @@ test_that("extract_rules.ObliqueForest() works with different trees", {
 })
 
 test_that("extract_rules.ObliqueForest() integrates with rule_text()", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
   rules <- extract_rules(forest, tree = 1)
 
   for (i in seq_len(nrow(rules))) {
@@ -102,6 +121,10 @@ test_that("extract_rules.ObliqueForest() integrates with rule_text()", {
 })
 
 test_that("extract_rules.ObliqueForest() rules contain oblique splits", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
   rules <- extract_rules(forest, tree = 1)
 
   # Check that at least some rules contain arithmetic operators
@@ -119,13 +142,17 @@ test_that("extract_rules.ObliqueForest() rules contain oblique splits", {
 })
 
 test_that("extract_rules.ObliqueForest() works with regression forest", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
   penguins_numeric <- penguins[, c(
     "bill_length_mm",
     "bill_depth_mm",
     "flipper_length_mm",
     "body_mass_g"
   )]
-  reg_forest <- orsf(body_mass_g ~ ., data = penguins_numeric, n_tree = 5)
+  reg_forest <- aorsf::orsf(body_mass_g ~ ., data = penguins_numeric, n_tree = 5)
   rules <- extract_rules(reg_forest, tree = 1)
 
   expect_s3_class(rules, "rule_set_ObliqueForest")
@@ -137,14 +164,22 @@ test_that("extract_rules.ObliqueForest() works with regression forest", {
 })
 
 test_that("extract_rules.ObliqueForest() sorts results by id", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
   rules <- extract_rules(forest, tree = 1)
 
   expect_true(all(diff(rules$id) > 0))
 })
 
 test_that("extract_rules.ObliqueForest() rules match aorsf node assignments", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
   skip("TODO: Debug rule extraction - node assignments don't match aorsf")
+
   # Test with numeric data only to avoid factor comparison issues
+  penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
   penguins_numeric <- penguins[, c(
     "bill_length_mm",
     "bill_depth_mm",
@@ -153,11 +188,11 @@ test_that("extract_rules.ObliqueForest() rules match aorsf node assignments", {
   )]
 
   set.seed(42)
-  test_forest <- orsf(
+  test_forest <- aorsf::orsf(
     body_mass_g ~ .,
     data = penguins_numeric,
     n_tree = 1,
-    control = orsf_control_regression(scale_x = FALSE)
+    control = aorsf::orsf_control_regression(scale_x = FALSE)
   )
 
   # Get leaf assignments from aorsf (0-indexed)
@@ -210,8 +245,12 @@ test_that("extract_rules.ObliqueForest() rules match aorsf node assignments", {
 })
 
 test_that("extract_rules.ObliqueForest() node assignments are consistent", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
   skip("TODO: Debug rule extraction - node assignments don't match aorsf")
+
   # Test that each node's observations match between aorsf and extracted rules
+  penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
   penguins_numeric <- penguins[, c(
     "bill_length_mm",
     "bill_depth_mm",
@@ -220,11 +259,11 @@ test_that("extract_rules.ObliqueForest() node assignments are consistent", {
   )]
 
   set.seed(123)
-  test_forest <- orsf(
+  test_forest <- aorsf::orsf(
     body_mass_g ~ .,
     data = penguins_numeric,
     n_tree = 1,
-    control = orsf_control_regression(scale_x = FALSE)
+    control = aorsf::orsf_control_regression(scale_x = FALSE)
   )
 
   # Get leaf assignments (0-indexed)
@@ -263,11 +302,13 @@ test_that("extract_rules.ObliqueForest() node assignments are consistent", {
 })
 
 test_that("extract_rules.ObliqueForest() handles single-node tree", {
+  skip_if_not_installed("aorsf")
+
   # Force a single-node tree with very high split_min_stat
   set.seed(123)
   small_data <- data.frame(y = 1:50, x = rnorm(50))
 
-  forest <- orsf(
+  forest <- aorsf::orsf(
     y ~ .,
     data = small_data,
     n_tree = 1,
@@ -290,6 +331,10 @@ test_that("extract_rules.ObliqueForest() handles single-node tree", {
 # Tests for active_predictors.ObliqueForest() ---------------------------------
 
 test_that("active_predictors.ObliqueForest() returns correct structure", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
   result <- active_predictors(forest)
 
   expect_s3_class(result, "tbl_df")
@@ -300,6 +345,10 @@ test_that("active_predictors.ObliqueForest() returns correct structure", {
 })
 
 test_that("active_predictors.ObliqueForest() extracts from single tree", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
   result <- active_predictors(forest, tree = 1L)
 
   expect_equal(nrow(result), 1)
@@ -308,6 +357,10 @@ test_that("active_predictors.ObliqueForest() extracts from single tree", {
 })
 
 test_that("active_predictors.ObliqueForest() extracts from multiple trees", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
   result <- active_predictors(forest, tree = c(1L, 2L, 3L))
 
   expect_equal(nrow(result), 3)
@@ -316,6 +369,10 @@ test_that("active_predictors.ObliqueForest() extracts from multiple trees", {
 })
 
 test_that("active_predictors.ObliqueForest() validates tree argument", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
   expect_snapshot(
     active_predictors(forest, tree = "1"),
     error = TRUE
@@ -338,9 +395,11 @@ test_that("active_predictors.ObliqueForest() validates tree argument", {
 })
 
 test_that("active_predictors.ObliqueForest() collapses factor indicators", {
+  skip_if_not_installed("aorsf")
+
   # Use wa_trees which has 'county' factor
   load(system.file("wa_trees.RData", package = "lorax"))
-  wa_forest <- orsf(
+  wa_forest <- aorsf::orsf(
     class ~ county + elevation + roughness,
     data = wa_trees,
     n_tree = 3
@@ -358,7 +417,11 @@ test_that("active_predictors.ObliqueForest() collapses factor indicators", {
 })
 
 test_that("active_predictors.ObliqueForest() handles mixed numeric and factor predictors", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
   # penguins has factors: species, island, sex
+  forest <- get_penguins_forest()
   result <- active_predictors(forest, tree = 1L)
   active_vars <- result$active_predictors[[1]]
 
@@ -382,9 +445,11 @@ test_that("active_predictors.ObliqueForest() handles mixed numeric and factor pr
 })
 
 test_that("active_predictors.ObliqueForest() handles tree with no splits", {
+  skip_if_not_installed("aorsf")
+
   # Create forest with high split_min_stat to attempt single node tree
   small_data <- data.frame(y = 1:50, x = rnorm(50))
-  no_split_forest <- orsf(
+  no_split_forest <- aorsf::orsf(
     y ~ x,
     data = small_data,
     n_tree = 1,
@@ -411,6 +476,10 @@ test_that("active_predictors.ObliqueForest() handles tree with no splits", {
 })
 
 test_that("active_predictors.ObliqueForest() returns sorted unique variables", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
   result <- active_predictors(forest, tree = 1L)
   active_vars <- result$active_predictors[[1]]
 
@@ -422,8 +491,10 @@ test_that("active_predictors.ObliqueForest() returns sorted unique variables", {
 })
 
 test_that("active_predictors.ObliqueForest() handles numeric-only predictors", {
+  skip_if_not_installed("aorsf")
+
   # Use mtcars which has no factors
-  forest_numeric <- orsf(mpg ~ cyl + disp + hp + wt, data = mtcars, n_tree = 3)
+  forest_numeric <- aorsf::orsf(mpg ~ cyl + disp + hp + wt, data = mtcars, n_tree = 3)
 
   result <- active_predictors(forest_numeric, tree = 1L)
   active_vars <- result$active_predictors[[1]]
@@ -433,7 +504,11 @@ test_that("active_predictors.ObliqueForest() handles numeric-only predictors", {
 })
 
 test_that("active_predictors.ObliqueForest() works with all trees", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
   # Extract from all trees in forest
+  forest <- get_penguins_forest()
   result <- active_predictors(forest, tree = 1:forest$n_tree)
 
   expect_equal(nrow(result), forest$n_tree)
@@ -442,7 +517,11 @@ test_that("active_predictors.ObliqueForest() works with all trees", {
 })
 
 test_that("active_predictors.ObliqueForest() handles duplicate tree numbers", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
   # Allow duplicate tree numbers (user may want this programmatically)
+  forest <- get_penguins_forest()
   result <- active_predictors(forest, tree = c(1L, 1L, 2L))
 
   expect_equal(nrow(result), 3)

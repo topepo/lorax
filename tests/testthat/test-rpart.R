@@ -1,9 +1,7 @@
-library(rpart)
-
-# Test data setup
-tree <- rpart(Species ~ ., data = iris)
-
 test_that("extract_rules.rpart() returns correct structure", {
+  skip_if_not_installed("rpart")
+
+  tree <- get_iris_rpart_tree()
   rules <- extract_rules(tree)
 
   expect_s3_class(rules, "rule_set_rpart")
@@ -15,6 +13,9 @@ test_that("extract_rules.rpart() returns correct structure", {
 })
 
 test_that("extract_rules.rpart() extracts all terminal nodes", {
+  skip_if_not_installed("rpart")
+
+  tree <- get_iris_rpart_tree()
   rules <- extract_rules(tree)
   terminal_nodes <- as.integer(rownames(tree$frame[
     tree$frame$var == "<leaf>",
@@ -23,6 +24,9 @@ test_that("extract_rules.rpart() extracts all terminal nodes", {
 })
 
 test_that("extract_rules.rpart() produces valid R expressions", {
+  skip_if_not_installed("rpart")
+
+  tree <- get_iris_rpart_tree()
   rules <- extract_rules(tree)
 
   for (i in seq_len(nrow(rules))) {
@@ -31,6 +35,9 @@ test_that("extract_rules.rpart() produces valid R expressions", {
 })
 
 test_that("extract_rules.rpart() rules evaluate correctly", {
+  skip_if_not_installed("rpart")
+
+  tree <- get_iris_rpart_tree()
   rules <- extract_rules(tree)
 
   for (i in seq_len(nrow(rules))) {
@@ -44,7 +51,9 @@ test_that("extract_rules.rpart() rules evaluate correctly", {
 })
 
 test_that("extract_rules.rpart() works with numeric-only splits", {
-  num_tree <- rpart(Petal.Length ~ Sepal.Length + Sepal.Width, data = iris)
+  skip_if_not_installed("rpart")
+
+  num_tree <- rpart::rpart(Petal.Length ~ Sepal.Length + Sepal.Width, data = iris)
   rules <- extract_rules(num_tree)
 
   expect_s3_class(rules, "rule_set_rpart")
@@ -56,7 +65,9 @@ test_that("extract_rules.rpart() works with numeric-only splits", {
 })
 
 test_that("extract_rules.rpart() works with categorical splits", {
-  cat_tree <- rpart(Species ~ ., data = iris)
+  skip_if_not_installed("rpart")
+
+  cat_tree <- rpart::rpart(Species ~ ., data = iris)
   rules <- extract_rules(cat_tree)
 
   expect_s3_class(rules, "rule_set_rpart")
@@ -64,8 +75,10 @@ test_that("extract_rules.rpart() works with categorical splits", {
 })
 
 test_that("extract_rules.rpart() works with single-node tree", {
+  skip_if_not_installed("rpart")
+
   # Create a tree with no splits
-  single_tree <- rpart(Sepal.Length ~ Sepal.Width, data = iris, cp = 1)
+  single_tree <- rpart::rpart(Sepal.Length ~ Sepal.Width, data = iris, cp = 1)
   rules <- extract_rules(single_tree)
 
   expect_s3_class(rules, "rule_set_rpart")
@@ -75,6 +88,9 @@ test_that("extract_rules.rpart() works with single-node tree", {
 })
 
 test_that("extract_rules.rpart() integrates with rule_text()", {
+  skip_if_not_installed("rpart")
+
+  tree <- get_iris_rpart_tree()
   rules <- extract_rules(tree)
 
   for (i in seq_len(nrow(rules))) {
@@ -89,8 +105,10 @@ test_that("extract_rules.rpart() integrates with rule_text()", {
 })
 
 test_that("extract_rules.rpart() works with wa_trees data", {
+  skip_if_not_installed("rpart")
+
   load(system.file(package = "lorax", "wa_trees.RData"))
-  wa_tree <- rpart(class ~ ., data = wa_trees)
+  wa_tree <- rpart::rpart(class ~ ., data = wa_trees)
   rules <- extract_rules(wa_tree)
 
   expect_s3_class(rules, "rule_set_rpart")
@@ -111,9 +129,11 @@ test_that("extract_rules.rpart() works with wa_trees data", {
 })
 
 test_that("extract_rules.rpart() handles no-split data", {
+  skip_if_not_installed("rpart")
+
   # Data where no good split can be made
   null_data <- data.frame(y = 1:10, x = rep(1:5, each = 2))
-  tree <- rpart(y ~ ., data = null_data)
+  tree <- rpart::rpart(y ~ ., data = null_data)
 
   rules <- extract_rules(tree)
 
@@ -126,8 +146,10 @@ test_that("extract_rules.rpart() handles no-split data", {
 # Tests for active_predictors.rpart() -----------------------------------------
 
 test_that("active_predictors.rpart() returns correct structure", {
+  skip_if_not_installed("rpart")
+
   load(system.file(package = "lorax", "wa_trees.RData"))
-  wa_tree <- rpart(class ~ ., data = wa_trees)
+  wa_tree <- rpart::rpart(class ~ ., data = wa_trees)
   result <- active_predictors(wa_tree)
 
   expect_s3_class(result, "tbl_df")
@@ -138,8 +160,10 @@ test_that("active_predictors.rpart() returns correct structure", {
 })
 
 test_that("active_predictors.rpart() extracts correct variables", {
+  skip_if_not_installed("rpart")
+
   load(system.file(package = "lorax", "wa_trees.RData"))
-  wa_tree <- rpart(class ~ ., data = wa_trees)
+  wa_tree <- rpart::rpart(class ~ ., data = wa_trees)
   result <- active_predictors(wa_tree)
 
   # Expected: unique variables from frame excluding "<leaf>"
@@ -149,8 +173,10 @@ test_that("active_predictors.rpart() extracts correct variables", {
 })
 
 test_that("active_predictors.rpart() excludes competing and surrogate splits", {
+  skip_if_not_installed("rpart")
+
   load(system.file(package = "lorax", "wa_trees.RData"))
-  wa_tree <- rpart(
+  wa_tree <- rpart::rpart(
     class ~ elevation + eastness + northness + roughness + county,
     data = wa_trees
   )
@@ -164,8 +190,10 @@ test_that("active_predictors.rpart() excludes competing and surrogate splits", {
 })
 
 test_that("active_predictors.rpart() handles single-node tree", {
+  skip_if_not_installed("rpart")
+
   load(system.file(package = "lorax", "wa_trees.RData"))
-  single_tree <- rpart(class ~ elevation, data = wa_trees, cp = 1)
+  single_tree <- rpart::rpart(class ~ elevation, data = wa_trees, cp = 1)
   result <- active_predictors(single_tree)
 
   expect_s3_class(result, "tbl_df")
@@ -175,8 +203,10 @@ test_that("active_predictors.rpart() handles single-node tree", {
 })
 
 test_that("active_predictors.rpart() handles tree with repeated variables", {
+  skip_if_not_installed("rpart")
+
   load(system.file(package = "lorax", "wa_trees.RData"))
-  deep_tree <- rpart(class ~ ., data = wa_trees, cp = 0.01)
+  deep_tree <- rpart::rpart(class ~ ., data = wa_trees, cp = 0.01)
   result <- active_predictors(deep_tree)
 
   # Should return unique variables only (no duplicates)
@@ -187,8 +217,10 @@ test_that("active_predictors.rpart() handles tree with repeated variables", {
 })
 
 test_that("active_predictors.rpart() works with numeric predictors", {
+  skip_if_not_installed("rpart")
+
   load(system.file(package = "lorax", "wa_trees.RData"))
-  num_tree <- rpart(elevation ~ year + roughness + dew_temp, data = wa_trees)
+  num_tree <- rpart::rpart(elevation ~ year + roughness + dew_temp, data = wa_trees)
   result <- active_predictors(num_tree)
 
   expect_s3_class(result, "tbl_df")
@@ -201,8 +233,10 @@ test_that("active_predictors.rpart() works with numeric predictors", {
 })
 
 test_that("active_predictors.rpart() works with factor predictors", {
+  skip_if_not_installed("rpart")
+
   load(system.file(package = "lorax", "wa_trees.RData"))
-  factor_tree <- rpart(county ~ class + elevation + roughness, data = wa_trees)
+  factor_tree <- rpart::rpart(county ~ class + elevation + roughness, data = wa_trees)
   result <- active_predictors(factor_tree)
 
   expect_s3_class(result, "tbl_df")
