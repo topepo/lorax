@@ -115,22 +115,7 @@ extract_rules.lgb.Booster <- function(x, tree = 1L, ...) {
   terminal_ids <- tree_dt$leaf_index[!is.na(tree_dt$leaf_index)]
 
   # Build rules for each terminal node
-  rules_list <- lapply(terminal_ids, function(leaf_id) {
-    # Build path from root to this terminal node
-    path <- lgb_build_node_path(leaf_id, tree_dt)
-
-    # Extract split conditions along the path
-    split_exprs <- list()
-    for (i in seq_along(path)[-length(path)]) {
-      parent <- path[i]
-      child <- path[i + 1]
-      is_child_leaf <- (i == length(path) - 1)
-      split_info <- lgb_get_split_info(parent, child, tree_dt, is_child_leaf)
-      split_exprs[[i]] <- rect_split_to_expr(split_info)
-    }
-
-    combine_rule_elements(split_exprs)
-  })
+  rules_list <- lapply(terminal_ids, lgb_extract_leaf_rule, tree_dt = tree_dt)
 
   # Return tibble with 1-based IDs
   tibble::tibble(
@@ -140,6 +125,24 @@ extract_rules.lgb.Booster <- function(x, tree = 1L, ...) {
   ) |>
     dplyr::arrange(id) |>
     tibble::new_tibble(class = c("rule_set_lgb.Booster", "rule_set"))
+}
+
+# Internal helper: extract rule for a single terminal node
+lgb_extract_leaf_rule <- function(leaf_id, tree_dt) {
+  # Build path from root to this terminal node
+  path <- lgb_build_node_path(leaf_id, tree_dt)
+
+  # Extract split conditions along the path
+  split_exprs <- list()
+  for (i in seq_along(path)[-length(path)]) {
+    parent <- path[i]
+    child <- path[i + 1]
+    is_child_leaf <- (i == length(path) - 1)
+    split_info <- lgb_get_split_info(parent, child, tree_dt, is_child_leaf)
+    split_exprs[[i]] <- rect_split_to_expr(split_info)
+  }
+
+  combine_rule_elements(split_exprs)
 }
 
 # Internal helper to build path from root to leaf

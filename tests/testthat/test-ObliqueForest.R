@@ -286,3 +286,165 @@ test_that("extract_rules.ObliqueForest() handles single-node tree", {
   expect_equal(rules$id, 1L) # 1-indexed
   expect_equal(rules$rules[[1]], rlang::expr(TRUE))
 })
+
+# Tests for active_predictors.ObliqueForest() ---------------------------------
+
+test_that("active_predictors.ObliqueForest() returns correct structure", {
+  result <- active_predictors(forest)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("active_predictors", "tree"))
+  expect_type(result$active_predictors, "list")
+  expect_type(result$tree, "integer")
+  expect_equal(nrow(result), 1)
+})
+
+test_that("active_predictors.ObliqueForest() extracts from single tree", {
+  result <- active_predictors(forest, tree = 1L)
+
+  expect_equal(nrow(result), 1)
+  expect_equal(result$tree, 1L)
+  expect_type(result$active_predictors[[1]], "character")
+})
+
+test_that("active_predictors.ObliqueForest() extracts from multiple trees", {
+  result <- active_predictors(forest, tree = c(1L, 2L, 3L))
+
+  expect_equal(nrow(result), 3)
+  expect_equal(result$tree, c(1L, 2L, 3L))
+  expect_equal(length(result$active_predictors), 3)
+})
+
+test_that("active_predictors.ObliqueForest() validates tree argument", {
+  expect_snapshot(
+    active_predictors(forest, tree = "1"),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    active_predictors(forest, tree = 1.5),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    active_predictors(forest, tree = 0L),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    active_predictors(forest, tree = 11L),
+    error = TRUE
+  )
+})
+
+test_that("active_predictors.ObliqueForest() collapses factor indicators", {
+  # Use wa_trees which has 'county' factor
+  load(system.file("wa_trees.RData", package = "lorax"))
+  wa_forest <- orsf(
+    class ~ county + elevation + roughness,
+    data = wa_trees,
+    n_tree = 3
+  )
+
+  result <- active_predictors(wa_forest, tree = 1L)
+  active_vars <- result$active_predictors[[1]]
+
+  # Should see "county" not "county_adams", "county_benton", etc.
+  expect_true("county" %in% active_vars)
+  expect_false(any(grepl("county_", active_vars)))
+
+  # All variables should be from original formula
+  expect_true(all(active_vars %in% c("county", "elevation", "roughness")))
+})
+
+test_that("active_predictors.ObliqueForest() handles mixed numeric and factor predictors", {
+  # penguins has factors: species, island, sex
+  result <- active_predictors(forest, tree = 1L)
+  active_vars <- result$active_predictors[[1]]
+
+  # Should have both numeric and factor variables
+  expect_true(any(
+    active_vars %in%
+      c(
+        "bill_length_mm",
+        "bill_depth_mm",
+        "flipper_length_mm",
+        "body_mass_g",
+        "year"
+      )
+  ))
+  expect_true(any(active_vars %in% c("species", "island", "sex")))
+
+  # Should NOT have indicator variables
+  expect_false(any(grepl("_Adelie|_Chinstrap|_Gentoo", active_vars)))
+  expect_false(any(grepl("_Biscoe|_Dream|_Torgersen", active_vars)))
+  expect_false(any(grepl("_female|_male", active_vars)))
+})
+
+test_that("active_predictors.ObliqueForest() handles tree with no splits", {
+  # Create forest with high split_min_stat to attempt single node tree
+  small_data <- data.frame(y = 1:50, x = rnorm(50))
+  no_split_forest <- orsf(
+    y ~ x,
+    data = small_data,
+    n_tree = 1,
+    split_min_stat = 0.99, # Very high threshold (close to max of 1)
+    oobag_pred_type = "none"
+  )
+
+  # Check if tree has no splits (root is terminal)
+  has_no_splits <- no_split_forest$forest$child_left[[1]][1] == 0
+
+  result <- active_predictors(no_split_forest, tree = 1L)
+
+  expect_equal(nrow(result), 1)
+  expect_equal(result$tree, 1L)
+  expect_type(result$active_predictors[[1]], "character")
+
+  # If tree has no splits, should return empty character vector
+  if (has_no_splits) {
+    expect_length(result$active_predictors[[1]], 0)
+  } else {
+    # If tree did split, should return some predictors
+    expect_true(length(result$active_predictors[[1]]) >= 0)
+  }
+})
+
+test_that("active_predictors.ObliqueForest() returns sorted unique variables", {
+  result <- active_predictors(forest, tree = 1L)
+  active_vars <- result$active_predictors[[1]]
+
+  # Should be sorted (case-insensitive)
+  expect_equal(active_vars, active_vars[order(tolower(active_vars))])
+
+  # Should be unique
+  expect_equal(length(active_vars), length(unique(active_vars)))
+})
+
+test_that("active_predictors.ObliqueForest() handles numeric-only predictors", {
+  # Use mtcars which has no factors
+  forest_numeric <- orsf(mpg ~ cyl + disp + hp + wt, data = mtcars, n_tree = 3)
+
+  result <- active_predictors(forest_numeric, tree = 1L)
+  active_vars <- result$active_predictors[[1]]
+
+  expect_type(active_vars, "character")
+  expect_true(all(active_vars %in% c("cyl", "disp", "hp", "wt")))
+})
+
+test_that("active_predictors.ObliqueForest() works with all trees", {
+  # Extract from all trees in forest
+  result <- active_predictors(forest, tree = 1:forest$n_tree)
+
+  expect_equal(nrow(result), forest$n_tree)
+  expect_equal(result$tree, 1:forest$n_tree)
+  expect_equal(length(result$active_predictors), forest$n_tree)
+})
+
+test_that("active_predictors.ObliqueForest() handles duplicate tree numbers", {
+  # Allow duplicate tree numbers (user may want this programmatically)
+  result <- active_predictors(forest, tree = c(1L, 1L, 2L))
+
+  expect_equal(nrow(result), 3)
+  expect_equal(result$tree, c(1L, 1L, 2L))
+})

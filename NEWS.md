@@ -1,5 +1,6 @@
 # lorax (development version)
 
+* `active_predictors()` gains an `ObliqueForest` method for extracting the set of predictors used in oblique tree splits from aorsf models. Supports extracting from multiple trees via the `tree` argument.
 * `active_predictors()` gains a `party` method for extracting the set of predictors used in tree splits from partykit objects.
 * `active_predictors()` gains an `rpart` method for extracting the set of predictors used in actual tree splits (excluding competing and surrogate splits).
 * `as.party()` gains methods for bart, C5.0, grf, lgb.Booster, randomForest, ranger, and xgb.Booster objects, enabling conversion of these models to partykit's party structure for visualization and analysis.

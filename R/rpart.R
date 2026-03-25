@@ -1,21 +1,29 @@
+# Internal helper: extract rule for a single terminal node
+rpart_extract_node_rule <- function(node_id, max_node_id, x) {
+  path <- build_node_path(node_id, max_node_id)
+
+  split_exprs <- list()
+  for (i in seq_along(path)[-length(path)]) {
+    parent <- path[i]
+    child <- path[i + 1]
+    split_info <- rpart_get_split_info(parent, child, x)
+    split_exprs[[i]] <- rect_split_to_expr(split_info)
+  }
+
+  combine_rule_elements(split_exprs)
+}
+
 #' @export
 extract_rules.rpart <- function(x, ...) {
   rlang::check_installed("rpart")
   terminal_ids <- rpart_get_terminal_nodes(x)
 
-  rules_list <- lapply(terminal_ids, function(node_id) {
-    path <- build_node_path(node_id, max(terminal_ids))
-
-    split_exprs <- list()
-    for (i in seq_along(path)[-length(path)]) {
-      parent <- path[i]
-      child <- path[i + 1]
-      split_info <- rpart_get_split_info(parent, child, x)
-      split_exprs[[i]] <- rect_split_to_expr(split_info)
-    }
-
-    combine_rule_elements(split_exprs)
-  })
+  rules_list <- lapply(
+    terminal_ids,
+    rpart_extract_node_rule,
+    max_node_id = max(terminal_ids),
+    x = x
+  )
 
   tibble::tibble(
     id = as.integer(terminal_ids),
