@@ -167,3 +167,16 @@ rpart_find_split_row <- function(node_id, x) {
   # The split for this node is at position splits_used + 1
   splits_used + 1
 }
+
+#' @rdname active_predictors
+#' @export
+active_predictors.rpart <- function(x, ...) {
+  rlang::check_installed("rpart")
+
+  # Extract variables used in splits (excluding leaves)
+  all_vars <- x$frame$var
+  active_vars <- unique(all_vars[all_vars != "<leaf>"])
+
+  # Use constructor to create result
+  new_active_predictors(active_vars)
+}

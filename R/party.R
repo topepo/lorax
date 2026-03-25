@@ -125,3 +125,37 @@ party_get_split_info <- function(parent_id, child_id, x) {
     }
   }
 }
+
+#' @rdname active_predictors
+#' @export
+active_predictors.party <- function(x, ...) {
+  rlang::check_installed("partykit")
+
+  # Get all non-terminal nodes (nodes with splits)
+  non_terminal_ids <- partykit::nodeids(x, terminal = FALSE)
+
+  # Extract variable names from each split
+  if (length(non_terminal_ids) == 0) {
+    # No non-terminal nodes means no splits
+    active_vars <- character(0)
+  } else {
+    nodes <- partykit::nodeapply(x, ids = non_terminal_ids, by_node = TRUE)
+    active_vars_list <- lapply(nodes, function(node) {
+      sp <- partykit::split_node(node)
+
+      # Only extract variable if split exists (some non-terminal nodes may not have splits)
+      if (!is.null(sp)) {
+        var_idx <- partykit::varid_split(sp)
+        names(x$data)[var_idx]
+      } else {
+        character(0)
+      }
+    })
+
+    # Combine all variables
+    active_vars <- unique(unlist(active_vars_list, use.names = FALSE))
+  }
+
+  # Use constructor to create result
+  new_active_predictors(active_vars)
+}

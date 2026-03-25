@@ -15,3 +15,39 @@
 extract_rules <- function(x, ...) {
   UseMethod("extract_rules")
 }
+
+# ------------------------------------------------------------------------------
+
+#' Extract the active features from a tree
+#'
+#' If a tree does not use a predictor in the training set in any of its splits
+#' it is functionally independent of the prediction function. This generic
+#' returns a data frame containing character vector of predictor names that
+#' were used in at least one split.
+#'
+#' @param x A object
+#' @param ... Other arguments passed to methods
+#'
+#' @return A tibble with list column `active_predictors` containing a character
+#' vector of predictors.
+#'
+#' @examples
+#' if (rlang::is_installed(c("rpart", "palmerpenguins"))) {
+#'   data(penguins, package = "palmerpenguins")
+#'   penguins <- na.omit(penguins)
+#'
+#'   # Fit a tree
+#'   tree <- rpart::rpart(species ~ ., data = penguins)
+#'   tree
+#'
+#'   # Extract active predictors
+#'   active_predictors(tree)
+#'
+#'   # Only primary splits are included - competing and surrogate splits
+#'   # are excluded since they don't affect predictions
+#' }
+#'
+#' @export
+active_predictors <- function(x, ...) {
+  UseMethod("active_predictors")
+}

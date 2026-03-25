@@ -110,17 +110,6 @@ test_that("extract_rules.rpart() works with wa_trees data", {
   }
 })
 
-test_that("extract_rules.rpart() handles single-node tree (already exists)", {
-  # This test already exists above, just confirming it works
-  single_tree <- rpart(Sepal.Length ~ Sepal.Width, data = iris, cp = 1)
-  rules <- extract_rules(single_tree)
-
-  expect_s3_class(rules, "rule_set_rpart")
-  expect_equal(nrow(rules), 1)
-  expect_equal(rules$id, 1L)
-  expect_equal(rules$rules[[1]], rlang::expr(TRUE))
-})
-
 test_that("extract_rules.rpart() handles no-split data", {
   # Data where no good split can be made
   null_data <- data.frame(y = 1:10, x = rep(1:5, each = 2))
@@ -134,15 +123,89 @@ test_that("extract_rules.rpart() handles no-split data", {
   expect_equal(rules$rules[[1]], rlang::expr(TRUE))
 })
 
-test_that("extract_rules.rpart() handles no-split data", {
-  # Data where no good split can be made
-  null_data <- data.frame(y = 1:10, x = rep(1:5, each = 2))
-  tree <- rpart(y ~ ., data = null_data)
+# Tests for active_predictors.rpart() -----------------------------------------
 
-  rules <- extract_rules(tree)
+test_that("active_predictors.rpart() returns correct structure", {
+  load(system.file(package = "lorax", "wa_trees.RData"))
+  wa_tree <- rpart(class ~ ., data = wa_trees)
+  result <- active_predictors(wa_tree)
 
-  expect_s3_class(rules, "rule_set_rpart")
-  expect_equal(nrow(rules), 1)
-  expect_equal(rules$id, 1L)
-  expect_equal(rules$rules[[1]], rlang::expr(TRUE))
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, "active_predictors")
+  expect_type(result$active_predictors, "list")
+  expect_length(result$active_predictors, 1)
+  expect_type(result$active_predictors[[1]], "character")
+})
+
+test_that("active_predictors.rpart() extracts correct variables", {
+  load(system.file(package = "lorax", "wa_trees.RData"))
+  wa_tree <- rpart(class ~ ., data = wa_trees)
+  result <- active_predictors(wa_tree)
+
+  # Expected: unique variables from frame excluding "<leaf>"
+  expected <- unique(wa_tree$frame$var[wa_tree$frame$var != "<leaf>"])
+
+  expect_equal(sort(result$active_predictors[[1]]), sort(expected))
+})
+
+test_that("active_predictors.rpart() excludes competing and surrogate splits", {
+  load(system.file(package = "lorax", "wa_trees.RData"))
+  wa_tree <- rpart(
+    class ~ elevation + eastness + northness + roughness + county,
+    data = wa_trees
+  )
+  result <- active_predictors(wa_tree)
+  active_vars <- result$active_predictors[[1]]
+
+  # Only variables used in actual splits should be included
+  # Not those in competing or surrogate splits
+  all_frame_vars <- unique(wa_tree$frame$var[wa_tree$frame$var != "<leaf>"])
+  expect_equal(sort(active_vars), sort(all_frame_vars))
+})
+
+test_that("active_predictors.rpart() handles single-node tree", {
+  load(system.file(package = "lorax", "wa_trees.RData"))
+  single_tree <- rpart(class ~ elevation, data = wa_trees, cp = 1)
+  result <- active_predictors(single_tree)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 1)
+  expect_type(result$active_predictors[[1]], "character")
+  expect_length(result$active_predictors[[1]], 0)
+})
+
+test_that("active_predictors.rpart() handles tree with repeated variables", {
+  load(system.file(package = "lorax", "wa_trees.RData"))
+  deep_tree <- rpart(class ~ ., data = wa_trees, cp = 0.01)
+  result <- active_predictors(deep_tree)
+
+  # Should return unique variables only (no duplicates)
+  expect_equal(
+    length(result$active_predictors[[1]]),
+    length(unique(result$active_predictors[[1]]))
+  )
+})
+
+test_that("active_predictors.rpart() works with numeric predictors", {
+  load(system.file(package = "lorax", "wa_trees.RData"))
+  num_tree <- rpart(elevation ~ year + roughness + dew_temp, data = wa_trees)
+  result <- active_predictors(num_tree)
+
+  expect_s3_class(result, "tbl_df")
+  expect_type(result$active_predictors[[1]], "character")
+  # All predictors should be from the model formula
+  expect_true(all(
+    result$active_predictors[[1]] %in%
+      c("year", "roughness", "dew_temp")
+  ))
+})
+
+test_that("active_predictors.rpart() works with factor predictors", {
+  load(system.file(package = "lorax", "wa_trees.RData"))
+  factor_tree <- rpart(county ~ class + elevation + roughness, data = wa_trees)
+  result <- active_predictors(factor_tree)
+
+  expect_s3_class(result, "tbl_df")
+  expect_type(result$active_predictors[[1]], "character")
+  expect_true(length(result$active_predictors[[1]]) >= 0)
 })
