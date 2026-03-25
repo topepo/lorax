@@ -15,3 +15,23 @@
 extract_rules <- function(x, ...) {
   UseMethod("extract_rules")
 }
+
+# ------------------------------------------------------------------------------
+
+#' Extract the active features from a tree
+#'
+#' If a tree does not use a predictor in the training set in any of its splits
+#' it is functionally independent of the prediction function. This generic
+#' returns a data frame containing character vector of predictor names that
+#' were used in at least one split.
+#'
+#' @param x A object
+#' @param ... Other arguments passed to methods
+#'
+#' @return A tibble with list column `active_predictors` containing a character
+#' vector of predictors.
+#'
+#' @export
+active_predictors <- function(x, ...) {
+ UseMethod("active_predictors")
+}
