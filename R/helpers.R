@@ -446,3 +446,48 @@ extract_conditions <- function(expr) {
     return(deparse1(expr))
   }
 }
+
+# Constructor for active_predictors objects
+new_active_predictors <- function(x, ...) {
+  # Validate that x is a character vector
+  check_character(x, call = rlang::caller_env())
+
+  # Ensure uniqueness and sort the values (case-insensitive for consistency)
+  x <- unique(x)
+  x <- x[order(tolower(x))]
+
+  # Create base tibble with active_predictors as list column
+  result <- tibble::tibble(
+    active_predictors = list(x)
+  )
+
+  # Add any scalar named values from ...
+  dots <- rlang::list2(...)
+  if (length(dots) > 0) {
+    # Validate that all values are named
+    if (is.null(names(dots)) || any(names(dots) == "")) {
+      cli::cli_abort(
+        "All values in {.arg ...} must be named.",
+        call = rlang::caller_env()
+      )
+    }
+
+    # Validate that all values are scalar
+    non_scalar <- names(dots)[vapply(
+      dots,
+      function(x) length(x) != 1,
+      logical(1)
+    )]
+    if (length(non_scalar) > 0) {
+      cli::cli_abort(
+        "All values in {.arg ...} must be scalar (length 1), but {.field {non_scalar}} {?is/are} not.",
+        call = rlang::caller_env()
+      )
+    }
+
+    # Add to tibble using as_tibble_row
+    result <- dplyr::bind_cols(result, tibble::as_tibble_row(dots))
+  }
+
+  result
+}

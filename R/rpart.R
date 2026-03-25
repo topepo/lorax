@@ -177,8 +177,6 @@ active_predictors.rpart <- function(x, ...) {
   all_vars <- x$frame$var
   active_vars <- unique(all_vars[all_vars != "<leaf>"])
 
-  # Return as tibble with list column
-  tibble::tibble(
-    active_predictors = list(active_vars)
-  )
+  # Use constructor to create result
+  new_active_predictors(active_vars)
 }

@@ -326,3 +326,59 @@
       Error in `rule_text()`:
       ! `max_group_nchar` must be a single positive numeric value, not `NA`.
 
+# new_active_predictors() validates x is character
+
+    Code
+      new_active_predictors(123)
+    Condition
+      Error:
+      ! `x` must be a character vector, not the number 123.
+
+---
+
+    Code
+      new_active_predictors(list("a", "b"))
+    Condition
+      Error:
+      ! `x` must be a character vector, not a list.
+
+---
+
+    Code
+      new_active_predictors(c(TRUE, FALSE))
+    Condition
+      Error:
+      ! `x` must be a character vector, not a logical vector.
+
+# new_active_predictors() validates ... values are scalar
+
+    Code
+      new_active_predictors(c("var1"), x = c(1, 2))
+    Condition
+      Error:
+      ! `x` must be a character vector, not a double vector.
+
+---
+
+    Code
+      new_active_predictors(c("var1"), vec = c("a", "b", "c"))
+    Condition
+      Error:
+      ! All values in `...` must be scalar (length 1), but vec is not.
+
+# new_active_predictors() validates ... values are named
+
+    Code
+      new_active_predictors(c("var1"), 5)
+    Condition
+      Error:
+      ! All values in `...` must be named.
+
+---
+
+    Code
+      new_active_predictors(c("var1"), "value")
+    Condition
+      Error:
+      ! All values in `...` must be named.
+

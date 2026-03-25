@@ -129,3 +129,118 @@ test_that("extract_rules.party() handles no-split data", {
   expect_equal(rules$id, 1L)
   expect_equal(rules$rules[[1]], rlang::expr(TRUE))
 })
+
+# Tests for active_predictors.party() -----------------------------------------
+
+test_that("active_predictors.party() returns correct structure", {
+  load(system.file(package = "lorax", "wa_trees.RData"))
+  wa_tree <- ctree(class ~ ., data = wa_trees)
+  result <- active_predictors(wa_tree)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, "active_predictors")
+  expect_type(result$active_predictors, "list")
+  expect_length(result$active_predictors, 1)
+  expect_type(result$active_predictors[[1]], "character")
+})
+
+test_that("active_predictors.party() extracts correct variables", {
+  load(system.file(package = "lorax", "wa_trees.RData"))
+  wa_tree <- ctree(class ~ elevation + eastness + county, data = wa_trees)
+  result <- active_predictors(wa_tree)
+
+  # Get expected variables from non-terminal nodes
+  non_term <- partykit::nodeids(wa_tree, terminal = FALSE)
+  expected_vars <- character()
+  for (node_id in non_term) {
+    node <- partykit::nodeapply(wa_tree, ids = node_id, by_node = TRUE)[[1]]
+    sp <- partykit::split_node(node)
+    if (!is.null(sp)) {
+      var_idx <- partykit::varid_split(sp)
+      expected_vars <- c(expected_vars, names(wa_tree$data)[var_idx])
+    }
+  }
+  expected <- unique(expected_vars)
+
+  expect_equal(sort(result$active_predictors[[1]]), sort(expected))
+})
+
+test_that("active_predictors.party() works with numeric predictors", {
+  load(system.file(package = "lorax", "wa_trees.RData"))
+  num_tree <- ctree(elevation ~ year + roughness + dew_temp, data = wa_trees)
+  result <- active_predictors(num_tree)
+
+  expect_s3_class(result, "tbl_df")
+  expect_type(result$active_predictors[[1]], "character")
+  # All predictors should be from the model formula
+  expect_true(all(
+    result$active_predictors[[1]] %in%
+      c("year", "roughness", "dew_temp")
+  ))
+})
+
+test_that("active_predictors.party() works with factor predictors", {
+  load(system.file(package = "lorax", "wa_trees.RData"))
+  factor_tree <- ctree(county ~ class + elevation + roughness, data = wa_trees)
+  result <- active_predictors(factor_tree)
+
+  expect_s3_class(result, "tbl_df")
+  expect_type(result$active_predictors[[1]], "character")
+  expect_true(length(result$active_predictors[[1]]) >= 0)
+  # All predictors should be from the model formula
+  expect_true(all(
+    result$active_predictors[[1]] %in%
+      c("class", "elevation", "roughness")
+  ))
+})
+
+test_that("active_predictors.party() works with mixed numeric and factor predictors", {
+  load(system.file(package = "lorax", "wa_trees.RData"))
+  mixed_tree <- ctree(class ~ elevation + county + roughness, data = wa_trees)
+  result <- active_predictors(mixed_tree)
+
+  expect_s3_class(result, "tbl_df")
+  expect_type(result$active_predictors[[1]], "character")
+  # Should have at least one predictor
+  expect_true(length(result$active_predictors[[1]]) >= 1)
+  # All predictors should be from the model formula
+  expect_true(all(
+    result$active_predictors[[1]] %in%
+      c("elevation", "county", "roughness")
+  ))
+})
+
+test_that("active_predictors.party() handles single-node tree", {
+  load(system.file(package = "lorax", "wa_trees.RData"))
+  single_tree <- ctree(class ~ elevation, data = wa_trees, mincriterion = 1)
+  result <- active_predictors(single_tree)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 1)
+  expect_type(result$active_predictors[[1]], "character")
+  expect_length(result$active_predictors[[1]], 0)
+})
+
+test_that("active_predictors.party() handles tree with repeated variables", {
+  load(system.file(package = "lorax", "wa_trees.RData"))
+  tree <- ctree(class ~ ., data = wa_trees)
+  result <- active_predictors(tree)
+
+  # Should return unique variables only (no duplicates)
+  expect_equal(
+    length(result$active_predictors[[1]]),
+    length(unique(result$active_predictors[[1]]))
+  )
+})
+
+test_that("active_predictors.party() handles no-split data", {
+  # Data where no good split can be made
+  null_data <- data.frame(y = 1:10, x = rep(1:5, each = 2))
+  tree <- ctree(y ~ ., data = null_data)
+  result <- active_predictors(tree)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 1)
+  expect_type(result$active_predictors[[1]], "character")
+  expect_length(result$active_predictors[[1]], 0)
+})

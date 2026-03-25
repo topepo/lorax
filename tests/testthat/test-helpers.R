@@ -718,3 +718,117 @@ test_that("rule_text() preserves structure when not abbreviating", {
   expect_true(grepl('x %in% c\\("a", "b"\\)', result))
   expect_true(grepl("y > 5", result))
 })
+
+# Tests for new_active_predictors() -------------------------------------------
+
+test_that("new_active_predictors() creates correct structure", {
+  result <- new_active_predictors(c("var1", "var2"))
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, "active_predictors")
+  expect_type(result$active_predictors, "list")
+  expect_length(result$active_predictors, 1)
+  expect_type(result$active_predictors[[1]], "character")
+})
+
+test_that("new_active_predictors() sorts variables", {
+  result <- new_active_predictors(c("z", "a", "m"))
+
+  expect_equal(result$active_predictors[[1]], c("a", "m", "z"))
+})
+
+test_that("new_active_predictors() handles empty character vector", {
+  result <- new_active_predictors(character(0))
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 1)
+  expect_length(result$active_predictors[[1]], 0)
+})
+
+test_that("new_active_predictors() adds scalar named values", {
+  result <- new_active_predictors(
+    c("var1", "var2"),
+    n_trees = 10L,
+    model_type = "rf"
+  )
+
+  expect_named(result, c("active_predictors", "n_trees", "model_type"))
+  expect_equal(result$n_trees, 10L)
+  expect_equal(result$model_type, "rf")
+})
+
+test_that("new_active_predictors() works with only ... arguments", {
+  result <- new_active_predictors(character(0), count = 5)
+
+  expect_named(result, c("active_predictors", "count"))
+  expect_equal(result$count, 5)
+  expect_length(result$active_predictors[[1]], 0)
+})
+
+test_that("new_active_predictors() validates x is character", {
+  expect_snapshot(
+    new_active_predictors(123),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    new_active_predictors(list("a", "b")),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    new_active_predictors(c(TRUE, FALSE)),
+    error = TRUE
+  )
+})
+
+test_that("new_active_predictors() handles duplicates by deduplicating", {
+  result <- new_active_predictors(c("a", "b", "a"))
+
+  expect_equal(result$active_predictors[[1]], c("a", "b"))
+})
+
+test_that("new_active_predictors() deduplicates and sorts", {
+  result <- new_active_predictors(c("z", "a", "m", "a", "z"))
+
+  expect_equal(result$active_predictors[[1]], c("a", "m", "z"))
+})
+
+test_that("new_active_predictors() validates ... values are scalar", {
+  expect_snapshot(
+    new_active_predictors(c("var1"), x = c(1, 2)),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    new_active_predictors(c("var1"), vec = c("a", "b", "c")),
+    error = TRUE
+  )
+})
+
+test_that("new_active_predictors() validates ... values are named", {
+  expect_snapshot(
+    new_active_predictors(c("var1"), 5),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    new_active_predictors(c("var1"), "value"),
+    error = TRUE
+  )
+})
+
+test_that("new_active_predictors() handles multiple scalar arguments", {
+  result <- new_active_predictors(
+    c("b", "a"),
+    count = 10,
+    type = "model",
+    flag = TRUE
+  )
+
+  expect_named(result, c("active_predictors", "count", "type", "flag"))
+  expect_equal(result$active_predictors[[1]], c("a", "b"))
+  expect_equal(result$count, 10)
+  expect_equal(result$type, "model")
+  expect_equal(result$flag, TRUE)
+})
