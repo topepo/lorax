@@ -44,6 +44,10 @@
     <div class="section level2">
 <h2 class="page-header" data-toc-text="development version" id="lorax-development-version">lorax (development version)<a class="anchor" aria-label="anchor" href="#lorax-development-version"></a></h2>
 <ul><li>
+<code><a href="../reference/active_predictors.html">active_predictors()</a></code> gains a <code>party</code> method for extracting the set of predictors used in tree splits from partykit objects.</li>
+<li>
+<code><a href="../reference/active_predictors.html">active_predictors()</a></code> gains an <code>rpart</code> method for extracting the set of predictors used in actual tree splits (excluding competing and surrogate splits).</li>
+<li>
 <code><a href="https://rdrr.io/pkg/partykit/man/party-coercion.html" class="external-link">as.party()</a></code> gains methods for bart, C5.0, grf, lgb.Booster, randomForest, ranger, and xgb.Booster objects, enabling conversion of these models to partykit’s party structure for visualization and analysis.</li>
 <li>
 <code><a href="../reference/extract_rules.html">extract_rules()</a></code> gains a <code>bart</code> method for extracting rules from BART models.</li>
