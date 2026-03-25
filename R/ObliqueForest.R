@@ -379,3 +379,110 @@ oblique_get_split_info <- function(parent_id, child_id, tree_num, x) {
     threshold = unscale_result$threshold
   )
 }
+
+# Internal helper: extract active predictors from one tree
+oblique_active_vars_one_tree <- function(tree_num, x) {
+  # Get child_left for this tree (0-indexed internally)
+  child_left <- x$forest$child_left[[tree_num]]
+
+  # Find non-terminal nodes (child_left != 0)
+  non_terminal_idx <- which(child_left != 0)
+
+  # If no non-terminal nodes, return empty character vector
+  if (length(non_terminal_idx) == 0) {
+    return(character(0))
+  }
+
+  # Extract all variable indices from non-terminal nodes
+  all_indices <- integer(0)
+  for (idx in non_terminal_idx) {
+    coef_idxs <- x$forest$coef_indices[[tree_num]][[idx]]
+    if (length(coef_idxs) > 0) {
+      all_indices <- c(all_indices, coef_idxs)
+    }
+  }
+
+  # Get unique indices and convert 0-indexed to 1-indexed
+  all_indices <- unique(all_indices) + 1L
+
+  # Map to variable names (includes one-hot encoded factors)
+  var_names_expanded <- oblique_get_var_names(x)
+  active_vars <- var_names_expanded[all_indices]
+
+  # Collapse factor indicators to base names
+  oblique_collapse_factor_names(active_vars, x)
+}
+
+# Internal helper: collapse factor indicator names to base factor names
+oblique_collapse_factor_names <- function(var_names, x) {
+  fctr_info <- x$get_fctr_info()
+
+  # If no factors, return as-is
+  if (length(fctr_info$cols) == 0) {
+    return(var_names)
+  }
+
+  # Build mapping from indicator name to base factor name
+  # e.g., "county_adams" -> "county", "county_benton" -> "county"
+  indicator_to_base <- list()
+  for (factor_name in fctr_info$cols) {
+    indicators <- fctr_info$keys[[factor_name]]
+    for (ind in indicators) {
+      indicator_to_base[[ind]] <- factor_name
+    }
+  }
+
+  # Replace indicators with base names
+  result <- character(length(var_names))
+  for (i in seq_along(var_names)) {
+    if (var_names[i] %in% names(indicator_to_base)) {
+      # This is a factor indicator - use base name
+      result[i] <- indicator_to_base[[var_names[i]]]
+    } else {
+      # Not a factor indicator - keep as-is
+      result[i] <- var_names[i]
+    }
+  }
+
+  # Return unique names (factors may appear multiple times via different indicators)
+  unique(result)
+}
+
+# Internal helper: extract active predictors for one tree and wrap in constructor
+oblique_extract_one <- function(tree_num, x) {
+  active_vars <- oblique_active_vars_one_tree(tree_num, x)
+  new_active_predictors(active_vars, tree = tree_num)
+}
+
+#' @rdname active_predictors
+#' @param tree Integer vector specifying which trees to extract active
+#'   predictors from. Default is `1L` for the first tree. Values must be
+#'   between 1 and the number of trees in the forest (`x$n_tree`).
+#' @export
+active_predictors.ObliqueForest <- function(x, tree = 1L, ...) {
+  rlang::check_installed("aorsf")
+
+  # Validate tree argument
+  if (!is.numeric(tree) || !all(tree == as.integer(tree))) {
+    cli::cli_abort(
+      "{.arg tree} must be an integer vector, not {.obj_type_friendly {tree}}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  tree <- as.integer(tree)
+
+  if (any(tree < 1L) || any(tree > x$n_tree)) {
+    cli::cli_abort(
+      "{.arg tree} values must be between 1 and {x$n_tree}, not {tree}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  # Extract active predictors for each tree
+  results <- lapply(tree, oblique_extract_one, x = x)
+
+  # Combine results and sort by tree
+  dplyr::bind_rows(results) |>
+    dplyr::arrange(tree)
+}
