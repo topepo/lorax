@@ -53,7 +53,10 @@ test_that("extract_rules.rpart() rules evaluate correctly", {
 test_that("extract_rules.rpart() works with numeric-only splits", {
   skip_if_not_installed("rpart")
 
-  num_tree <- rpart::rpart(Petal.Length ~ Sepal.Length + Sepal.Width, data = iris)
+  num_tree <- rpart::rpart(
+    Petal.Length ~ Sepal.Length + Sepal.Width,
+    data = iris
+  )
   rules <- extract_rules(num_tree)
 
   expect_s3_class(rules, "rule_set_rpart")
@@ -220,7 +223,10 @@ test_that("active_predictors.rpart() works with numeric predictors", {
   skip_if_not_installed("rpart")
 
   load(system.file(package = "lorax", "wa_trees.RData"))
-  num_tree <- rpart::rpart(elevation ~ year + roughness + dew_temp, data = wa_trees)
+  num_tree <- rpart::rpart(
+    elevation ~ year + roughness + dew_temp,
+    data = wa_trees
+  )
   result <- active_predictors(num_tree)
 
   expect_s3_class(result, "tbl_df")
@@ -236,7 +242,10 @@ test_that("active_predictors.rpart() works with factor predictors", {
   skip_if_not_installed("rpart")
 
   load(system.file(package = "lorax", "wa_trees.RData"))
-  factor_tree <- rpart::rpart(county ~ class + elevation + roughness, data = wa_trees)
+  factor_tree <- rpart::rpart(
+    county ~ class + elevation + roughness,
+    data = wa_trees
+  )
   result <- active_predictors(factor_tree)
 
   expect_s3_class(result, "tbl_df")

@@ -57,14 +57,20 @@ test_that("extract_rules.ObliqueForest() rules evaluate correctly with numeric d
 
   # Use regression forest with numeric predictors only
   # (avoids factor one-hot encoding issues)
-  penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
+  penguins <- palmerpenguins::penguins[
+    complete.cases(palmerpenguins::penguins),
+  ]
   penguins_numeric <- penguins[, c(
     "bill_length_mm",
     "bill_depth_mm",
     "flipper_length_mm",
     "body_mass_g"
   )]
-  reg_forest <- aorsf::orsf(body_mass_g ~ ., data = penguins_numeric, n_tree = 5)
+  reg_forest <- aorsf::orsf(
+    body_mass_g ~ .,
+    data = penguins_numeric,
+    n_tree = 5
+  )
   rules <- extract_rules(reg_forest, tree = 1)
 
   # Check that all rules are valid expressions that evaluate to logical vectors
@@ -145,14 +151,20 @@ test_that("extract_rules.ObliqueForest() works with regression forest", {
   skip_if_not_installed("aorsf")
   skip_if_not_installed("palmerpenguins")
 
-  penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
+  penguins <- palmerpenguins::penguins[
+    complete.cases(palmerpenguins::penguins),
+  ]
   penguins_numeric <- penguins[, c(
     "bill_length_mm",
     "bill_depth_mm",
     "flipper_length_mm",
     "body_mass_g"
   )]
-  reg_forest <- aorsf::orsf(body_mass_g ~ ., data = penguins_numeric, n_tree = 5)
+  reg_forest <- aorsf::orsf(
+    body_mass_g ~ .,
+    data = penguins_numeric,
+    n_tree = 5
+  )
   rules <- extract_rules(reg_forest, tree = 1)
 
   expect_s3_class(rules, "rule_set_ObliqueForest")
@@ -179,7 +191,9 @@ test_that("extract_rules.ObliqueForest() rules match aorsf node assignments", {
   skip("TODO: Debug rule extraction - node assignments don't match aorsf")
 
   # Test with numeric data only to avoid factor comparison issues
-  penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
+  penguins <- palmerpenguins::penguins[
+    complete.cases(palmerpenguins::penguins),
+  ]
   penguins_numeric <- penguins[, c(
     "bill_length_mm",
     "bill_depth_mm",
@@ -250,7 +264,9 @@ test_that("extract_rules.ObliqueForest() node assignments are consistent", {
   skip("TODO: Debug rule extraction - node assignments don't match aorsf")
 
   # Test that each node's observations match between aorsf and extracted rules
-  penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
+  penguins <- palmerpenguins::penguins[
+    complete.cases(palmerpenguins::penguins),
+  ]
   penguins_numeric <- penguins[, c(
     "bill_length_mm",
     "bill_depth_mm",
@@ -494,7 +510,11 @@ test_that("active_predictors.ObliqueForest() handles numeric-only predictors", {
   skip_if_not_installed("aorsf")
 
   # Use mtcars which has no factors
-  forest_numeric <- aorsf::orsf(mpg ~ cyl + disp + hp + wt, data = mtcars, n_tree = 3)
+  forest_numeric <- aorsf::orsf(
+    mpg ~ cyl + disp + hp + wt,
+    data = mtcars,
+    n_tree = 3
+  )
 
   result <- active_predictors(forest_numeric, tree = 1L)
   active_vars <- result$active_predictors[[1]]

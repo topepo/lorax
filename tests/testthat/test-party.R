@@ -179,7 +179,10 @@ test_that("active_predictors.party() extracts correct variables", {
   skip_if_not_installed("partykit")
 
   load(system.file(package = "lorax", "wa_trees.RData"))
-  wa_tree <- partykit::ctree(class ~ elevation + eastness + county, data = wa_trees)
+  wa_tree <- partykit::ctree(
+    class ~ elevation + eastness + county,
+    data = wa_trees
+  )
   result <- active_predictors(wa_tree)
 
   # Get expected variables from non-terminal nodes
@@ -202,7 +205,10 @@ test_that("active_predictors.party() works with numeric predictors", {
   skip_if_not_installed("partykit")
 
   load(system.file(package = "lorax", "wa_trees.RData"))
-  num_tree <- partykit::ctree(elevation ~ year + roughness + dew_temp, data = wa_trees)
+  num_tree <- partykit::ctree(
+    elevation ~ year + roughness + dew_temp,
+    data = wa_trees
+  )
   result <- active_predictors(num_tree)
 
   expect_s3_class(result, "tbl_df")
@@ -218,7 +224,10 @@ test_that("active_predictors.party() works with factor predictors", {
   skip_if_not_installed("partykit")
 
   load(system.file(package = "lorax", "wa_trees.RData"))
-  factor_tree <- partykit::ctree(county ~ class + elevation + roughness, data = wa_trees)
+  factor_tree <- partykit::ctree(
+    county ~ class + elevation + roughness,
+    data = wa_trees
+  )
   result <- active_predictors(factor_tree)
 
   expect_s3_class(result, "tbl_df")
@@ -235,7 +244,10 @@ test_that("active_predictors.party() works with mixed numeric and factor predict
   skip_if_not_installed("partykit")
 
   load(system.file(package = "lorax", "wa_trees.RData"))
-  mixed_tree <- partykit::ctree(class ~ elevation + county + roughness, data = wa_trees)
+  mixed_tree <- partykit::ctree(
+    class ~ elevation + county + roughness,
+    data = wa_trees
+  )
   result <- active_predictors(mixed_tree)
 
   expect_s3_class(result, "tbl_df")
@@ -253,7 +265,11 @@ test_that("active_predictors.party() handles single-node tree", {
   skip_if_not_installed("partykit")
 
   load(system.file(package = "lorax", "wa_trees.RData"))
-  single_tree <- partykit::ctree(class ~ elevation, data = wa_trees, mincriterion = 1)
+  single_tree <- partykit::ctree(
+    class ~ elevation,
+    data = wa_trees,
+    mincriterion = 1
+  )
   result <- active_predictors(single_tree)
 
   expect_s3_class(result, "tbl_df")

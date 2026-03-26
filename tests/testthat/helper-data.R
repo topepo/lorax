@@ -69,7 +69,9 @@ get_factor_data <- function(n = 100) {
 get_penguins_forest <- function() {
   skip_if_not_installed("aorsf")
   skip_if_not_installed("palmerpenguins")
-  penguins <- palmerpenguins::penguins[complete.cases(palmerpenguins::penguins), ]
+  penguins <- palmerpenguins::penguins[
+    complete.cases(palmerpenguins::penguins),
+  ]
   aorsf::orsf(species ~ ., data = penguins, n_tree = 10)
 }
 
