@@ -70,3 +70,43 @@
       Error in `as.party()`:
       ! dbarts model must be fitted with `keeptrees = TRUE` to extract trees.
 
+# active_predictors.bart() validates tree argument
+
+    Code
+      active_predictors(fit, tree = "1")
+    Condition
+      Error:
+      ! `tree` must be an integer vector, not a string.
+
+---
+
+    Code
+      active_predictors(fit, tree = 1.5)
+    Condition
+      Error:
+      ! `tree` must be an integer vector, not a number.
+
+---
+
+    Code
+      active_predictors(fit, tree = 0L)
+    Condition
+      Error:
+      ! `tree` values must be between 1 and 5.
+
+---
+
+    Code
+      active_predictors(fit, tree = 11L)
+    Condition
+      Error:
+      ! `tree` values must be between 1 and 5.
+
+# active_predictors.bart() requires keeptrees = TRUE
+
+    Code
+      active_predictors(fit, tree = 1L)
+    Condition
+      Error:
+      ! dbarts model must be fitted with `keeptrees = TRUE` to extract active predictors.
+

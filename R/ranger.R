@@ -244,3 +244,62 @@ ranger_build_partynode_from_info <- function(node_id, tree_info, var_names) {
     info = list(node_id = node_id)
   )
 }
+
+# ------------------------------------------------------------------------------
+
+# Internal helper: extract active predictors for one tree and wrap in constructor
+ranger_extract_one <- function(tree_num, x) {
+  # Extract tree using treeInfo
+  tree_info <- ranger::treeInfo(x, tree = tree_num)
+
+  # Filter to non-terminal nodes
+  split_nodes <- tree_info[!tree_info$terminal, ]
+
+  # Extract splitvarName column (already as character)
+  active_vars <- split_nodes$splitvarName
+
+  # Return using constructor (handles uniqueness and sorting)
+  new_active_predictors(active_vars, tree = tree_num)
+}
+
+#' @rdname active_predictors
+#' @param tree Integer vector specifying which trees to extract active
+#'   predictors from. Default is `1L` for the first tree. Values must be
+#'   between 1 and the number of trees in the forest.
+#' @export
+active_predictors.ranger <- function(x, tree = 1L, ...) {
+  rlang::check_installed("ranger")
+
+  # Validate tree argument
+  if (!is.numeric(tree) || !all(tree == as.integer(tree))) {
+    cli::cli_abort(
+      "{.arg tree} must be an integer vector, not {.obj_type_friendly {tree}}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  tree <- as.integer(tree)
+
+  # Check that forest exists
+  if (is.null(x$forest)) {
+    cli::cli_abort(
+      "{.pkg ranger} model must be fitted with {.code write.forest = TRUE} to extract active predictors.",
+      call = rlang::caller_env()
+    )
+  }
+
+  # Validate tree range
+  if (any(tree < 1L) || any(tree > x$num.trees)) {
+    cli::cli_abort(
+      "{.arg tree} values must be between 1 and {x$num.trees}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  # Extract for each tree
+  results <- lapply(tree, ranger_extract_one, x = x)
+
+  # Combine and sort by tree
+  dplyr::bind_rows(results) |>
+    dplyr::arrange(tree)
+}

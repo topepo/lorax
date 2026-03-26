@@ -342,3 +342,66 @@ rf_build_partynode <- function(
     info = list(row_idx = row_idx)
   )
 }
+
+# ------------------------------------------------------------------------------
+
+# Internal helper: extract active predictors for one tree and wrap in constructor
+rf_extract_one <- function(tree_num, x) {
+  # Extract tree using getTree
+  tree_df <- randomForest::getTree(x, k = tree_num, labelVar = FALSE)
+
+  # Get split var column (1-based indices, 0 for terminal)
+  split_vars <- tree_df[, "split var"]
+
+  # Filter to non-zero values (exclude terminal nodes)
+  var_indices <- split_vars[split_vars > 0]
+
+  # Map indices to variable names via importance rownames
+  var_names <- rownames(x$importance)
+  active_vars <- var_names[var_indices]
+
+  # Return using constructor (handles uniqueness and sorting)
+  new_active_predictors(active_vars, tree = tree_num)
+}
+
+#' @rdname active_predictors
+#' @param tree Integer vector specifying which trees to extract active
+#'   predictors from. Default is `1L` for the first tree. Values must be
+#'   between 1 and the number of trees in the forest.
+#' @export
+active_predictors.randomForest <- function(x, tree = 1L, ...) {
+  rlang::check_installed("randomForest")
+
+  # Validate tree argument
+  if (!is.numeric(tree) || !all(tree == as.integer(tree))) {
+    cli::cli_abort(
+      "{.arg tree} must be an integer vector, not {.obj_type_friendly {tree}}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  tree <- as.integer(tree)
+
+  # Check that forest exists
+  if (is.null(x$forest)) {
+    cli::cli_abort(
+      "{.pkg randomForest} model must be fitted with {.code keep.forest = TRUE} to extract active predictors.",
+      call = rlang::caller_env()
+    )
+  }
+
+  # Validate tree range
+  if (any(tree < 1L) || any(tree > x$ntree)) {
+    cli::cli_abort(
+      "{.arg tree} values must be between 1 and {x$ntree}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  # Extract for each tree
+  results <- lapply(tree, rf_extract_one, x = x)
+
+  # Combine and sort by tree
+  dplyr::bind_rows(results) |>
+    dplyr::arrange(tree)
+}
