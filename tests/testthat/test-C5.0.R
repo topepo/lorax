@@ -267,7 +267,7 @@ test_that("as.party.C5.0 handles multiway categorical splits correctly", {
 
 test_that("active_predictors.C5.0() has correct structure for tree models", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins)
@@ -296,7 +296,7 @@ test_that("active_predictors.C5.0() extracts correct variables", {
 
 test_that("active_predictors.C5.0() works with numeric predictors", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+
 
   # C5.0 requires factor outcome
   mtcars_factor <- mtcars
@@ -311,7 +311,7 @@ test_that("active_predictors.C5.0() works with numeric predictors", {
 
 test_that("active_predictors.C5.0() works with factor predictors", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+
   wa_trees <- get_wa_trees_data()
 
   fit <- C50::C5.0(class ~ county + roughness, data = wa_trees)
@@ -323,7 +323,7 @@ test_that("active_predictors.C5.0() works with factor predictors", {
 
 test_that("active_predictors.C5.0() handles tree with no splits", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+
 
   # Create a trivial dataset with no useful splits
   small_data <- data.frame(
@@ -340,7 +340,7 @@ test_that("active_predictors.C5.0() handles tree with no splits", {
 
 test_that("active_predictors.C5.0() extracts from single boosted tree", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins, trials = 5)
@@ -353,7 +353,7 @@ test_that("active_predictors.C5.0() extracts from single boosted tree", {
 
 test_that("active_predictors.C5.0() extracts from multiple boosted trees", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins, trials = 5)
@@ -366,7 +366,7 @@ test_that("active_predictors.C5.0() extracts from multiple boosted trees", {
 
 test_that("active_predictors.C5.0() extracts from all trees", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins, trials = 5)
