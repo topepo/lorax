@@ -310,7 +310,7 @@ test_that("active_predictors.C5.0() works with factor predictors", {
 
 test_that("active_predictors.C5.0() handles tree with no splits", {
   skip_if_not_installed("C50")
- skip("troubleshooting")
+  skip_on_os("linux")
 
   # Create a trivial dataset with no useful splits
   small_data <- data.frame(
@@ -327,7 +327,7 @@ test_that("active_predictors.C5.0() handles tree with no splits", {
 
 test_that("active_predictors.C5.0() extracts from single boosted tree", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+  skip_on_os("linux")
 
   penguins <- get_penguins_data()
 
@@ -341,7 +341,7 @@ test_that("active_predictors.C5.0() extracts from single boosted tree", {
 
 test_that("active_predictors.C5.0() extracts from multiple boosted trees", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+  skip_on_os("linux")
 
   penguins <- get_penguins_data()
 
@@ -355,7 +355,7 @@ test_that("active_predictors.C5.0() extracts from multiple boosted trees", {
 
 test_that("active_predictors.C5.0() extracts from all trees", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+  skip_on_os("linux")
 
   penguins <- get_penguins_data()
 
@@ -369,7 +369,7 @@ test_that("active_predictors.C5.0() extracts from all trees", {
 
 test_that("active_predictors.C5.0() validates tree argument", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+  skip_on_os("linux")
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins, trials = 3)
@@ -382,7 +382,7 @@ test_that("active_predictors.C5.0() validates tree argument", {
 
 test_that("active_predictors.C5.0() returns sorted unique results", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+  skip_on_os("linux")
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins)
@@ -395,7 +395,7 @@ test_that("active_predictors.C5.0() returns sorted unique results", {
 
 test_that("active_predictors.C5.0() automatically deduplicates tree numbers", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+  skip_on_os("linux")
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins, trials = 3)
@@ -407,7 +407,7 @@ test_that("active_predictors.C5.0() automatically deduplicates tree numbers", {
 
 test_that("active_predictors.C5.0() rule model has correct structure", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+  skip_on_os("linux")
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins, rules = TRUE)
@@ -422,7 +422,7 @@ test_that("active_predictors.C5.0() rule model has correct structure", {
 
 test_that("active_predictors.C5.0() extracts from rule conditions", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+  skip_on_os("linux")
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins, rules = TRUE)
@@ -436,7 +436,7 @@ test_that("active_predictors.C5.0() extracts from rule conditions", {
 
 test_that("active_predictors.C5.0() rule model with factors", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+  skip_on_os("linux")
   wa_trees <- get_wa_trees_data()
 
   fit <- C50::C5.0(class ~ county + roughness, data = wa_trees, rules = TRUE)
@@ -448,7 +448,7 @@ test_that("active_predictors.C5.0() rule model with factors", {
 
 test_that("active_predictors.C5.0() rule model with numerics", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+  skip_on_os("linux")
 
   # C5.0 requires factor outcome
   mtcars_factor <- mtcars
