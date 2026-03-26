@@ -367,7 +367,8 @@ c5_parse_node_recursive <- function(
         split <- build_partysplit(varid, split_cut, right = FALSE)
       } else {
         # Parse elts groups and create index vector
-        split_index <- integer(length(var_levels))
+        # Initialize with 1s (not 0s) so unassigned levels default to child 1
+        split_index <- rep(1L, length(var_levels))
 
         for (child_num in seq_along(elts_groups)) {
           # Split on commas to get individual levels
