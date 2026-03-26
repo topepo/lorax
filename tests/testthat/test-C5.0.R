@@ -310,7 +310,7 @@ test_that("active_predictors.C5.0() works with factor predictors", {
 
 test_that("active_predictors.C5.0() handles tree with no splits", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+
 
   # Create a trivial dataset with no useful splits
   small_data <- data.frame(
@@ -327,7 +327,7 @@ test_that("active_predictors.C5.0() handles tree with no splits", {
 
 test_that("active_predictors.C5.0() extracts from single boosted tree", {
   skip_if_not_installed("C50")
-  skip("troubleshooting")
+
 
   penguins <- get_penguins_data()
 
