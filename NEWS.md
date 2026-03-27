@@ -8,3 +8,4 @@
 * `extract_rules()` gains a `bart` method for extracting rules from BART models.
 * `extract_rules()` gains an `lgb.Booster` method for extracting rules from LightGBM models.
 * `extract_rules()` gains an `xgb.Booster` method for extracting rules from XGBoost models.
+* `var_imp()` gains methods for grf, ObliqueForest, randomForest, ranger, rpart, and xgb.Booster objects for extracting variable importance scores. The randomForest method supports selecting different importance metrics via the `type` parameter, and the xgb.Booster method supports specifying the complete feature set via the `feature_names` parameter.
