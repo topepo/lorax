@@ -308,3 +308,32 @@ grf_find_max_split_var <- function(all_nodes) {
 
   max_var
 }
+
+# ------------------------------------------------------------------------------
+# Variable importance Wrapper
+
+#' Tree Importance Scores
+#'
+#' Methods for computing variable importance scores via the model object using
+#' a common interface.
+#'
+#' @param object A model object.
+#' @param complete A logical to filling absent importance values with zeros.
+#' @param ... Arguments passed to importance functions (if any).
+#' @return A tibble with columns `term` and `estimate`.
+#' @name lorax_var_imp
+#'
+#' @export
+var_imp.grf <- function(object, complete = TRUE, ...) {
+ pred_names <- colnames(object$X.orig)
+ res <- grf::variable_importance(object, ...)[,1]
+ names(res) <- pred_names
+ res <- tibble::enframe(res)
+ names(res) <- c("term", "estimate")
+
+ if (complete) {
+  res <- complete_results(res, pred_names)
+ }
+
+ res
+}
