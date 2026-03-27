@@ -325,15 +325,16 @@ grf_find_max_split_var <- function(all_nodes) {
 #'
 #' @export
 var_imp.grf <- function(object, complete = TRUE, ...) {
- pred_names <- colnames(object$X.orig)
- res <- grf::variable_importance(object, ...)[,1]
- names(res) <- pred_names
- res <- tibble::enframe(res)
- names(res) <- c("term", "estimate")
+  rlang::check_installed("grf")
+  pred_names <- colnames(object$X.orig)
+  res <- grf::variable_importance(object, ...)[, 1]
+  names(res) <- pred_names
+  res <- tibble::enframe(res)
+  names(res) <- c("term", "estimate")
 
- if (complete) {
-  res <- complete_results(res, pred_names)
- }
+  if (complete) {
+    res <- complete_results(res, pred_names)
+  }
 
- res
+  res
 }

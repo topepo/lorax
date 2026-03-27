@@ -195,13 +195,16 @@ active_predictors.rpart <- function(x, ...) {
 #' @export
 #' @rdname lorax_var_imp
 var_imp.rpart <- function(object, complete = TRUE, ...) {
- res <- tibble::enframe(object$variable.importance)
- names(res) <- c("term", "estimate")
+  res <- tibble::enframe(object$variable.importance)
+  names(res) <- c("term", "estimate")
 
- if (complete) {
-  vars <- terms_predictor_names(object$terms)
-  res <- complete_results(res, vars)
- }
+  # Ensure term is character (enframe returns integer when input is NULL)
+  res$term <- as.character(res$term)
 
- res
+  if (complete) {
+    vars <- terms_predictor_names(object$terms)
+    res <- complete_results(res, vars)
+  }
+
+  res
 }
