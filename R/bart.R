@@ -800,3 +800,75 @@ bart_build_partynode_df <- function(tree_df, start_row, var_names) {
     rows_consumed = total_rows
   ))
 }
+
+# ------------------------------------------------------------------------------
+
+# Internal helper: extract active predictors for one tree and wrap in constructor
+bart_extract_one <- function(tree_num, x) {
+  # Extract trees
+  trees_df <- x$fit$getTrees()
+
+  # Filter to specific tree and most recent sample
+  tree_df <- trees_df[trees_df$tree == tree_num, ]
+
+  # Use most recent sample if multiple samples exist
+  if ("sample" %in% names(tree_df)) {
+    tree_df <- tree_df[tree_df$sample == max(tree_df$sample), ]
+  }
+
+  # Get variable indices from var column (exclude -1 for terminal nodes)
+  var_indices <- tree_df$var[tree_df$var != -1]
+
+  # Map 1-based indices to variable names
+  var_names <- colnames(x$fit$data@x)
+  active_vars <- var_names[var_indices]
+
+  # Return using constructor (handles uniqueness and sorting)
+  new_active_predictors(active_vars, tree = tree_num)
+}
+
+#' @rdname active_predictors
+#' @param tree Integer vector specifying which trees to extract active
+#'   predictors from. Default is `1L` for the first tree. Values must be
+#'   between 1 and the number of trees in the forest.
+#' @export
+active_predictors.bart <- function(x, tree = 1L, ...) {
+  rlang::check_installed("dbarts")
+
+  # Validate tree argument
+  if (!is.numeric(tree) || !all(tree == as.integer(tree))) {
+    cli::cli_abort(
+      "{.arg tree} must be an integer vector, not {.obj_type_friendly {tree}}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  tree <- as.integer(tree)
+
+  # Check that model was fitted with keeptrees = TRUE
+  if (is.null(x$fit)) {
+    cli::cli_abort(
+      "{.pkg dbarts} model must be fitted with {.code keeptrees = TRUE} to extract active predictors.",
+      call = rlang::caller_env()
+    )
+  }
+
+  # Get available trees
+  trees_df <- x$fit$getTrees()
+  max_tree <- max(trees_df$tree)
+
+  # Validate tree range
+  if (any(tree < 1L) || any(tree > max_tree)) {
+    cli::cli_abort(
+      "{.arg tree} values must be between 1 and {max_tree}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  # Extract for each tree
+  results <- lapply(tree, bart_extract_one, x = x)
+
+  # Combine and sort by tree
+  dplyr::bind_rows(results) |>
+    dplyr::arrange(tree)
+}

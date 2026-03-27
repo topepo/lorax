@@ -46,3 +46,43 @@
       Error in `as.party()`:
       ! ranger model must have `write.forest = TRUE` to extract trees.
 
+# active_predictors.ranger() validates tree argument
+
+    Code
+      active_predictors(rf, tree = "1")
+    Condition
+      Error:
+      ! `tree` must be an integer vector, not a string.
+
+---
+
+    Code
+      active_predictors(rf, tree = 1.5)
+    Condition
+      Error:
+      ! `tree` must be an integer vector, not a number.
+
+---
+
+    Code
+      active_predictors(rf, tree = 0L)
+    Condition
+      Error:
+      ! `tree` values must be between 1 and 5.
+
+---
+
+    Code
+      active_predictors(rf, tree = 11L)
+    Condition
+      Error:
+      ! `tree` values must be between 1 and 5.
+
+# active_predictors.ranger() requires write.forest = TRUE
+
+    Code
+      active_predictors(rf, tree = 1L)
+    Condition
+      Error:
+      ! ranger model must be fitted with `write.forest = TRUE` to extract active predictors.
+

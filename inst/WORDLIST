@@ -12,6 +12,7 @@ aorsf
 aorsf's
 bart
 categoricals
+dbarts
 funder
 grf
 interpretability
@@ -24,6 +25,7 @@ partykit's
 partysplit
 pre
 randomForest
+ranger
 rightDaughter
 tibble
 unscale

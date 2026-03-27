@@ -405,3 +405,266 @@ test_that("as.party.bart does not show asterisks in node summaries", {
 
   expect_false(has_asterisk_summary)
 })
+
+# Tests for active_predictors.bart() -----------------------------------------
+
+test_that("active_predictors.bart() returns correct structure", {
+  skip_if_not_installed("dbarts")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )],
+    y.train = penguins$bill_length_mm,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 5,
+    nskip = 100,
+    ndpost = 1
+  ))
+
+  result <- active_predictors(fit)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("active_predictors", "tree"))
+  expect_type(result$active_predictors, "list")
+  expect_type(result$tree, "integer")
+  expect_equal(nrow(result), 1)
+})
+
+test_that("active_predictors.bart() extracts from single tree", {
+  skip_if_not_installed("dbarts")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )],
+    y.train = penguins$bill_length_mm,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 5,
+    nskip = 100,
+    ndpost = 1
+  ))
+
+  result <- active_predictors(fit, tree = 1L)
+
+  expect_equal(nrow(result), 1)
+  expect_equal(result$tree, 1L)
+  expect_type(result$active_predictors[[1]], "character")
+})
+
+test_that("active_predictors.bart() extracts from multiple trees", {
+  skip_if_not_installed("dbarts")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )],
+    y.train = penguins$bill_length_mm,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 5,
+    nskip = 100,
+    ndpost = 1
+  ))
+
+  result <- active_predictors(fit, tree = c(1L, 2L, 3L))
+
+  expect_equal(nrow(result), 3)
+  expect_equal(result$tree, c(1L, 2L, 3L))
+  expect_equal(length(result$active_predictors), 3)
+})
+
+test_that("active_predictors.bart() validates tree argument", {
+  skip_if_not_installed("dbarts")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )],
+    y.train = penguins$bill_length_mm,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 5,
+    nskip = 100,
+    ndpost = 1
+  ))
+
+  expect_snapshot(
+    active_predictors(fit, tree = "1"),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    active_predictors(fit, tree = 1.5),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    active_predictors(fit, tree = 0L),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    active_predictors(fit, tree = 11L),
+    error = TRUE
+  )
+})
+
+test_that("active_predictors.bart() requires keeptrees = TRUE", {
+  skip_if_not_installed("dbarts")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )],
+    y.train = penguins$bill_length_mm,
+    keeptrees = FALSE,
+    verbose = FALSE,
+    ntree = 5
+  ))
+
+  expect_snapshot(
+    active_predictors(fit, tree = 1L),
+    error = TRUE
+  )
+})
+
+test_that("active_predictors.bart() returns sorted unique variables", {
+  skip_if_not_installed("dbarts")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )],
+    y.train = penguins$bill_length_mm,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 5,
+    nskip = 100,
+    ndpost = 1
+  ))
+
+  result <- active_predictors(fit, tree = 1L)
+  active_vars <- result$active_predictors[[1]]
+
+  expect_equal(active_vars, active_vars[order(tolower(active_vars))])
+  expect_equal(length(active_vars), length(unique(active_vars)))
+})
+
+test_that("active_predictors.bart() handles numeric-only predictors", {
+  skip_if_not_installed("dbarts")
+
+  data <- get_regression_data(n = 100)
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = data[, c("x1", "x2", "x3")],
+    y.train = data$y,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 3,
+    nskip = 50,
+    ndpost = 1
+  ))
+
+  result <- active_predictors(fit, tree = 1L)
+  active_vars <- result$active_predictors[[1]]
+
+  expect_type(active_vars, "character")
+  expect_true(all(active_vars %in% c("x1", "x2", "x3")))
+})
+
+test_that("active_predictors.bart() works with all trees", {
+  skip_if_not_installed("dbarts")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )],
+    y.train = penguins$bill_length_mm,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 5,
+    nskip = 100,
+    ndpost = 1
+  ))
+
+  trees_df <- fit$fit$getTrees()
+  max_tree <- max(trees_df$tree)
+
+  result <- active_predictors(fit, tree = 1:max_tree)
+
+  expect_equal(nrow(result), max_tree)
+  expect_equal(result$tree, 1:max_tree)
+  expect_equal(length(result$active_predictors), max_tree)
+})
+
+test_that("active_predictors.bart() handles duplicate tree numbers", {
+  skip_if_not_installed("dbarts")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )],
+    y.train = penguins$bill_length_mm,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 5,
+    nskip = 100,
+    ndpost = 1
+  ))
+
+  result <- active_predictors(fit, tree = c(1L, 1L, 2L))
+
+  expect_equal(nrow(result), 3)
+  expect_equal(result$tree, c(1L, 1L, 2L))
+})
