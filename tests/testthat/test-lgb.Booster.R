@@ -467,3 +467,464 @@ test_that("as.party.lgb.Booster does not show asterisks in node summaries", {
 
   expect_false(has_asterisk_summary)
 })
+
+# Tests for var_imp.lgb.Booster() ---------------------------------------------
+
+test_that("var_imp.lgb.Booster() returns correct structure", {
+  skip_if_not_installed("lightgbm")
+
+  data <- get_regression_data(n = 100)
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  set.seed(821)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "regression"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = -1
+  )
+
+  result <- var_imp(bst)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("term", "estimate"))
+  expect_type(result$term, "character")
+  expect_type(result$estimate, "double")
+})
+
+test_that("var_imp.lgb.Booster() extracts variable importance scores", {
+  skip_if_not_installed("lightgbm")
+
+  data <- get_regression_data(n = 100)
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  set.seed(347)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "regression"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = -1
+  )
+
+  result <- var_imp(bst)
+
+  # Should have at least one variable with non-zero importance
+  expect_true(any(result$estimate > 0))
+
+  # All estimates should be non-negative
+  expect_true(all(result$estimate >= 0))
+
+  # Should have at least one predictor
+  expect_true(nrow(result) > 0)
+})
+
+test_that("var_imp.lgb.Booster() with complete=TRUE fills missing predictors", {
+  skip_if_not_installed("lightgbm")
+
+  set.seed(629)
+  data <- get_regression_data(n = 200)
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  set.seed(914)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "regression"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = -1
+  )
+
+  result <- var_imp(bst, complete = TRUE)
+
+  # Should have at least one predictor
+  expect_true(nrow(result) >= 1)
+
+  # All estimates should be non-negative
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.lgb.Booster() with complete=FALSE returns only used predictors", {
+  skip_if_not_installed("lightgbm")
+
+  data <- get_regression_data(n = 200)
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  set.seed(483)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "regression"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = -1
+  )
+
+  result <- var_imp(bst, complete = FALSE)
+
+  # Should only have predictors with importance scores
+  expect_true(nrow(result) >= 1)
+  expect_true(all(result$estimate > 0))
+})
+
+test_that("var_imp.lgb.Booster() works with numeric predictors only", {
+  skip_if_not_installed("lightgbm")
+
+  mtcars <- get_mtcars_data()
+
+  pred_cols <- c("cyl", "disp", "hp", "wt")
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(mtcars[, pred_cols]),
+    label = mtcars$mpg
+  )
+  set.seed(756)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "regression"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = -1
+  )
+
+  result <- var_imp(bst, complete = TRUE, feature_names = pred_cols)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 4)
+  expect_true(all(result$estimate >= 0))
+  expect_setequal(result$term, pred_cols)
+})
+
+test_that("var_imp.lgb.Booster() importance scores match underlying object", {
+  skip_if_not_installed("lightgbm")
+
+  data <- get_regression_data(n = 100)
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  set.seed(192)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "regression"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = -1
+  )
+
+  result <- var_imp(bst, complete = FALSE)
+
+  # Get expected importance from lightgbm
+  expected <- as.data.frame(lightgbm::lgb.importance(model = bst))
+
+  # Match scores
+  for (i in seq_len(nrow(result))) {
+    term <- result$term[i]
+    estimate <- result$estimate[i]
+    expected_row <- expected[expected$Feature == term, ]
+    expect_equal(estimate, expected_row$Gain, tolerance = 1e-10)
+  }
+})
+
+test_that("var_imp.lgb.Booster() works with binary classification", {
+  skip_if_not_installed("lightgbm")
+
+  data <- get_binary_data(n = 100)
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = as.numeric(data$y) - 1
+  )
+  set.seed(568)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "binary"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = -1
+  )
+
+  result <- var_imp(bst)
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(nrow(result) >= 1)
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.lgb.Booster() works with multiclass classification", {
+  skip_if_not_installed("lightgbm")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )]),
+    label = as.numeric(penguins$species) - 1
+  )
+  set.seed(274)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "multiclass",
+      num_class = 3
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = -1
+  )
+
+  result <- var_imp(bst)
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(nrow(result) >= 1)
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.lgb.Booster() handles model with no valid splits", {
+  skip_if_not_installed("lightgbm")
+
+  # Create data that produces no splits
+  test_data <- data.frame(
+    x1 = rep(1, 10),
+    y = rep(0, 10)
+  )
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(test_data[, "x1", drop = FALSE]),
+    label = test_data$y
+  )
+  set.seed(835)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 0,
+      objective = "regression"
+    ),
+    data = dtrain,
+    nrounds = 1,
+    verbose = -1
+  )
+
+  result <- var_imp(bst, complete = FALSE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("term", "estimate"))
+  # Should have 0 rows since no features were used
+  expect_equal(nrow(result), 0)
+
+  # With feature_names, should return the feature with 0 importance
+  result_complete <- var_imp(bst, complete = TRUE, feature_names = "x1")
+  expect_equal(nrow(result_complete), 1)
+  expect_equal(result_complete$term, "x1")
+  expect_equal(result_complete$estimate, 0)
+})
+
+test_that("var_imp.lgb.Booster() handles many predictors", {
+  skip_if_not_installed("lightgbm")
+
+  set.seed(402)
+  n <- 200
+  p <- 15
+  X <- as.data.frame(matrix(rnorm(n * p), nrow = n, ncol = p))
+  colnames(X) <- paste0("x", 1:p)
+  X$y <- X$x1 + X$x2 + rnorm(n)
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(X[, paste0("x", 1:p)]),
+    label = X$y
+  )
+  set.seed(967)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "regression"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = -1
+  )
+
+  result <- var_imp(bst, complete = FALSE)
+
+  # Should have only predictors that were used
+  expect_true(nrow(result) >= 1)
+  expect_true(nrow(result) <= p)
+  expect_true(all(result$estimate >= 0))
+
+  # With feature_names parameter, should have all predictors
+  result_complete <- var_imp(
+    bst,
+    complete = TRUE,
+    feature_names = paste0("x", 1:p)
+  )
+  expect_equal(nrow(result_complete), p)
+  expect_true(all(result_complete$estimate >= 0))
+  expect_setequal(result_complete$term, paste0("x", 1:p))
+})
+
+test_that("var_imp.lgb.Booster() works with constrained trees", {
+  skip_if_not_installed("lightgbm")
+
+  set.seed(518)
+  small_data <- data.frame(
+    y = rnorm(100),
+    x1 = rnorm(100),
+    x2 = rnorm(100)
+  )
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(small_data[, c("x1", "x2")]),
+    label = small_data$y
+  )
+  set.seed(693)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 1,
+      objective = "regression"
+    ),
+    data = dtrain,
+    nrounds = 3,
+    verbose = -1
+  )
+
+  result <- var_imp(bst, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("term", "estimate"))
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.lgb.Booster() works with deep trees", {
+  skip_if_not_installed("lightgbm")
+
+  set.seed(741)
+  data <- get_regression_data(n = 200)
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  set.seed(326)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 10,
+      objective = "regression"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = -1
+  )
+
+  result <- var_imp(bst)
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(nrow(result) >= 1)
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.lgb.Booster() handles agaricus data", {
+  skip_if_not_installed("lightgbm")
+
+  data(agaricus.train, package = "lightgbm")
+
+  dtrain <- lightgbm::lgb.Dataset(
+    agaricus.train$data,
+    label = agaricus.train$label
+  )
+  set.seed(159)
+  bst <- lightgbm::lgb.train(
+    params = list(max_depth = 3, objective = "binary"),
+    data = dtrain,
+    nrounds = 5,
+    verbose = -1
+  )
+
+  result <- var_imp(bst, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(nrow(result) > 0)
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.lgb.Booster() handles very shallow trees", {
+  skip_if_not_installed("lightgbm")
+
+  data <- get_binary_data(n = 50)
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = as.numeric(data$y) - 1
+  )
+  set.seed(487)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 1,
+      objective = "binary"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = -1
+  )
+
+  result <- var_imp(bst)
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.lgb.Booster() works with many boosting rounds", {
+  skip_if_not_installed("lightgbm")
+
+  data <- get_regression_data(n = 150)
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  set.seed(851)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "regression"
+    ),
+    data = dtrain,
+    nrounds = 20,
+    verbose = -1
+  )
+
+  result <- var_imp(bst)
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(nrow(result) >= 1)
+  expect_true(all(result$estimate >= 0))
+})
