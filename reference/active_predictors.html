@@ -59,10 +59,19 @@ were used in at least one split.</p>
 <span><span class="co"># S3 method for class 'ObliqueForest'</span></span>
 <span><span class="fu">active_predictors</span><span class="op">(</span><span class="va">x</span>, tree <span class="op">=</span> <span class="fl">1L</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
+<span><span class="co"># S3 method for class 'bart'</span></span>
+<span><span class="fu">active_predictors</span><span class="op">(</span><span class="va">x</span>, tree <span class="op">=</span> <span class="fl">1L</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
 <span><span class="fu">active_predictors</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'party'</span></span>
 <span><span class="fu">active_predictors</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'randomForest'</span></span>
+<span><span class="fu">active_predictors</span><span class="op">(</span><span class="va">x</span>, tree <span class="op">=</span> <span class="fl">1L</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'ranger'</span></span>
+<span><span class="fu">active_predictors</span><span class="op">(</span><span class="va">x</span>, tree <span class="op">=</span> <span class="fl">1L</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'rpart'</span></span>
 <span><span class="fu">active_predictors</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
@@ -79,7 +88,7 @@ were used in at least one split.</p>
 <dt id="arg-tree">tree<a class="anchor" aria-label="anchor" href="#arg-tree"></a></dt>
 <dd><p>Integer vector specifying which trees to extract active
 predictors from. Default is <code>1L</code> for the first tree. Values must be
-between 1 and the number of trees in the forest (<code>x$n_tree</code>).</p></dd>
+between 1 and the number of trees in the forest.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
