@@ -308,3 +308,104 @@ grf_find_max_split_var <- function(all_nodes) {
 
   max_var
 }
+
+# ------------------------------------------------------------------------------
+
+#' @rdname active_predictors
+#' @export
+active_predictors.regression_forest <- function(x, tree = 1L, ...) {
+  rlang::check_installed("grf")
+
+  # Validate tree argument
+  if (!is.numeric(tree) || !all(tree == as.integer(tree))) {
+    cli::cli_abort(
+      "{.arg tree} must be an integer vector, not {.obj_type_friendly {tree}}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  tree <- as.integer(tree)
+
+  # Get number of trees
+  num_trees <- x$`_num_trees`
+  if (is.null(num_trees)) {
+    num_trees <- 1000 # Default grf value
+  }
+
+  if (any(tree < 1L) || any(tree > num_trees)) {
+    cli::cli_abort(
+      "{.arg tree} values must be between 1 and {num_trees}, not {tree}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  # Extract active predictors for each tree
+  results <- lapply(tree, grf_active_vars_one_tree, x = x)
+
+  # Combine results and sort by tree
+  dplyr::bind_rows(results) |>
+    dplyr::arrange(tree)
+}
+
+#' @rdname active_predictors
+#' @export
+active_predictors.grf <- function(x, tree = 1L, ...) {
+  # Generic method that delegates to regression_forest method
+  active_predictors.regression_forest(x, tree = tree, ...)
+}
+
+# Internal helper to extract active predictors from one tree
+grf_active_vars_one_tree <- function(tree_num, x) {
+  # Get tree structure
+  tree_list <- grf::get_tree(x, tree_num)
+
+  # Collect split variables from all internal nodes
+  split_vars <- integer(0)
+
+  # Recursive function to traverse tree
+  collect_vars <- function(node) {
+    if (!node$is_leaf) {
+      split_vars <<- c(split_vars, node$split_variable)
+      # Traverse children using indices
+      if (!is.null(node$left_child)) {
+        left_idx <- as.integer(node$left_child)
+        collect_vars(tree_list$nodes[[left_idx]])
+      }
+      if (!is.null(node$right_child)) {
+        right_idx <- as.integer(node$right_child)
+        collect_vars(tree_list$nodes[[right_idx]])
+      }
+    }
+  }
+
+  # Start from root (first node)
+  if (!is.null(tree_list$nodes) && length(tree_list$nodes) > 0) {
+    collect_vars(tree_list$nodes[[1]])
+  }
+
+  # Get unique indices
+  unique_indices <- unique(split_vars)
+
+  # Map to variable names
+  if (!is.null(x$X.orig)) {
+    var_names <- colnames(x$X.orig)
+    if (is.null(var_names)) {
+      var_names <- paste0("X", seq_len(ncol(x$X.orig)))
+    }
+  } else if (length(unique_indices) > 0) {
+    # Infer from max split variable
+    var_names <- paste0("X", seq_len(max(unique_indices)))
+  } else {
+    # No splits
+    var_names <- character(0)
+  }
+
+  # Map indices to names
+  active_vars <- if (length(unique_indices) > 0) {
+    var_names[unique_indices]
+  } else {
+    character(0)
+  }
+
+  new_active_predictors(active_vars, tree = tree_num)
+}
