@@ -7,13 +7,13 @@
 oblique_extract_node_rule(node_id, tree, x)
 }
 \arguments{
+\item{node_id}{An integer for the node ID to process.}
+
 \item{tree}{Integer specifying which tree to extract rules from (1-based).
 Default is \code{1L} for the first tree. Must be between 1 and the number of
 trees in the forest (\code{x$n_tree}).}
 
 \item{x}{An \code{ObliqueForest} object from the \pkg{aorsf} package}
-
-\item{...}{Not currently used}
 }
 \value{
 A tibble with columns:
