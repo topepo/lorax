@@ -8,7 +8,7 @@
 #' @param tree Integer specifying which tree to extract rules from (1-based).
 #'   Default is `1L` for the first tree. Must be between 1 and the number of
 #'   trees in the forest (`x$n_tree`).
-#' @param ... Not currently used
+#' @param node_id An integer for the node ID to process.
 #'
 #' @return A tibble with columns:
 #'   * `tree`: integer, the tree number (1-based).

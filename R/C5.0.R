@@ -367,7 +367,8 @@ c5_parse_node_recursive <- function(
         split <- build_partysplit(varid, split_cut, right = FALSE)
       } else {
         # Parse elts groups and create index vector
-        split_index <- integer(length(var_levels))
+        # Initialize with 1s (not 0s) so unassigned levels default to child 1
+        split_index <- rep(1L, length(var_levels))
 
         for (child_num in seq_along(elts_groups)) {
           # Split on commas to get individual levels
@@ -649,4 +650,213 @@ c5_parse_tree_at_index <- function(
   }
 
   result$node
+}
+
+# Extract active variables from C5.0 rules text
+#
+# @param rules_text Character string containing C5.0 rules
+#
+# @return Character vector of unique variable names
+c5_extract_active_vars_from_rules <- function(rules_text) {
+  # Split into lines
+  rules_lines <- strsplit(rules_text, "\n")[[1]]
+
+  # Extract att= from condition lines (type="1" or type="2")
+  active_vars <- character(0)
+  for (line in rules_lines) {
+    attrs <- c5_parse_attributes(line)
+    if (!is.null(attrs$type) && attrs$type %in% c("1", "2")) {
+      if (!is.null(attrs$att)) {
+        active_vars <- c(active_vars, attrs$att)
+      }
+    }
+  }
+
+  unique(active_vars)
+}
+
+# Find the starting line index for a specific tree in a simple way
+#
+# @param tree_lines Character vector of all tree lines
+# @param tree_num Which tree to find (1-based)
+#
+# @return Integer line index where the tree starts, or NULL if not found
+c5_find_tree_start_simple <- function(tree_lines, tree_num) {
+  # Skip to first type= line
+  type_lines <- which(grepl("type=", tree_lines))
+  if (length(type_lines) == 0) {
+    return(NULL)
+  }
+  current_line <- type_lines[1]
+  if (tree_num == 1) {
+    return(current_line)
+  }
+
+  # Count trees by detecting boundaries (empty lines between trees)
+  trees_found <- 1
+  in_tree <- TRUE
+
+  for (i in (current_line + 1):length(tree_lines)) {
+    line <- tree_lines[i]
+    has_type <- grepl("type=", line)
+    is_empty <- nchar(trimws(line)) == 0
+
+    if (is_empty) {
+      in_tree <- FALSE
+    } else if (has_type && !in_tree) {
+      trees_found <- trees_found + 1
+      in_tree <- TRUE
+      if (trees_found == tree_num) {
+        return(i)
+      }
+    }
+  }
+
+  NULL
+}
+
+# Find the ending line index for a specific tree
+#
+# @param tree_lines Character vector of all tree lines
+# @param start_idx Starting line index of the tree
+# @param tree_num Which tree this is (1-based)
+# @param num_trials Total number of trials in the model
+#
+# @return Integer line index where the tree ends
+c5_find_tree_end_simple <- function(
+  tree_lines,
+  start_idx,
+  tree_num,
+  num_trials
+) {
+  if (tree_num == num_trials) {
+    return(length(tree_lines))
+  }
+
+  # Find next tree start
+  next_start <- c5_find_tree_start_simple(tree_lines, tree_num + 1)
+  if (is.null(next_start)) {
+    return(length(tree_lines))
+  }
+
+  next_start - 1
+}
+
+# Extract active variables from one C5.0 tree
+#
+# @param tree_lines Character vector of all tree lines
+# @param tree_num Which tree to extract from (1-based)
+# @param num_trials Total number of trials in the model
+#
+# @return Character vector of unique variable names
+c5_extract_active_vars_one_tree <- function(tree_lines, tree_num, num_trials) {
+  # Locate tree boundaries
+  if (num_trials > 1) {
+    start_idx <- c5_find_tree_start_simple(tree_lines, tree_num)
+    if (is.null(start_idx)) {
+      return(character(0))
+    }
+    end_idx <- c5_find_tree_end_simple(
+      tree_lines,
+      start_idx,
+      tree_num,
+      num_trials
+    )
+  } else {
+    start_idx <- 1
+    end_idx <- length(tree_lines)
+  }
+
+  # Extract att= values from type="2" lines (internal splits)
+  active_vars <- character(0)
+  for (i in start_idx:end_idx) {
+    line <- tree_lines[i]
+    # Skip empty or invalid lines
+    if (length(line) == 0 || is.null(line)) {
+      next
+    }
+    if (is.na(line)) {
+      next
+    }
+    if (nchar(trimws(line)) == 0) {
+      next
+    }
+    attrs <- c5_parse_attributes(line)
+    if (!is.null(attrs$type) && attrs$type == "2" && !is.null(attrs$att)) {
+      active_vars <- c(active_vars, attrs$att)
+    }
+  }
+
+  unique(active_vars)
+}
+
+# Wrapper to extract active predictors for one tree
+#
+# @param tree_num Which tree to extract from (1-based)
+# @param tree_lines Character vector of all tree lines
+# @param num_trials Total number of trials in the model
+#
+# @return Tibble with active_predictors and tree columns
+c5_extract_one <- function(tree_num, tree_lines, num_trials) {
+  active_vars <- c5_extract_active_vars_one_tree(
+    tree_lines,
+    tree_num,
+    num_trials
+  )
+  new_active_predictors(active_vars, tree = tree_num)
+}
+
+#' @rdname active_predictors
+#' @param tree Integer vector specifying which trees (boosting trials) to
+#'   extract active predictors from. Default is `1L` for the first tree.
+#'   Values must be between 1 and the number of actual trials
+#'   (`x$trials["Actual"]`). Duplicate values are automatically removed.
+#'   This parameter is ignored for rule-based models.
+#' @export
+active_predictors.C5.0 <- function(x, tree = 1L, ...) {
+  rlang::check_installed("C50")
+
+  # Detect model type - rule-based models have non-empty rules
+  is_rule_model <- !is.null(x$rules) && nchar(x$rules) > 0
+
+  if (is_rule_model) {
+    # Extract from rules
+    active_vars <- c5_extract_active_vars_from_rules(x$rules)
+    return(new_active_predictors(active_vars))
+  }
+
+  # Tree-based model - validate tree argument
+  if (!is.numeric(tree) || !all(tree == as.integer(tree))) {
+    cli::cli_abort(
+      "{.arg tree} must be an integer vector, not {.obj_type_friendly {tree}}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  tree <- as.integer(tree)
+  tree <- unique(tree)
+
+  num_trials <- as.integer(x$trials["Actual"])
+  if (any(tree < 1L) || any(tree > num_trials)) {
+    cli::cli_abort(
+      "{.arg tree} values must be between 1 and {num_trials}, not {tree}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  # Split tree text into lines and remove empty ones
+  tree_lines <- strsplit(x$tree, "\n")[[1]]
+  tree_lines <- tree_lines[nchar(trimws(tree_lines)) > 0]
+
+  # Extract active predictors for each requested tree
+  results <- lapply(
+    tree,
+    c5_extract_one,
+    tree_lines = tree_lines,
+    num_trials = num_trials
+  )
+
+  # Combine results and sort by tree
+  dplyr::bind_rows(results) |>
+    dplyr::arrange(tree)
 }

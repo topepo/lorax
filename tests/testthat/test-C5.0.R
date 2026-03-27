@@ -250,3 +250,212 @@ test_that("as.party.C5.0 handles multiway categorical splits correctly", {
     }
   }
 })
+
+# active_predictors() tests ---------------------------------------------------
+
+test_that("active_predictors.C5.0() has correct structure for tree models", {
+  skip_if_not_installed("C50")
+
+  penguins <- get_penguins_data()
+
+  fit <- C50::C5.0(species ~ ., data = penguins)
+  result <- active_predictors(fit)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("active_predictors", "tree"))
+  expect_type(result$active_predictors, "list")
+  expect_type(result$tree, "integer")
+  expect_equal(nrow(result), 1)
+})
+
+test_that("active_predictors.C5.0() extracts correct variables", {
+  skip_if_not_installed("C50")
+  penguins <- get_penguins_data()
+
+  fit <- C50::C5.0(species ~ ., data = penguins)
+  result <- active_predictors(fit)
+
+  active_vars <- result$active_predictors[[1]]
+  expect_true(is.character(active_vars))
+  expect_true(all(active_vars %in% names(penguins)))
+  expect_true(length(active_vars) > 0)
+  expect_true(length(active_vars) <= ncol(penguins) - 1)
+})
+
+test_that("active_predictors.C5.0() works with numeric predictors", {
+  skip_if_not_installed("C50")
+
+  # C5.0 requires factor outcome
+  mtcars_factor <- mtcars
+  mtcars_factor$vs <- factor(mtcars_factor$vs)
+  fit <- C50::C5.0(vs ~ mpg + hp + wt, data = mtcars_factor)
+  result <- active_predictors(fit)
+
+  expect_s3_class(result, "tbl_df")
+  active_vars <- result$active_predictors[[1]]
+  expect_true(all(active_vars %in% c("mpg", "hp", "wt")))
+})
+
+test_that("active_predictors.C5.0() works with factor predictors", {
+  skip_if_not_installed("C50")
+
+  wa_trees <- get_wa_trees_data()
+
+  fit <- C50::C5.0(class ~ county + roughness, data = wa_trees)
+  result <- active_predictors(fit)
+
+  active_vars <- result$active_predictors[[1]]
+  expect_true(all(active_vars %in% c("county", "roughness")))
+})
+
+test_that("active_predictors.C5.0() handles tree with no splits", {
+  skip_if_not_installed("C50")
+  skip_on_os("linux")
+
+  # Create a trivial dataset with no useful splits
+  small_data <- data.frame(
+    x = c(1, 1, 1),
+    y = factor(c("a", "a", "a"))
+  )
+  fit <- C50::C5.0(y ~ x, data = small_data)
+  result <- active_predictors(fit)
+
+  expect_s3_class(result, "tbl_df")
+  # A tree with no splits will have an empty active_predictors list
+  expect_equal(length(result$active_predictors[[1]]), 0)
+})
+
+test_that("active_predictors.C5.0() extracts from single boosted tree", {
+  skip_if_not_installed("C50")
+  skip_on_os("linux")
+
+  penguins <- get_penguins_data()
+
+  fit <- C50::C5.0(species ~ ., data = penguins, trials = 5)
+  result <- active_predictors(fit, tree = 2L)
+
+  expect_equal(nrow(result), 1)
+  expect_equal(result$tree, 2L)
+  expect_true(is.character(result$active_predictors[[1]]))
+})
+
+test_that("active_predictors.C5.0() extracts from multiple boosted trees", {
+  skip_if_not_installed("C50")
+  skip_on_os("linux")
+
+  penguins <- get_penguins_data()
+
+  fit <- C50::C5.0(species ~ ., data = penguins, trials = 5)
+  result <- active_predictors(fit, tree = c(1L, 2L, 3L))
+
+  expect_equal(nrow(result), 3)
+  expect_equal(result$tree, c(1L, 2L, 3L))
+  expect_true(all(vapply(result$active_predictors, length, integer(1)) >= 0))
+})
+
+test_that("active_predictors.C5.0() extracts from all trees", {
+  skip_if_not_installed("C50")
+  skip_on_os("linux")
+
+  penguins <- get_penguins_data()
+
+  fit <- C50::C5.0(species ~ ., data = penguins, trials = 5)
+  num_trials <- as.integer(fit$trials["Actual"])
+  result <- active_predictors(fit, tree = 1:num_trials)
+
+  expect_equal(nrow(result), num_trials)
+  expect_equal(result$tree, 1:num_trials)
+})
+
+test_that("active_predictors.C5.0() validates tree argument", {
+  skip_if_not_installed("C50")
+  skip_on_os("linux")
+  penguins <- get_penguins_data()
+
+  fit <- C50::C5.0(species ~ ., data = penguins, trials = 3)
+
+  expect_snapshot(active_predictors(fit, tree = "1"), error = TRUE)
+  expect_snapshot(active_predictors(fit, tree = 1.5), error = TRUE)
+  expect_snapshot(active_predictors(fit, tree = 0L), error = TRUE)
+  expect_snapshot(active_predictors(fit, tree = 10L), error = TRUE)
+})
+
+test_that("active_predictors.C5.0() returns sorted unique results", {
+  skip_if_not_installed("C50")
+  skip_on_os("linux")
+  penguins <- get_penguins_data()
+
+  fit <- C50::C5.0(species ~ ., data = penguins)
+  result <- active_predictors(fit)
+
+  active_vars <- result$active_predictors[[1]]
+  expect_equal(active_vars, active_vars[order(tolower(active_vars))])
+  expect_equal(length(active_vars), length(unique(active_vars)))
+})
+
+test_that("active_predictors.C5.0() automatically deduplicates tree numbers", {
+  skip_if_not_installed("C50")
+  skip_on_os("linux")
+  penguins <- get_penguins_data()
+
+  fit <- C50::C5.0(species ~ ., data = penguins, trials = 3)
+  result <- active_predictors(fit, tree = c(1L, 1L, 2L))
+
+  expect_equal(nrow(result), 2)
+  expect_equal(result$tree, c(1L, 2L))
+})
+
+test_that("active_predictors.C5.0() rule model has correct structure", {
+  skip_if_not_installed("C50")
+  skip_on_os("linux")
+  penguins <- get_penguins_data()
+
+  fit <- C50::C5.0(species ~ ., data = penguins, rules = TRUE)
+  result <- active_predictors(fit)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, "active_predictors")
+  expect_false("tree" %in% names(result))
+  expect_type(result$active_predictors, "list")
+  expect_equal(nrow(result), 1)
+})
+
+test_that("active_predictors.C5.0() extracts from rule conditions", {
+  skip_if_not_installed("C50")
+  skip_on_os("linux")
+  penguins <- get_penguins_data()
+
+  fit <- C50::C5.0(species ~ ., data = penguins, rules = TRUE)
+  result <- active_predictors(fit)
+
+  active_vars <- result$active_predictors[[1]]
+  expect_true(is.character(active_vars))
+  expect_true(all(active_vars %in% names(penguins)))
+  expect_true(length(active_vars) > 0)
+})
+
+test_that("active_predictors.C5.0() rule model with factors", {
+  skip_if_not_installed("C50")
+  skip_on_os("linux")
+  wa_trees <- get_wa_trees_data()
+
+  fit <- C50::C5.0(class ~ county + roughness, data = wa_trees, rules = TRUE)
+  result <- active_predictors(fit)
+
+  active_vars <- result$active_predictors[[1]]
+  expect_true(all(active_vars %in% c("county", "roughness")))
+})
+
+test_that("active_predictors.C5.0() rule model with numerics", {
+  skip_if_not_installed("C50")
+  skip_on_os("linux")
+
+  # C5.0 requires factor outcome
+  mtcars_factor <- mtcars
+  mtcars_factor$vs <- factor(mtcars_factor$vs)
+  fit <- C50::C5.0(vs ~ mpg + hp + wt, data = mtcars_factor, rules = TRUE)
+  result <- active_predictors(fit)
+
+  active_vars <- result$active_predictors[[1]]
+  expect_true(all(active_vars %in% c("mpg", "hp", "wt")))
+})
