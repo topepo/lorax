@@ -301,3 +301,335 @@ test_that("active_predictors.ranger() handles duplicate tree numbers", {
   expect_equal(nrow(result), 3)
   expect_equal(result$tree, c(1L, 1L, 2L))
 })
+
+# Tests for var_imp.ranger() -------------------------------------------------
+
+test_that("var_imp.ranger() returns correct structure", {
+  skip_if_not_installed("ranger")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+  set.seed(847)
+  rf <- ranger::ranger(
+    species ~ .,
+    data = penguins,
+    importance = "impurity",
+    num.trees = 10
+  )
+  result <- var_imp(rf)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("term", "estimate"))
+  expect_type(result$term, "character")
+  expect_type(result$estimate, "double")
+})
+
+test_that("var_imp.ranger() extracts variable importance scores", {
+  skip_if_not_installed("ranger")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+  set.seed(293)
+  rf <- ranger::ranger(
+    species ~ .,
+    data = penguins,
+    importance = "impurity",
+    num.trees = 10
+  )
+  result <- var_imp(rf)
+
+  # Should have at least one variable with non-zero importance
+  expect_true(any(result$estimate > 0))
+
+  # All estimates should be non-negative
+  expect_true(all(result$estimate >= 0))
+
+  # Should have all predictors from the model
+  expect_true(nrow(result) > 0)
+})
+
+test_that("var_imp.ranger() with complete=TRUE fills missing predictors", {
+  skip_if_not_installed("ranger")
+
+  # Create a scenario where some predictors might have zero importance
+  set.seed(614)
+  data <- get_regression_data(n = 200)
+  # Add a near-constant predictor
+  data$x4 <- rnorm(200, mean = 1000, sd = 0.001)
+
+  rf <- ranger::ranger(
+    y ~ x1 + x2 + x3 + x4,
+    data = data,
+    importance = "impurity",
+    num.trees = 10
+  )
+
+  result <- var_imp(rf, complete = TRUE)
+
+  # Should have all 4 predictors
+  expect_equal(nrow(result), 4)
+  expect_setequal(result$term, c("x1", "x2", "x3", "x4"))
+
+  # All estimates should be non-negative
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ranger() with complete=FALSE returns only used predictors", {
+  skip_if_not_installed("ranger")
+
+  set.seed(759)
+  data <- get_regression_data(n = 200)
+
+  rf <- ranger::ranger(
+    y ~ x1 + x2 + x3,
+    data = data,
+    importance = "impurity",
+    num.trees = 10
+  )
+
+  result <- var_imp(rf, complete = FALSE)
+
+  # Should only have predictors with importance scores
+  expected_vars <- names(rf$variable.importance)
+  expect_equal(nrow(result), length(expected_vars))
+  expect_setequal(result$term, expected_vars)
+})
+
+test_that("var_imp.ranger() works with numeric predictors only", {
+  skip_if_not_installed("ranger")
+
+  mtcars <- get_mtcars_data()
+  set.seed(186)
+  rf <- ranger::ranger(
+    mpg ~ cyl + disp + hp + wt,
+    data = mtcars,
+    importance = "impurity",
+    num.trees = 10
+  )
+  result <- var_imp(rf, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 4)
+  expect_setequal(result$term, c("cyl", "disp", "hp", "wt"))
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ranger() works with factor predictors", {
+  skip_if_not_installed("ranger")
+
+  wa_trees <- get_wa_trees_data()
+  set.seed(421)
+  rf <- ranger::ranger(
+    county ~ class + elevation + roughness,
+    data = wa_trees,
+    importance = "impurity",
+    num.trees = 10
+  )
+  result <- var_imp(rf, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 3)
+  expect_setequal(result$term, c("class", "elevation", "roughness"))
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ranger() works with mixed numeric and factor predictors", {
+  skip_if_not_installed("ranger")
+
+  wa_trees <- get_wa_trees_data()
+  set.seed(537)
+  rf <- ranger::ranger(
+    elevation ~ class + county + roughness + dew_temp,
+    data = wa_trees,
+    importance = "impurity",
+    num.trees = 10
+  )
+  result <- var_imp(rf, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 4)
+  expect_setequal(result$term, c("class", "county", "roughness", "dew_temp"))
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ranger() importance scores match underlying object", {
+  skip_if_not_installed("ranger")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+  set.seed(905)
+  rf <- ranger::ranger(
+    species ~ .,
+    data = penguins,
+    importance = "impurity",
+    num.trees = 10
+  )
+  result <- var_imp(rf, complete = FALSE)
+
+  # Match against rf$variable.importance
+  expected <- rf$variable.importance
+
+  for (i in seq_len(nrow(result))) {
+    term <- result$term[i]
+    estimate <- result$estimate[i]
+    expect_equal(estimate, expected[[term]], tolerance = 1e-10)
+  }
+})
+
+test_that("var_imp.ranger() works with impurity importance", {
+  skip_if_not_installed("ranger")
+
+  mtcars <- get_mtcars_data()
+  set.seed(672)
+  rf <- ranger::ranger(
+    mpg ~ cyl + disp + hp,
+    data = mtcars,
+    importance = "impurity",
+    num.trees = 10
+  )
+  result <- var_imp(rf)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 3)
+  expect_setequal(result$term, c("cyl", "disp", "hp"))
+})
+
+test_that("var_imp.ranger() works with permutation importance", {
+  skip_if_not_installed("ranger")
+
+  mtcars <- get_mtcars_data()
+  set.seed(318)
+  rf <- ranger::ranger(
+    mpg ~ cyl + disp + hp,
+    data = mtcars,
+    importance = "permutation",
+    num.trees = 10
+  )
+  result <- var_imp(rf)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 3)
+  expect_setequal(result$term, c("cyl", "disp", "hp"))
+})
+
+test_that("var_imp.ranger() errors when importance not calculated", {
+  skip_if_not_installed("ranger")
+
+  mtcars <- get_mtcars_data()
+  set.seed(894)
+  rf <- ranger::ranger(
+    mpg ~ cyl + disp + hp,
+    data = mtcars,
+    num.trees = 10
+  )
+
+  expect_snapshot(var_imp(rf), error = TRUE)
+})
+
+test_that("var_imp.ranger() handles many predictors", {
+  skip_if_not_installed("ranger")
+
+  set.seed(753)
+  n <- 200
+  p <- 15
+  X <- as.data.frame(matrix(rnorm(n * p), nrow = n, ncol = p))
+  colnames(X) <- paste0("x", 1:p)
+  X$y <- X$x1 + X$x2 + rnorm(n)
+
+  rf <- ranger::ranger(
+    y ~ .,
+    data = X,
+    importance = "impurity",
+    num.trees = 10
+  )
+  result <- var_imp(rf)
+
+  expect_equal(nrow(result), p)
+  expect_setequal(result$term, paste0("x", 1:p))
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ranger() works with classification forest", {
+  skip_if_not_installed("ranger")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+  set.seed(481)
+  rf <- ranger::ranger(
+    species ~ .,
+    data = penguins,
+    importance = "impurity",
+    num.trees = 10
+  )
+  result <- var_imp(rf)
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(nrow(result) > 0)
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ranger() works with regression forest", {
+  skip_if_not_installed("ranger")
+
+  mtcars <- get_mtcars_data()
+  set.seed(629)
+  rf <- ranger::ranger(
+    mpg ~ cyl + disp + hp,
+    data = mtcars,
+    importance = "impurity",
+    num.trees = 10
+  )
+  result <- var_imp(rf)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 3)
+  expect_setequal(result$term, c("cyl", "disp", "hp"))
+})
+
+test_that("var_imp.ranger() handles forest with constrained splits", {
+  skip_if_not_installed("ranger")
+
+  # Force a very constrained forest
+  set.seed(142)
+  small_data <- data.frame(
+    y = rnorm(100),
+    x1 = rnorm(100),
+    x2 = rnorm(100)
+  )
+
+  rf <- ranger::ranger(
+    y ~ x1 + x2,
+    data = small_data,
+    importance = "impurity",
+    num.trees = 5,
+    min.node.size = 30
+  )
+
+  result <- var_imp(rf, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("term", "estimate"))
+  expect_equal(nrow(result), 2)
+  expect_setequal(result$term, c("x1", "x2"))
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ranger() handles forest with very deep trees", {
+  skip_if_not_installed("ranger")
+
+  set.seed(568)
+  data <- get_regression_data(n = 200)
+
+  rf <- ranger::ranger(
+    y ~ x1 + x2 + x3,
+    data = data,
+    importance = "impurity",
+    num.trees = 10,
+    max.depth = 20
+  )
+  result <- var_imp(rf)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 3)
+  expect_true(all(result$estimate >= 0))
+})
