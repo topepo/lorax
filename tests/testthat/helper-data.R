@@ -64,3 +64,27 @@ get_factor_data <- function(n = 100) {
     x4 = factor(sample(c("Red", "Blue"), n, replace = TRUE))
   )
 }
+
+# Get penguins forest for ObliqueForest tests
+get_penguins_forest <- function() {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+  penguins <- palmerpenguins::penguins[
+    complete.cases(palmerpenguins::penguins),
+  ]
+  aorsf::orsf(species ~ ., data = penguins, n_tree = 10)
+}
+
+# Get penguins tree for party tests
+get_penguins_tree <- function() {
+  skip_if_not_installed("partykit")
+  skip_if_not_installed("palmerpenguins")
+  penguins <- palmerpenguins::penguins
+  partykit::ctree(species ~ ., data = penguins)
+}
+
+# Get iris rpart tree for rpart tests
+get_iris_rpart_tree <- function() {
+  skip_if_not_installed("rpart")
+  rpart::rpart(Species ~ ., data = iris)
+}

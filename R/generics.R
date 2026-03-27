@@ -47,6 +47,24 @@ extract_rules <- function(x, ...) {
 #'   # are excluded since they don't affect predictions
 #' }
 #'
+#' # C5.0 single tree
+#' if (rlang::is_installed(c("C50", "palmerpenguins"))) {
+#'   data(penguins, package = "palmerpenguins")
+#'   penguins <- na.omit(penguins)
+#'
+#'   # Tree-based model
+#'   c5_tree <- C50::C5.0(species ~ ., data = penguins)
+#'   active_predictors(c5_tree)
+#'
+#'   # Boosted model - extract from multiple trials
+#'   c5_boost <- C50::C5.0(species ~ ., data = penguins, trials = 5)
+#'   active_predictors(c5_boost, tree = 1:3)
+#'
+#'   # Rule-based model
+#'   c5_rules <- C50::C5.0(species ~ ., data = penguins, rules = TRUE)
+#'   active_predictors(c5_rules)
+#' }
+#'
 #' @export
 active_predictors <- function(x, ...) {
   UseMethod("active_predictors")

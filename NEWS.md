@@ -1,5 +1,6 @@
 # lorax (development version)
 
+* `active_predictors()` gains a `C5.0` method for extracting the set of predictors used in tree splits from C5.0 decision tree and boosted models, as well as from rule conditions in rule-based models. For tree-based models, the `tree` argument supports extracting from multiple boosting trials.
 * `active_predictors()` gains an `ObliqueForest` method for extracting the set of predictors used in oblique tree splits from aorsf models. Supports extracting from multiple trees via the `tree` argument.
 * `active_predictors()` gains a `party` method for extracting the set of predictors used in tree splits from partykit objects.
 * `active_predictors()` gains an `rpart` method for extracting the set of predictors used in actual tree splits (excluding competing and surrogate splits).
