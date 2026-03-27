@@ -1,4 +1,4 @@
-# lorax (development version)
+# lorax 0.1.0
 
 * `active_predictors()` gains a `C5.0` method for extracting the set of predictors used in tree splits from C5.0 decision tree and boosted models, as well as from rule conditions in rule-based models. For tree-based models, the `tree` argument supports extracting from multiple boosting trials.
 * `active_predictors()` gains `regression_forest` and `grf` methods for extracting the set of predictors used in tree splits from grf models. The `tree` argument supports extracting from multiple trees.
