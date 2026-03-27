@@ -2,7 +2,10 @@
 
 S3method(active_predictors,C5.0)
 S3method(active_predictors,ObliqueForest)
+S3method(active_predictors,bart)
 S3method(active_predictors,party)
+S3method(active_predictors,randomForest)
+S3method(active_predictors,ranger)
 S3method(active_predictors,rpart)
 S3method(as.party,C5.0)
 S3method(as.party,bart)

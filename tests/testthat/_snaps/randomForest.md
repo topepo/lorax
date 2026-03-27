@@ -38,3 +38,43 @@
       Error in `as.party()`:
       ! randomForest model must have `keep.forest = TRUE` to extract trees.
 
+# active_predictors.randomForest() validates tree argument
+
+    Code
+      active_predictors(rf, tree = "1")
+    Condition
+      Error:
+      ! `tree` must be an integer vector, not a string.
+
+---
+
+    Code
+      active_predictors(rf, tree = 1.5)
+    Condition
+      Error:
+      ! `tree` must be an integer vector, not a number.
+
+---
+
+    Code
+      active_predictors(rf, tree = 0L)
+    Condition
+      Error:
+      ! `tree` values must be between 1 and 5.
+
+---
+
+    Code
+      active_predictors(rf, tree = 11L)
+    Condition
+      Error:
+      ! `tree` values must be between 1 and 5.
+
+# active_predictors.randomForest() requires keep.forest = TRUE
+
+    Code
+      active_predictors(rf, tree = 1L)
+    Condition
+      Error:
+      ! randomForest model must be fitted with `keep.forest = TRUE` to extract active predictors.
+
