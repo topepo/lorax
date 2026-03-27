@@ -2,8 +2,12 @@
 
 S3method(active_predictors,C5.0)
 S3method(active_predictors,ObliqueForest)
+S3method(active_predictors,grf)
+S3method(active_predictors,lgb.Booster)
 S3method(active_predictors,party)
+S3method(active_predictors,regression_forest)
 S3method(active_predictors,rpart)
+S3method(active_predictors,xgb.Booster)
 S3method(as.party,C5.0)
 S3method(as.party,bart)
 S3method(as.party,grf)

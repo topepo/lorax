@@ -38,3 +38,35 @@
       Error in `as.party()`:
       ! `data` must contain the response variable in addition to predictors.
 
+# active_predictors.lgb.Booster() validates tree argument
+
+    Code
+      active_predictors(bst, tree = "1")
+    Condition
+      Error:
+      ! `tree` must be an integer vector, not a string.
+
+---
+
+    Code
+      active_predictors(bst, tree = 1.5)
+    Condition
+      Error:
+      ! `tree` must be an integer vector, not a number.
+
+---
+
+    Code
+      active_predictors(bst, tree = 0L)
+    Condition
+      Error:
+      ! `tree` values must be between 1 and 5, not 0.
+
+---
+
+    Code
+      active_predictors(bst, tree = 999L)
+    Condition
+      Error:
+      ! `tree` values must be between 1 and 5, not 999.
+

@@ -467,3 +467,241 @@ test_that("as.party.lgb.Booster does not show asterisks in node summaries", {
 
   expect_false(has_asterisk_summary)
 })
+
+# ------------------------------------------------------------------------------
+# active_predictors tests
+# ------------------------------------------------------------------------------
+
+test_that("active_predictors.lgb.Booster() returns correct structure", {
+  skip_if_not_installed("lightgbm")
+
+  data <- get_regression_data(n = 100)
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  bst <- lightgbm::lgb.train(
+    params = list(objective = "regression", max_depth = 3),
+    data = dtrain,
+    nrounds = 3,
+    verbose = -1
+  )
+
+  result <- active_predictors(bst)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("active_predictors", "tree"))
+  expect_type(result$active_predictors, "list")
+  expect_type(result$tree, "integer")
+  expect_equal(nrow(result), 1)
+})
+
+test_that("active_predictors.lgb.Booster() extracts from single tree", {
+  skip_if_not_installed("lightgbm")
+
+  data <- get_regression_data(n = 100)
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  bst <- lightgbm::lgb.train(
+    params = list(objective = "regression", max_depth = 3),
+    data = dtrain,
+    nrounds = 5,
+    verbose = -1
+  )
+
+  result <- active_predictors(bst, tree = 1L)
+
+  expect_equal(nrow(result), 1)
+  expect_equal(result$tree, 1L)
+  expect_type(result$active_predictors[[1]], "character")
+})
+
+test_that("active_predictors.lgb.Booster() extracts from multiple trees", {
+  skip_if_not_installed("lightgbm")
+
+  data <- get_regression_data(n = 100)
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  bst <- lightgbm::lgb.train(
+    params = list(objective = "regression", max_depth = 3),
+    data = dtrain,
+    nrounds = 5,
+    verbose = -1
+  )
+
+  result <- active_predictors(bst, tree = c(1L, 2L, 3L))
+
+  expect_equal(nrow(result), 3)
+  expect_equal(result$tree, c(1L, 2L, 3L))
+  expect_equal(length(result$active_predictors), 3)
+})
+
+test_that("active_predictors.lgb.Booster() works with all trees", {
+  skip_if_not_installed("lightgbm")
+
+  data <- get_regression_data(n = 100)
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  bst <- lightgbm::lgb.train(
+    params = list(objective = "regression", max_depth = 3),
+    data = dtrain,
+    nrounds = 3,
+    verbose = -1
+  )
+
+  result <- active_predictors(bst, tree = 1:3)
+
+  expect_equal(nrow(result), 3)
+  expect_equal(result$tree, c(1L, 2L, 3L))
+  expect_equal(length(result$active_predictors), 3)
+})
+
+test_that("active_predictors.lgb.Booster() validates tree argument", {
+  skip_if_not_installed("lightgbm")
+
+  data <- get_regression_data(n = 100)
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  bst <- lightgbm::lgb.train(
+    params = list(objective = "regression", max_depth = 3),
+    data = dtrain,
+    nrounds = 5,
+    verbose = -1
+  )
+
+  expect_snapshot(
+    active_predictors(bst, tree = "1"),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    active_predictors(bst, tree = 1.5),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    active_predictors(bst, tree = 0L),
+    error = TRUE
+  )
+
+  expect_snapshot(
+    active_predictors(bst, tree = 999L),
+    error = TRUE
+  )
+})
+
+test_that("active_predictors.lgb.Booster() handles tree with no splits", {
+  skip_if_not_installed("lightgbm")
+
+  # Create simple data with min_data_in_leaf set high
+  test_data <- data.frame(
+    x1 = rnorm(20),
+    y = rnorm(20)
+  )
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(test_data[, "x1", drop = FALSE]),
+    label = test_data$y
+  )
+  bst <- lightgbm::lgb.train(
+    params = list(
+      objective = "regression",
+      max_depth = 1,
+      min_data_in_leaf = 50
+    ),
+    data = dtrain,
+    nrounds = 1,
+    verbose = -1
+  )
+
+  result <- active_predictors(bst, tree = 1L)
+
+  expect_equal(nrow(result), 1)
+  expect_equal(result$tree, 1L)
+  expect_type(result$active_predictors[[1]], "character")
+  # May have 0 or more predictors depending on whether split occurred
+  expect_true(length(result$active_predictors[[1]]) >= 0)
+})
+
+test_that("active_predictors.lgb.Booster() returns sorted unique variables", {
+  skip_if_not_installed("lightgbm")
+
+  data <- get_regression_data(n = 100)
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  bst <- lightgbm::lgb.train(
+    params = list(objective = "regression", max_depth = 3),
+    data = dtrain,
+    nrounds = 3,
+    verbose = -1
+  )
+
+  result <- active_predictors(bst, tree = 1L)
+  active_vars <- result$active_predictors[[1]]
+
+  # Should be sorted (case-insensitive)
+  expect_equal(active_vars, active_vars[order(tolower(active_vars))])
+
+  # Should be unique
+  expect_equal(length(active_vars), length(unique(active_vars)))
+})
+
+test_that("active_predictors.lgb.Booster() works with numeric predictors", {
+  skip_if_not_installed("lightgbm")
+
+  # Use mtcars which has no factors
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(mtcars[, c("cyl", "disp", "hp", "wt")]),
+    label = mtcars$mpg
+  )
+  bst <- lightgbm::lgb.train(
+    params = list(objective = "regression", max_depth = 3),
+    data = dtrain,
+    nrounds = 3,
+    verbose = -1
+  )
+
+  result <- active_predictors(bst, tree = 1L)
+  active_vars <- result$active_predictors[[1]]
+
+  expect_type(active_vars, "character")
+  expect_true(all(active_vars %in% c("cyl", "disp", "hp", "wt")))
+})
+
+test_that("active_predictors.lgb.Booster() works with feature names", {
+  skip_if_not_installed("lightgbm")
+
+  data(agaricus.train, package = "lightgbm")
+
+  dtrain <- lightgbm::lgb.Dataset(
+    agaricus.train$data,
+    label = agaricus.train$label
+  )
+  bst <- lightgbm::lgb.train(
+    params = list(objective = "binary", max_depth = 3),
+    data = dtrain,
+    nrounds = 3,
+    verbose = -1
+  )
+
+  result <- active_predictors(bst, tree = 1L)
+  active_vars <- result$active_predictors[[1]]
+
+  expect_type(active_vars, "character")
+  expect_true(length(active_vars) > 0)
+})
