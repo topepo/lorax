@@ -305,3 +305,226 @@ test_that("active_predictors.party() handles no-split data", {
   expect_type(result$active_predictors[[1]], "character")
   expect_length(result$active_predictors[[1]], 0)
 })
+
+# Tests for var_imp.party() --------------------------------------------------
+
+test_that("var_imp.party() returns correct structure", {
+  skip_if_not_installed("partykit")
+
+  wa_trees <- get_wa_trees_data()
+  set.seed(427)
+  tree <- partykit::ctree(
+    class ~ elevation + roughness + dew_temp,
+    data = wa_trees
+  )
+  result <- var_imp(tree)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("term", "estimate"))
+  expect_type(result$term, "character")
+  expect_type(result$estimate, "double")
+})
+
+test_that("var_imp.party() extracts variable importance scores", {
+  skip_if_not_installed("partykit")
+
+  wa_trees <- get_wa_trees_data()
+  set.seed(638)
+  tree <- partykit::ctree(
+    class ~ elevation + roughness + dew_temp,
+    data = wa_trees
+  )
+  result <- var_imp(tree)
+
+  # Should have all predictors
+  expect_true(nrow(result) > 0)
+
+  # All estimates should be numeric
+  expect_true(all(is.numeric(result$estimate)))
+})
+
+test_that("var_imp.party() with complete=TRUE fills missing predictors", {
+  skip_if_not_installed("partykit")
+
+  wa_trees <- get_wa_trees_data()
+  set.seed(749)
+  tree <- partykit::ctree(
+    class ~ elevation + roughness + dew_temp,
+    data = wa_trees
+  )
+  result <- var_imp(tree, complete = TRUE)
+
+  # Should have all 3 predictors
+  expect_equal(nrow(result), 3)
+  expect_setequal(result$term, c("elevation", "roughness", "dew_temp"))
+})
+
+test_that("var_imp.party() with complete=FALSE returns only used predictors", {
+  skip_if_not_installed("partykit")
+
+  wa_trees <- get_wa_trees_data()
+  set.seed(851)
+  tree <- partykit::ctree(
+    class ~ elevation + roughness + dew_temp,
+    data = wa_trees
+  )
+  result <- var_imp(tree, complete = FALSE)
+
+  # Should only have predictors with importance scores
+  imp <- partykit::varimp(tree)
+  expected_vars <- names(imp)
+  expect_equal(nrow(result), length(expected_vars))
+  expect_setequal(result$term, expected_vars)
+})
+
+test_that("var_imp.party() works with numeric predictors only", {
+  skip_if_not_installed("partykit")
+
+  data <- get_regression_data(n = 150)
+  set.seed(963)
+  tree <- partykit::ctree(y ~ x1 + x2 + x3, data = data)
+  result <- var_imp(tree, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 3)
+  expect_setequal(result$term, c("x1", "x2", "x3"))
+})
+
+test_that("var_imp.party() works with factor predictors", {
+  skip_if_not_installed("partykit")
+
+  wa_trees <- get_wa_trees_data()
+  set.seed(174)
+  tree <- partykit::ctree(
+    county ~ class + elevation,
+    data = wa_trees
+  )
+  result <- var_imp(tree, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 2)
+  expect_setequal(result$term, c("class", "elevation"))
+})
+
+test_that("var_imp.party() works with mixed numeric and factor predictors", {
+  skip_if_not_installed("partykit")
+
+  wa_trees <- get_wa_trees_data()
+  set.seed(285)
+  tree <- partykit::ctree(
+    elevation ~ class + county + roughness,
+    data = wa_trees
+  )
+  result <- var_imp(tree, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 3)
+  expect_setequal(result$term, c("class", "county", "roughness"))
+})
+
+test_that("var_imp.party() returns all expected predictors", {
+  skip_if_not_installed("partykit")
+
+  wa_trees <- get_wa_trees_data()
+  set.seed(396)
+  tree <- partykit::ctree(
+    class ~ elevation + roughness + dew_temp,
+    data = wa_trees
+  )
+  result <- var_imp(tree, complete = FALSE)
+
+  # Check that all predictors from partykit::varimp() are present
+  expected_names <- names(partykit::varimp(tree))
+  expect_setequal(result$term, expected_names)
+
+  # Check that estimates are numeric
+  expect_true(all(is.numeric(result$estimate)))
+})
+
+test_that("var_imp.party() works with classification tree", {
+  skip_if_not_installed("partykit")
+
+  wa_trees <- get_wa_trees_data()
+  set.seed(507)
+  tree <- partykit::ctree(
+    class ~ elevation + roughness + dew_temp,
+    data = wa_trees
+  )
+  result <- var_imp(tree)
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(nrow(result) > 0)
+})
+
+test_that("var_imp.party() works with regression tree", {
+  skip_if_not_installed("partykit")
+
+  data <- get_regression_data(n = 150)
+  set.seed(618)
+  tree <- partykit::ctree(y ~ x1 + x2 + x3, data = data)
+  result <- var_imp(tree)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 3)
+  expect_setequal(result$term, c("x1", "x2", "x3"))
+})
+
+test_that("var_imp.party() handles tree with no splits", {
+  skip_if_not_installed("partykit")
+
+  # Data where tree may have no splits
+  null_data <- data.frame(y = 1:10, x = rep(1:5, each = 2))
+  set.seed(729)
+  tree <- partykit::ctree(y ~ ., data = null_data)
+  result <- var_imp(tree, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 1)
+  expect_equal(result$term, "x")
+  # Should have zero importance for unused predictor
+  expect_equal(result$estimate, 0)
+})
+
+test_that("var_imp.party() handles many predictors", {
+  skip_if_not_installed("partykit")
+
+  set.seed(834)
+  n <- 200
+  p <- 10
+  X <- as.data.frame(matrix(rnorm(n * p), nrow = n, ncol = p))
+  colnames(X) <- paste0("x", 1:p)
+  X$y <- X$x1 + X$x2 + rnorm(n)
+
+  set.seed(941)
+  tree <- partykit::ctree(y ~ ., data = X)
+  result <- var_imp(tree)
+
+  expect_equal(nrow(result), p)
+  expect_setequal(result$term, paste0("x", 1:p))
+})
+
+test_that("var_imp.party() handles constrained splits", {
+  skip_if_not_installed("partykit")
+
+  # Force a constrained tree
+  set.seed(152)
+  small_data <- data.frame(
+    y = rnorm(100),
+    x1 = rnorm(100),
+    x2 = rnorm(100)
+  )
+
+  set.seed(263)
+  tree <- partykit::ctree(
+    y ~ x1 + x2,
+    data = small_data,
+    control = partykit::ctree_control(minsplit = 30)
+  )
+
+  result <- var_imp(tree, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("term", "estimate"))
+  expect_equal(nrow(result), 2)
+  expect_setequal(result$term, c("x1", "x2"))
+})
