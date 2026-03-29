@@ -341,7 +341,7 @@ var_imp.grf <- function(object, complete = TRUE, ...) {
 
 #' @rdname active_predictors
 #' @export
-active_predictors.regression_forest <- function(x, tree = 1L, ...) {
+active_predictors.grf <- function(x, tree = 1L, ...) {
   rlang::check_installed("grf")
 
   # Validate tree argument
@@ -373,13 +373,6 @@ active_predictors.regression_forest <- function(x, tree = 1L, ...) {
   # Combine results and sort by tree
   dplyr::bind_rows(results) |>
     dplyr::arrange(tree)
-}
-
-#' @rdname active_predictors
-#' @export
-active_predictors.grf <- function(x, tree = 1L, ...) {
-  # Generic method that delegates to regression_forest method
-  active_predictors.regression_forest(x, tree = tree, ...)
 }
 
 # Internal helper to extract active predictors from one tree

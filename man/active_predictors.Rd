@@ -8,7 +8,6 @@
 \alias{active_predictors.bart}
 \alias{active_predictors.cforest}
 \alias{active_predictors}
-\alias{active_predictors.regression_forest}
 \alias{active_predictors.grf}
 \alias{active_predictors.lgb.Booster}
 \alias{active_predictors.party}
@@ -27,8 +26,6 @@
 \method{active_predictors}{cforest}(x, tree = 1L, ...)
 
 active_predictors(x, ...)
-
-\method{active_predictors}{regression_forest}(x, tree = 1L, ...)
 
 \method{active_predictors}{grf}(x, tree = 1L, ...)
 
