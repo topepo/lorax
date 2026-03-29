@@ -610,3 +610,59 @@ var_imp.xgb.Booster <- function(
 
   res
 }
+
+#' @rdname active_predictors
+#' @export
+active_predictors.xgb.Booster <- function(x, tree = 1L, ...) {
+  rlang::check_installed("xgboost")
+
+  # Validate tree argument
+  if (!is.numeric(tree) || !all(tree == as.integer(tree))) {
+    cli::cli_abort(
+      "{.arg tree} must be an integer vector, not {.obj_type_friendly {tree}}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  tree <- as.integer(tree)
+
+  # Get all trees to determine number
+  tree_dt <- xgboost::xgb.model.dt.tree(x, use_int_id = TRUE)
+  tree_dt <- as.data.frame(tree_dt)
+
+  num_trees <- max(tree_dt$Tree) + 1L
+
+  if (any(tree < 1L) || any(tree > num_trees)) {
+    cli::cli_abort(
+      "{.arg tree} values must be between 1 and {num_trees}, not {tree}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  # Extract active predictors for each tree
+  results <- lapply(tree, xgb_active_vars_one_tree, x = x, tree_dt = tree_dt)
+
+  # Combine results and sort by tree
+  dplyr::bind_rows(results) |>
+    dplyr::arrange(tree)
+}
+
+# Internal helper to extract active predictors from one tree
+xgb_active_vars_one_tree <- function(tree_num, x, tree_dt) {
+  # Filter to selected tree (convert 1-based to 0-based)
+  tree_df <- tree_dt[tree_dt$Tree == (tree_num - 1L), ]
+
+  # Get non-leaf features
+  features <- unique(tree_df$Feature[tree_df$Feature != "Leaf"])
+
+  # Handle default names like "f0", "f1" - map to actual feature names
+  if (length(features) > 0 && all(grepl("^f[0-9]+$", features))) {
+    feature_names <- x$feature_names
+    if (!is.null(feature_names)) {
+      indices <- as.integer(sub("^f", "", features)) + 1L # 0-based to 1-based
+      features <- feature_names[indices]
+    }
+  }
+
+  new_active_predictors(features, tree = tree_num)
+}

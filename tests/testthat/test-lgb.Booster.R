@@ -468,7 +468,6 @@ test_that("as.party.lgb.Booster does not show asterisks in node summaries", {
   expect_false(has_asterisk_summary)
 })
 
-
 # ------------------------------------------------------------------------------
 # active_predictors tests
 # ------------------------------------------------------------------------------

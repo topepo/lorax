@@ -768,3 +768,64 @@ var_imp.lgb.Booster <- function(
 
   res
 }
+
+#' @rdname active_predictors
+#' @export
+active_predictors.lgb.Booster <- function(x, tree = 1L, ...) {
+  rlang::check_installed("lightgbm")
+
+  # Validate tree argument
+  if (!is.numeric(tree) || !all(tree == as.integer(tree))) {
+    cli::cli_abort(
+      "{.arg tree} must be an integer vector, not {.obj_type_friendly {tree}}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  tree <- as.integer(tree)
+
+  # Get all trees to determine number
+  tree_dt <- lightgbm::lgb.model.dt.tree(x)
+  tree_dt <- as.data.frame(tree_dt)
+
+  # Handle case where tree_index might be all NA (shouldn't happen but be safe)
+  if (nrow(tree_dt) == 0 || all(is.na(tree_dt$tree_index))) {
+    num_trees <- 1L # Assume at least one tree
+  } else {
+    num_trees <- max(tree_dt$tree_index, na.rm = TRUE) + 1L
+  }
+
+  if (any(tree < 1L) || any(tree > num_trees)) {
+    cli::cli_abort(
+      "{.arg tree} values must be between 1 and {num_trees}, not {tree}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  # Extract active predictors for each tree
+  results <- lapply(tree, lgb_active_vars_one_tree, x = x, tree_dt = tree_dt)
+
+  # Combine results and sort by tree
+  dplyr::bind_rows(results) |>
+    dplyr::arrange(tree)
+}
+
+# Internal helper to extract active predictors from one tree
+lgb_active_vars_one_tree <- function(tree_num, x, tree_dt) {
+  # Filter to selected tree (convert 1-based to 0-based)
+  tree_df <- tree_dt[tree_dt$tree_index == (tree_num - 1L), ]
+
+  # Get features from internal nodes (non-NA split_index)
+  features <- unique(tree_df$split_feature[!is.na(tree_df$split_index)])
+
+  # Handle default names like "Column_0" - map to actual feature names
+  if (length(features) > 0 && all(grepl("^Column_[0-9]+$", features))) {
+    feature_names <- x$feature_names
+    if (!is.null(feature_names) && length(feature_names) > 0) {
+      indices <- as.integer(sub("^Column_", "", features)) + 1L # 0-based to 1-based
+      features <- feature_names[indices]
+    }
+  }
+
+  new_active_predictors(features, tree = tree_num)
+}
