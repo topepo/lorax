@@ -79,7 +79,7 @@
 #' }
 #'
 #' @export
-as.party.regression_forest <- function(obj, tree = 1L, data = NULL, ...) {
+as.party.grf <- function(obj, tree = 1L, data = NULL, ...) {
   rlang::check_installed("grf")
   # Validate tree parameter
   if (!is.numeric(tree) || length(tree) != 1 || tree != as.integer(tree)) {
@@ -226,13 +226,6 @@ as.party.regression_forest <- function(obj, tree = 1L, data = NULL, ...) {
   }
 
   party_obj
-}
-
-#' @rdname as.party.regression_forest
-#' @export
-as.party.grf <- function(obj, tree = 1L, data = NULL, ...) {
-  # Generic method that delegates to regression_forest method
-  as.party.regression_forest(obj, tree = tree, data = data, ...)
 }
 
 # Internal helper to recursively build partynode from grf tree structure
