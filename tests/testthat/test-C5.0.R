@@ -251,6 +251,231 @@ test_that("as.party.C5.0 handles multiway categorical splits correctly", {
   }
 })
 
+# extract_rules() tests -------------------------------------------------------
+
+test_that("extract_rules.C5.0() returns correct structure", {
+  skip_if_not_installed("C50")
+
+  data <- get_factor_data(n = 100)
+  set.seed(327)
+  c5_tree <- C50::C5.0(y ~ x1 + x2 + x3, data = data)
+  rules <- extract_rules(c5_tree, tree = 1L, data = data)
+
+  expect_s3_class(rules, "rule_set_party")
+  expect_s3_class(rules, "rule_set")
+  expect_s3_class(rules, "tbl_df")
+  expect_named(rules, c("id", "rules", "tree"))
+  expect_type(rules$id, "integer")
+  expect_type(rules$rules, "list")
+  expect_type(rules$tree, "integer")
+})
+
+test_that("extract_rules.C5.0() extracts from single tree", {
+  skip_if_not_installed("C50")
+
+  data <- get_factor_data(n = 100)
+  set.seed(438)
+  c5_tree <- C50::C5.0(y ~ x1 + x2 + x3, data = data)
+  rules <- extract_rules(c5_tree, tree = 1L, data = data)
+
+  expect_equal(unique(rules$tree), 1L)
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
+test_that("extract_rules.C5.0() extracts from multiple boosted trees", {
+  skip_if_not_installed("C50")
+
+  wa_trees <- get_wa_trees_data()[1:200, ]
+  set.seed(549)
+  c5_boost <- C50::C5.0(
+    class ~ elevation + county + roughness,
+    data = wa_trees,
+    trials = 5
+  )
+
+  # Get actual number of trials
+  n_trials <- c5_boost$trials["Actual"]
+  trees_to_extract <- min(3L, n_trials)
+  tree_nums <- seq_len(trees_to_extract)
+
+  rules <- extract_rules(c5_boost, tree = tree_nums, data = wa_trees)
+
+  expect_equal(sort(unique(rules$tree)), tree_nums)
+  expect_true(nrow(rules) > 0)
+
+  # Check that each tree has rules
+  for (tree_num in tree_nums) {
+    tree_rules <- rules[rules$tree == tree_num, ]
+    expect_true(nrow(tree_rules) > 0)
+  }
+})
+
+test_that("extract_rules.C5.0() validates tree argument", {
+  skip_if_not_installed("C50")
+
+  wa_trees <- get_wa_trees_data()[1:200, ]
+  set.seed(651)
+  c5_boost <- C50::C5.0(class ~ elevation + county, data = wa_trees, trials = 5)
+
+  expect_snapshot(
+    extract_rules(c5_boost, tree = "1", data = wa_trees),
+    error = TRUE
+  )
+  expect_snapshot(
+    extract_rules(c5_boost, tree = 1.5, data = wa_trees),
+    error = TRUE
+  )
+  expect_snapshot(
+    extract_rules(c5_boost, tree = 0L, data = wa_trees),
+    error = TRUE
+  )
+  expect_snapshot(
+    extract_rules(c5_boost, tree = 10L, data = wa_trees),
+    error = TRUE
+  )
+})
+
+test_that("extract_rules.C5.0() requires data parameter", {
+  skip_if_not_installed("C50")
+
+  data <- get_factor_data(n = 100)
+  set.seed(762)
+  c5_tree <- C50::C5.0(y ~ x1 + x2 + x3, data = data)
+
+  expect_snapshot(extract_rules(c5_tree, tree = 1L), error = TRUE)
+  expect_snapshot(extract_rules(c5_tree, tree = 1L, data = NULL), error = TRUE)
+})
+
+test_that("extract_rules.C5.0() works with numeric predictors", {
+  skip_if_not_installed("C50")
+
+  data <- get_regression_data(n = 100)
+  data$y_cat <- cut(data$y, breaks = 3, labels = c("low", "med", "high"))
+  set.seed(873)
+  c5_tree <- C50::C5.0(y_cat ~ x1 + x2, data = data)
+  rules <- extract_rules(c5_tree, tree = 1L, data = data)
+
+  expect_s3_class(rules, "rule_set_party")
+  expect_true(nrow(rules) > 0)
+})
+
+test_that("extract_rules.C5.0() works with factor predictors", {
+  skip_if_not_installed("C50")
+
+  data <- get_factor_data(n = 100)
+  set.seed(984)
+  c5_tree <- C50::C5.0(y ~ x2 + x4, data = data)
+  rules <- extract_rules(c5_tree, tree = 1L, data = data)
+
+  expect_s3_class(rules, "rule_set_party")
+  expect_true(nrow(rules) > 0)
+})
+
+test_that("extract_rules.C5.0() works with mixed predictors", {
+  skip_if_not_installed("C50")
+
+  wa_trees <- get_wa_trees_data()[1:200, ]
+  set.seed(195)
+  c5_tree <- C50::C5.0(class ~ elevation + county, data = wa_trees)
+  rules <- extract_rules(c5_tree, tree = 1L, data = wa_trees)
+
+  expect_s3_class(rules, "rule_set_party")
+  expect_true(nrow(rules) > 0)
+})
+
+test_that("extract_rules.C5.0() rules are sorted by tree then id", {
+  skip_if_not_installed("C50")
+
+  wa_trees <- get_wa_trees_data()[1:200, ]
+  set.seed(216)
+  c5_boost <- C50::C5.0(
+    class ~ elevation + county + roughness,
+    data = wa_trees,
+    trials = 5
+  )
+
+  # Get actual number of trials and extract in reverse order
+  n_trials <- c5_boost$trials["Actual"]
+  trees_to_extract <- min(3L, n_trials)
+  tree_nums <- rev(seq_len(trees_to_extract))
+
+  rules <- extract_rules(c5_boost, tree = tree_nums, data = wa_trees)
+
+  # Check sorting
+  expect_true(all(diff(rules$tree) >= 0))
+
+  # Within each tree, ids should be sorted
+  for (tree_num in unique(rules$tree)) {
+    tree_rules <- rules[rules$tree == tree_num, ]
+    expect_true(all(diff(tree_rules$id) > 0))
+  }
+})
+
+test_that("extract_rules.C5.0() handles duplicate tree numbers", {
+  skip_if_not_installed("C50")
+
+  wa_trees <- get_wa_trees_data()[1:200, ]
+  set.seed(327)
+  c5_boost <- C50::C5.0(class ~ elevation + county, data = wa_trees, trials = 5)
+
+  # Get actual number of trials
+  n_trials <- c5_boost$trials["Actual"]
+  if (n_trials >= 2) {
+    rules <- extract_rules(c5_boost, tree = c(1L, 1L, 2L), data = wa_trees)
+
+    # Should have results for tree 1 twice
+    tree_counts <- table(rules$tree)
+    expect_equal(as.numeric(names(tree_counts)), c(1, 2))
+  } else {
+    # If only 1 trial, just test with duplicates of that
+    rules <- extract_rules(c5_boost, tree = c(1L, 1L), data = wa_trees)
+    tree_counts <- table(rules$tree)
+    expect_equal(as.numeric(names(tree_counts)), 1)
+  }
+})
+
+test_that("extract_rules.C5.0() works with all trees", {
+  skip_if_not_installed("C50")
+
+  wa_trees <- get_wa_trees_data()[1:200, ]
+  set.seed(438)
+  c5_boost <- C50::C5.0(
+    class ~ elevation + county + roughness,
+    data = wa_trees,
+    trials = 5
+  )
+
+  # Get actual number of trials
+  n_trials <- c5_boost$trials["Actual"]
+  rules <- extract_rules(c5_boost, tree = 1:n_trials, data = wa_trees)
+
+  expect_equal(sort(unique(rules$tree)), 1:n_trials)
+  expect_true(nrow(rules) > 0)
+})
+
+test_that("extract_rules.C5.0() handles tree with no valid splits", {
+  skip_if_not_installed("C50")
+
+  # Create data where tree may have no splits
+  null_data <- data.frame(
+    y = as.factor(rep(c("A", "B"), each = 5)),
+    x1 = rep(1:5, each = 2),
+    x2 = rep(1:5, each = 2)
+  )
+  set.seed(549)
+  c5_tree <- C50::C5.0(y ~ ., data = null_data)
+  rules <- extract_rules(c5_tree, tree = 1L, data = null_data)
+
+  expect_s3_class(rules, "rule_set_party")
+  # Even with no splits, should return at least one rule (TRUE)
+  expect_true(nrow(rules) >= 1)
+})
+
 # active_predictors() tests ---------------------------------------------------
 
 test_that("active_predictors.C5.0() has correct structure for tree models", {

@@ -246,6 +246,75 @@ ranger_build_partynode_from_info <- function(node_id, tree_info, var_names) {
 }
 
 # ------------------------------------------------------------------------------
+# Extract rules from ranger
+
+# Internal helper: extract rules for one tree from ranger
+ranger_extract_rules_one <- function(tree_num, x, data) {
+  # Convert to party
+  tree_party <- as.party(x, tree = tree_num, data = data)
+
+  # Extract rules using party method
+  rules <- extract_rules.party(tree_party)
+
+  # Add tree column
+  rules$tree <- tree_num
+
+  rules
+}
+
+#' @rdname extract_rules
+#' @param tree Integer vector specifying which trees to extract rules from.
+#'   Default is `1L` for the first tree. Values must be between 1 and the
+#'   number of trees in the forest (`x$num.trees`).
+#' @param data Data.frame containing the training data. Required for ranger
+#'   models to properly extract rules with fitted values and node summaries.
+#' @export
+extract_rules.ranger <- function(x, tree = 1L, data = NULL, ...) {
+  rlang::check_installed("ranger")
+
+  # Require data parameter
+  if (is.null(data)) {
+    cli::cli_abort(
+      "{.arg data} is required for {.fn extract_rules.ranger}.",
+      "i" = "Provide the training data to extract rules correctly."
+    )
+  }
+
+  # Validate tree argument
+  if (!is.numeric(tree) || !all(tree == as.integer(tree))) {
+    cli::cli_abort(
+      "{.arg tree} must be an integer vector, not {.obj_type_friendly {tree}}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  tree <- as.integer(tree)
+
+  # Check that forest exists
+  if (is.null(x$forest)) {
+    cli::cli_abort(
+      "{.pkg ranger} model must have {.code write.forest = TRUE} to extract rules.",
+      call = rlang::caller_env()
+    )
+  }
+
+  # Validate tree range
+  if (any(tree < 1L) || any(tree > x$num.trees)) {
+    cli::cli_abort(
+      "{.arg tree} values must be between 1 and {x$num.trees}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  # Extract for each tree
+  results <- lapply(tree, ranger_extract_rules_one, x = x, data = data)
+
+  # Combine and sort by tree then id
+  dplyr::bind_rows(results) |>
+    dplyr::arrange(tree, id)
+}
+
+# ------------------------------------------------------------------------------
 
 # Internal helper: extract active predictors for one tree and wrap in constructor
 ranger_extract_one <- function(tree_num, x) {

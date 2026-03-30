@@ -806,6 +806,72 @@ c5_extract_one <- function(tree_num, tree_lines, num_trials) {
   new_active_predictors(active_vars, tree = tree_num)
 }
 
+# ------------------------------------------------------------------------------
+# Extract rules from C5.0
+
+# Internal helper: extract rules for one tree from C5.0
+c5_extract_rules_one <- function(tree_num, x, data) {
+  # Convert to party
+  tree_party <- as.party(x, tree = tree_num, data = data)
+
+  # Extract rules using party method
+  rules <- extract_rules.party(tree_party)
+
+  # Add tree column
+  rules$tree <- tree_num
+
+  rules
+}
+
+#' @rdname extract_rules
+#' @param tree Integer vector specifying which trees (boosting trials) to
+#'   extract rules from. Default is `1L` for the first tree. Values must be
+#'   between 1 and the number of actual trials (`x$trials["Actual"]`).
+#' @param data Data.frame containing the training data. Required for C5.0
+#'   models to properly parse tree structure with correct factor levels.
+#' @export
+extract_rules.C5.0 <- function(x, tree = 1L, data = NULL, ...) {
+  rlang::check_installed("C50")
+
+  # Require data parameter
+  if (is.null(data)) {
+    cli::cli_abort(
+      "{.arg data} is required for {.fn extract_rules.C5.0}.",
+      "i" = "Provide the training data to extract rules correctly."
+    )
+  }
+
+  # Validate tree argument
+  if (!is.numeric(tree) || !all(tree == as.integer(tree))) {
+    cli::cli_abort(
+      "{.arg tree} must be an integer vector, not {.obj_type_friendly {tree}}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  tree <- as.integer(tree)
+
+  # Get number of trials
+  num_trials <- x$trials["Actual"]
+
+  # Validate tree range
+  if (any(tree < 1L) || any(tree > num_trials)) {
+    cli::cli_abort(
+      "{.arg tree} values must be between 1 and {num_trials}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  # Extract for each tree
+  results <- lapply(tree, c5_extract_rules_one, x = x, data = data)
+
+  # Combine and sort by tree then id
+  dplyr::bind_rows(results) |>
+    dplyr::arrange(tree, id)
+}
+
+# ------------------------------------------------------------------------------
+
 #' @rdname active_predictors
 #' @param tree Integer vector specifying which trees (boosting trials) to
 #'   extract active predictors from. Default is `1L` for the first tree.
