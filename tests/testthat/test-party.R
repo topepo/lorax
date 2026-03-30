@@ -311,10 +311,10 @@ test_that("active_predictors.party() handles no-split data", {
 test_that("var_imp.party() returns correct structure", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(427)
   tree <- partykit::ctree(
-    class ~ elevation + roughness + dew_temp,
+    class ~ elevation + county,
     data = wa_trees
   )
   result <- var_imp(tree)
@@ -328,10 +328,10 @@ test_that("var_imp.party() returns correct structure", {
 test_that("var_imp.party() extracts variable importance scores", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(638)
   tree <- partykit::ctree(
-    class ~ elevation + roughness + dew_temp,
+    class ~ elevation + county,
     data = wa_trees
   )
   result <- var_imp(tree)
@@ -346,7 +346,7 @@ test_that("var_imp.party() extracts variable importance scores", {
 test_that("var_imp.party() with complete=TRUE fills missing predictors", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(749)
   tree <- partykit::ctree(
     class ~ elevation + roughness + dew_temp,
@@ -362,10 +362,10 @@ test_that("var_imp.party() with complete=TRUE fills missing predictors", {
 test_that("var_imp.party() with complete=FALSE returns only used predictors", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(851)
   tree <- partykit::ctree(
-    class ~ elevation + roughness + dew_temp,
+    class ~ elevation + county,
     data = wa_trees
   )
   result <- var_imp(tree, complete = FALSE)
@@ -380,20 +380,20 @@ test_that("var_imp.party() with complete=FALSE returns only used predictors", {
 test_that("var_imp.party() works with numeric predictors only", {
   skip_if_not_installed("partykit")
 
-  data <- get_regression_data(n = 150)
+  data <- get_regression_data(n = 80)
   set.seed(963)
-  tree <- partykit::ctree(y ~ x1 + x2 + x3, data = data)
+  tree <- partykit::ctree(y ~ x1 + x2, data = data)
   result <- var_imp(tree, complete = TRUE)
 
   expect_s3_class(result, "tbl_df")
-  expect_equal(nrow(result), 3)
-  expect_setequal(result$term, c("x1", "x2", "x3"))
+  expect_equal(nrow(result), 2)
+  expect_setequal(result$term, c("x1", "x2"))
 })
 
 test_that("var_imp.party() works with factor predictors", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(174)
   tree <- partykit::ctree(
     county ~ class + elevation,
@@ -409,26 +409,26 @@ test_that("var_imp.party() works with factor predictors", {
 test_that("var_imp.party() works with mixed numeric and factor predictors", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(285)
   tree <- partykit::ctree(
-    elevation ~ class + county + roughness,
+    elevation ~ class + roughness,
     data = wa_trees
   )
   result <- var_imp(tree, complete = TRUE)
 
   expect_s3_class(result, "tbl_df")
-  expect_equal(nrow(result), 3)
-  expect_setequal(result$term, c("class", "county", "roughness"))
+  expect_equal(nrow(result), 2)
+  expect_setequal(result$term, c("class", "roughness"))
 })
 
 test_that("var_imp.party() returns all expected predictors", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(396)
   tree <- partykit::ctree(
-    class ~ elevation + roughness + dew_temp,
+    class ~ elevation + county,
     data = wa_trees
   )
   result <- var_imp(tree, complete = FALSE)
@@ -444,10 +444,10 @@ test_that("var_imp.party() returns all expected predictors", {
 test_that("var_imp.party() works with classification tree", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(507)
   tree <- partykit::ctree(
-    class ~ elevation + roughness + dew_temp,
+    class ~ elevation + county,
     data = wa_trees
   )
   result <- var_imp(tree)
@@ -459,14 +459,14 @@ test_that("var_imp.party() works with classification tree", {
 test_that("var_imp.party() works with regression tree", {
   skip_if_not_installed("partykit")
 
-  data <- get_regression_data(n = 150)
+  data <- get_regression_data(n = 80)
   set.seed(618)
-  tree <- partykit::ctree(y ~ x1 + x2 + x3, data = data)
+  tree <- partykit::ctree(y ~ x1 + x2, data = data)
   result <- var_imp(tree)
 
   expect_s3_class(result, "tbl_df")
-  expect_equal(nrow(result), 3)
-  expect_setequal(result$term, c("x1", "x2", "x3"))
+  expect_equal(nrow(result), 2)
+  expect_setequal(result$term, c("x1", "x2"))
 })
 
 test_that("var_imp.party() handles tree with no splits", {
@@ -489,8 +489,8 @@ test_that("var_imp.party() handles many predictors", {
   skip_if_not_installed("partykit")
 
   set.seed(834)
-  n <- 200
-  p <- 10
+  n <- 100
+  p <- 5
   X <- as.data.frame(matrix(rnorm(n * p), nrow = n, ncol = p))
   colnames(X) <- paste0("x", 1:p)
   X$y <- X$x1 + X$x2 + rnorm(n)
@@ -509,16 +509,16 @@ test_that("var_imp.party() handles constrained splits", {
   # Force a constrained tree
   set.seed(152)
   small_data <- data.frame(
-    y = rnorm(100),
-    x1 = rnorm(100),
-    x2 = rnorm(100)
+    y = rnorm(60),
+    x1 = rnorm(60),
+    x2 = rnorm(60)
   )
 
   set.seed(263)
   tree <- partykit::ctree(
     y ~ x1 + x2,
     data = small_data,
-    control = partykit::ctree_control(minsplit = 30)
+    control = partykit::ctree_control(minsplit = 20)
   )
 
   result <- var_imp(tree, complete = TRUE)

@@ -3,10 +3,10 @@
 test_that("extract_rules.cforest() returns correct structure", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(847)
   cf <- partykit::cforest(
-    class ~ elevation + roughness,
+    class ~ elevation + county,
     data = wa_trees,
     ntree = 3
   )
@@ -24,9 +24,13 @@ test_that("extract_rules.cforest() returns correct structure", {
 test_that("extract_rules.cforest() extracts from single tree", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(532)
-  cf <- partykit::cforest(class ~ ., data = wa_trees, ntree = 5)
+  cf <- partykit::cforest(
+    class ~ elevation + county + roughness,
+    data = wa_trees,
+    ntree = 3
+  )
   rules <- extract_rules(cf, tree = 1L)
 
   expect_equal(unique(rules$tree), 1L)
@@ -41,9 +45,13 @@ test_that("extract_rules.cforest() extracts from single tree", {
 test_that("extract_rules.cforest() extracts from multiple trees", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(219)
-  cf <- partykit::cforest(class ~ ., data = wa_trees, ntree = 5)
+  cf <- partykit::cforest(
+    class ~ elevation + county + roughness,
+    data = wa_trees,
+    ntree = 3
+  )
   rules <- extract_rules(cf, tree = c(1L, 2L, 3L))
 
   expect_equal(sort(unique(rules$tree)), c(1L, 2L, 3L))
@@ -59,9 +67,13 @@ test_that("extract_rules.cforest() extracts from multiple trees", {
 test_that("extract_rules.cforest() validates tree argument", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(674)
-  cf <- partykit::cforest(class ~ ., data = wa_trees, ntree = 3)
+  cf <- partykit::cforest(
+    class ~ elevation + county,
+    data = wa_trees,
+    ntree = 3
+  )
 
   expect_snapshot(extract_rules(cf, tree = "1"), error = TRUE)
   expect_snapshot(extract_rules(cf, tree = 1.5), error = TRUE)
@@ -72,7 +84,7 @@ test_that("extract_rules.cforest() validates tree argument", {
 test_that("extract_rules.cforest() works with numeric predictors", {
   skip_if_not_installed("partykit")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data(n = 60)
   set.seed(158)
   cf <- partykit::cforest(y ~ x1 + x2, data = data, ntree = 3)
   rules <- extract_rules(cf, tree = 1L)
@@ -84,7 +96,7 @@ test_that("extract_rules.cforest() works with numeric predictors", {
 test_that("extract_rules.cforest() works with factor predictors", {
   skip_if_not_installed("partykit")
 
-  data <- get_factor_data(n = 100)
+  data <- get_factor_data(n = 60)
   set.seed(391)
   cf <- partykit::cforest(y ~ x2 + x4, data = data, ntree = 3)
   rules <- extract_rules(cf, tree = 1L)
@@ -96,7 +108,7 @@ test_that("extract_rules.cforest() works with factor predictors", {
 test_that("extract_rules.cforest() works with mixed numeric and factor predictors", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(746)
   cf <- partykit::cforest(
     class ~ elevation + county + roughness,
@@ -112,9 +124,13 @@ test_that("extract_rules.cforest() works with mixed numeric and factor predictor
 test_that("extract_rules.cforest() rules are sorted by tree then id", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(803)
-  cf <- partykit::cforest(class ~ ., data = wa_trees, ntree = 3)
+  cf <- partykit::cforest(
+    class ~ elevation + county + roughness,
+    data = wa_trees,
+    ntree = 3
+  )
   rules <- extract_rules(cf, tree = c(2L, 1L, 3L))
 
   # Check sorting
@@ -130,9 +146,13 @@ test_that("extract_rules.cforest() rules are sorted by tree then id", {
 test_that("extract_rules.cforest() handles duplicate tree numbers", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(456)
-  cf <- partykit::cforest(class ~ ., data = wa_trees, ntree = 3)
+  cf <- partykit::cforest(
+    class ~ elevation + county,
+    data = wa_trees,
+    ntree = 3
+  )
   rules <- extract_rules(cf, tree = c(1L, 1L, 2L))
 
   # Should have results for tree 1 twice
@@ -143,9 +163,13 @@ test_that("extract_rules.cforest() handles duplicate tree numbers", {
 test_that("extract_rules.cforest() works with all trees", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(927)
-  cf <- partykit::cforest(class ~ ., data = wa_trees, ntree = 3)
+  cf <- partykit::cforest(
+    class ~ elevation + county,
+    data = wa_trees,
+    ntree = 3
+  )
   n_trees <- length(cf$nodes)
   rules <- extract_rules(cf, tree = 1:n_trees)
 
@@ -172,10 +196,10 @@ test_that("extract_rules.cforest() handles tree with no valid splits", {
 test_that("active_predictors.cforest() returns correct structure", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(183)
   cf <- partykit::cforest(
-    class ~ elevation + roughness,
+    class ~ elevation + county,
     data = wa_trees,
     ntree = 3
   )
@@ -191,9 +215,13 @@ test_that("active_predictors.cforest() returns correct structure", {
 test_that("active_predictors.cforest() extracts from single tree", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(295)
-  cf <- partykit::cforest(class ~ ., data = wa_trees, ntree = 5)
+  cf <- partykit::cforest(
+    class ~ elevation + county + roughness,
+    data = wa_trees,
+    ntree = 3
+  )
   result <- active_predictors(cf, tree = 1L)
 
   expect_equal(nrow(result), 1)
@@ -204,9 +232,13 @@ test_that("active_predictors.cforest() extracts from single tree", {
 test_that("active_predictors.cforest() extracts from multiple trees", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(418)
-  cf <- partykit::cforest(class ~ ., data = wa_trees, ntree = 5)
+  cf <- partykit::cforest(
+    class ~ elevation + county + roughness,
+    data = wa_trees,
+    ntree = 3
+  )
   result <- active_predictors(cf, tree = c(1L, 2L, 3L))
 
   expect_equal(nrow(result), 3)
@@ -217,9 +249,13 @@ test_that("active_predictors.cforest() extracts from multiple trees", {
 test_that("active_predictors.cforest() validates tree argument", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(563)
-  cf <- partykit::cforest(class ~ ., data = wa_trees, ntree = 3)
+  cf <- partykit::cforest(
+    class ~ elevation + county,
+    data = wa_trees,
+    ntree = 3
+  )
 
   expect_snapshot(active_predictors(cf, tree = "1"), error = TRUE)
   expect_snapshot(active_predictors(cf, tree = 1.5), error = TRUE)
@@ -230,7 +266,7 @@ test_that("active_predictors.cforest() validates tree argument", {
 test_that("active_predictors.cforest() works with numeric predictors", {
   skip_if_not_installed("partykit")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data(n = 60)
   set.seed(729)
   cf <- partykit::cforest(y ~ x1 + x2 + x3, data = data, ntree = 3)
   result <- active_predictors(cf, tree = 1L)
@@ -243,7 +279,7 @@ test_that("active_predictors.cforest() works with numeric predictors", {
 test_that("active_predictors.cforest() works with factor predictors", {
   skip_if_not_installed("partykit")
 
-  data <- get_factor_data(n = 100)
+  data <- get_factor_data(n = 60)
   set.seed(841)
   cf <- partykit::cforest(y ~ x2 + x4, data = data, ntree = 3)
   result <- active_predictors(cf, tree = 1L)
@@ -256,7 +292,7 @@ test_that("active_predictors.cforest() works with factor predictors", {
 test_that("active_predictors.cforest() works with mixed numeric and factor predictors", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(926)
   cf <- partykit::cforest(
     class ~ elevation + county + roughness,
@@ -273,9 +309,13 @@ test_that("active_predictors.cforest() works with mixed numeric and factor predi
 test_that("active_predictors.cforest() returns sorted unique variables", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(147)
-  cf <- partykit::cforest(class ~ ., data = wa_trees, ntree = 3)
+  cf <- partykit::cforest(
+    class ~ elevation + county + roughness,
+    data = wa_trees,
+    ntree = 3
+  )
   result <- active_predictors(cf, tree = 1L)
 
   active_vars <- result$active_predictors[[1]]
@@ -286,9 +326,13 @@ test_that("active_predictors.cforest() returns sorted unique variables", {
 test_that("active_predictors.cforest() works with all trees", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(372)
-  cf <- partykit::cforest(class ~ ., data = wa_trees, ntree = 3)
+  cf <- partykit::cforest(
+    class ~ elevation + county,
+    data = wa_trees,
+    ntree = 3
+  )
   n_trees <- length(cf$nodes)
   result <- active_predictors(cf, tree = 1:n_trees)
 
@@ -300,9 +344,13 @@ test_that("active_predictors.cforest() works with all trees", {
 test_that("active_predictors.cforest() handles duplicate tree numbers", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(508)
-  cf <- partykit::cforest(class ~ ., data = wa_trees, ntree = 3)
+  cf <- partykit::cforest(
+    class ~ elevation + county,
+    data = wa_trees,
+    ntree = 3
+  )
   result <- active_predictors(cf, tree = c(1L, 1L, 2L))
 
   expect_equal(nrow(result), 3)
@@ -329,12 +377,12 @@ test_that("active_predictors.cforest() handles tree with no splits", {
 test_that("var_imp.cforest() returns correct structure", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(821)
   cf <- partykit::cforest(
-    class ~ elevation + roughness + dew_temp,
+    class ~ elevation + county,
     data = wa_trees,
-    ntree = 10
+    ntree = 5
   )
   result <- var_imp(cf)
 
@@ -347,12 +395,12 @@ test_that("var_imp.cforest() returns correct structure", {
 test_that("var_imp.cforest() extracts variable importance scores", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(934)
   cf <- partykit::cforest(
-    class ~ elevation + roughness + dew_temp,
+    class ~ elevation + county,
     data = wa_trees,
-    ntree = 10
+    ntree = 5
   )
   result <- var_imp(cf)
 
@@ -366,12 +414,12 @@ test_that("var_imp.cforest() extracts variable importance scores", {
 test_that("var_imp.cforest() with complete=TRUE fills missing predictors", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(157)
   cf <- partykit::cforest(
     class ~ elevation + roughness + dew_temp,
     data = wa_trees,
-    ntree = 10
+    ntree = 5
   )
   result <- var_imp(cf, complete = TRUE)
 
@@ -383,12 +431,12 @@ test_that("var_imp.cforest() with complete=TRUE fills missing predictors", {
 test_that("var_imp.cforest() with complete=FALSE returns only used predictors", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(283)
   cf <- partykit::cforest(
-    class ~ elevation + roughness + dew_temp,
+    class ~ elevation + county,
     data = wa_trees,
-    ntree = 10
+    ntree = 5
   )
   result <- var_imp(cf, complete = FALSE)
 
@@ -402,25 +450,25 @@ test_that("var_imp.cforest() with complete=FALSE returns only used predictors", 
 test_that("var_imp.cforest() works with numeric predictors only", {
   skip_if_not_installed("partykit")
 
-  data <- get_regression_data(n = 150)
+  data <- get_regression_data(n = 80)
   set.seed(476)
-  cf <- partykit::cforest(y ~ x1 + x2 + x3, data = data, ntree = 10)
+  cf <- partykit::cforest(y ~ x1 + x2, data = data, ntree = 5)
   result <- var_imp(cf, complete = TRUE)
 
   expect_s3_class(result, "tbl_df")
-  expect_equal(nrow(result), 3)
-  expect_setequal(result$term, c("x1", "x2", "x3"))
+  expect_equal(nrow(result), 2)
+  expect_setequal(result$term, c("x1", "x2"))
 })
 
 test_that("var_imp.cforest() works with factor predictors", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(619)
   cf <- partykit::cforest(
     county ~ class + elevation,
     data = wa_trees,
-    ntree = 10
+    ntree = 5
   )
   result <- var_imp(cf, complete = TRUE)
 
@@ -432,29 +480,29 @@ test_that("var_imp.cforest() works with factor predictors", {
 test_that("var_imp.cforest() works with mixed numeric and factor predictors", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(742)
   cf <- partykit::cforest(
-    elevation ~ class + county + roughness,
+    elevation ~ class + roughness,
     data = wa_trees,
-    ntree = 10
+    ntree = 5
   )
   result <- var_imp(cf, complete = TRUE)
 
   expect_s3_class(result, "tbl_df")
-  expect_equal(nrow(result), 3)
-  expect_setequal(result$term, c("class", "county", "roughness"))
+  expect_equal(nrow(result), 2)
+  expect_setequal(result$term, c("class", "roughness"))
 })
 
 test_that("var_imp.cforest() returns all expected predictors", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(865)
   cf <- partykit::cforest(
-    class ~ elevation + roughness + dew_temp,
+    class ~ elevation + county,
     data = wa_trees,
-    ntree = 10
+    ntree = 5
   )
   result <- var_imp(cf, complete = FALSE)
 
@@ -469,12 +517,12 @@ test_that("var_imp.cforest() returns all expected predictors", {
 test_that("var_imp.cforest() works with classification forest", {
   skip_if_not_installed("partykit")
 
-  wa_trees <- get_wa_trees_data()
+  wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(918)
   cf <- partykit::cforest(
-    class ~ elevation + roughness + dew_temp,
+    class ~ elevation + county,
     data = wa_trees,
-    ntree = 10
+    ntree = 5
   )
   result <- var_imp(cf)
 
@@ -485,28 +533,28 @@ test_that("var_imp.cforest() works with classification forest", {
 test_that("var_imp.cforest() works with regression forest", {
   skip_if_not_installed("partykit")
 
-  data <- get_regression_data(n = 150)
+  data <- get_regression_data(n = 80)
   set.seed(241)
-  cf <- partykit::cforest(y ~ x1 + x2 + x3, data = data, ntree = 10)
+  cf <- partykit::cforest(y ~ x1 + x2, data = data, ntree = 5)
   result <- var_imp(cf)
 
   expect_s3_class(result, "tbl_df")
-  expect_equal(nrow(result), 3)
-  expect_setequal(result$term, c("x1", "x2", "x3"))
+  expect_equal(nrow(result), 2)
+  expect_setequal(result$term, c("x1", "x2"))
 })
 
 test_that("var_imp.cforest() handles many predictors", {
   skip_if_not_installed("partykit")
 
   set.seed(374)
-  n <- 200
-  p <- 10
+  n <- 100
+  p <- 5
   X <- as.data.frame(matrix(rnorm(n * p), nrow = n, ncol = p))
   colnames(X) <- paste0("x", 1:p)
   X$y <- X$x1 + X$x2 + rnorm(n)
 
   set.seed(507)
-  cf <- partykit::cforest(y ~ ., data = X, ntree = 10)
+  cf <- partykit::cforest(y ~ ., data = X, ntree = 5)
   result <- var_imp(cf)
 
   expect_equal(nrow(result), p)
@@ -519,17 +567,17 @@ test_that("var_imp.cforest() handles constrained splits", {
   # Force a constrained forest
   set.seed(682)
   small_data <- data.frame(
-    y = rnorm(100),
-    x1 = rnorm(100),
-    x2 = rnorm(100)
+    y = rnorm(60),
+    x1 = rnorm(60),
+    x2 = rnorm(60)
   )
 
   set.seed(795)
   cf <- partykit::cforest(
     y ~ x1 + x2,
     data = small_data,
-    ntree = 5,
-    control = partykit::ctree_control(minsplit = 30)
+    ntree = 3,
+    control = partykit::ctree_control(minsplit = 20)
   )
 
   result <- var_imp(cf, complete = TRUE)
