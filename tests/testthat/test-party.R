@@ -1,4 +1,4 @@
-skip("TOOOO LONG")
+# skip("TOOOO LONG")
 
 test_that("extract_rules.party() returns correct structure", {
   skip_if_not_installed("partykit")
