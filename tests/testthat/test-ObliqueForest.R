@@ -306,7 +306,7 @@ test_that("extract_rules.ObliqueForest() node assignments are consistent", {
     rule_matches <- eval(rules$rules[[j]], penguins_numeric)
     obs_in_node_rule <- which(rule_matches)
 
-    # Should be the same observations
+    # Should be the same observations; macos differences happen here
     expect_setequal(
       obs_in_node_aorsf,
       obs_in_node_rule
