@@ -66,6 +66,7 @@ test_that("extract_rules.ObliqueForest() rules evaluate correctly with numeric d
     "flipper_length_mm",
     "body_mass_g"
   )]
+  set.seed(47)
   reg_forest <- aorsf::orsf(
     body_mass_g ~ .,
     data = penguins_numeric,
@@ -160,6 +161,7 @@ test_that("extract_rules.ObliqueForest() works with regression forest", {
     "flipper_length_mm",
     "body_mass_g"
   )]
+  set.seed(238)
   reg_forest <- aorsf::orsf(
     body_mass_g ~ .,
     data = penguins_numeric,
@@ -272,7 +274,7 @@ test_that("extract_rules.ObliqueForest() node assignments are consistent", {
     "body_mass_g"
   )]
 
-  set.seed(123)
+  set.seed(802)
   test_forest <- aorsf::orsf(
     body_mass_g ~ .,
     data = penguins_numeric,
@@ -315,7 +317,7 @@ test_that("extract_rules.ObliqueForest() handles single-node tree", {
   skip_if_not_installed("aorsf")
 
   # Force a single-node tree with very high split_min_stat
-  set.seed(123)
+  set.seed(315)
   small_data <- data.frame(y = 1:50, x = rnorm(50))
 
   forest <- aorsf::orsf(
@@ -409,6 +411,7 @@ test_that("active_predictors.ObliqueForest() collapses factor indicators", {
 
   # Use wa_trees which has 'county' factor
   load(system.file("wa_trees.RData", package = "lorax"))
+  set.seed(591)
   wa_forest <- aorsf::orsf(
     class ~ county + elevation + roughness,
     data = wa_trees,
@@ -459,6 +462,7 @@ test_that("active_predictors.ObliqueForest() handles tree with no splits", {
 
   # Create forest with high split_min_stat to attempt single node tree
   small_data <- data.frame(y = 1:50, x = rnorm(50))
+  set.seed(341)
   no_split_forest <- aorsf::orsf(
     y ~ x,
     data = small_data,
@@ -504,6 +508,7 @@ test_that("active_predictors.ObliqueForest() handles numeric-only predictors", {
   skip_if_not_installed("aorsf")
 
   # Use mtcars which has no factors
+  set.seed(659)
   forest_numeric <- aorsf::orsf(
     mpg ~ cyl + disp + hp + wt,
     data = mtcars,
@@ -540,4 +545,324 @@ test_that("active_predictors.ObliqueForest() handles duplicate tree numbers", {
 
   expect_equal(nrow(result), 3)
   expect_equal(result$tree, c(1L, 1L, 2L))
+})
+
+# Tests for var_imp.ObliqueForest() ------------------------------------------
+
+test_that("var_imp.ObliqueForest() returns correct structure", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
+  result <- var_imp(forest)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("term", "estimate"))
+  expect_type(result$term, "character")
+  expect_type(result$estimate, "double")
+})
+
+test_that("var_imp.ObliqueForest() extracts variable importance scores", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
+  result <- var_imp(forest)
+
+  # Should have at least one variable with non-zero importance
+  expect_true(any(result$estimate > 0))
+
+  # All estimates should be non-negative
+  expect_true(all(result$estimate >= 0))
+
+  # Should have all predictors from the model
+  expect_true(nrow(result) > 0)
+})
+
+test_that("var_imp.ObliqueForest() with complete=TRUE fills missing predictors", {
+  skip_if_not_installed("aorsf")
+
+  # Create a scenario where some predictors might not be used
+  set.seed(419)
+  data <- get_regression_data(n = 200)
+  # Add a near-constant predictor that might not be used
+  data$x4 <- rnorm(200, mean = 1000, sd = 0.001)
+
+  forest <- aorsf::orsf(
+    y ~ x1 + x2 + x3 + x4,
+    data = data,
+    n_tree = 10,
+    oobag_pred_type = "none"
+  )
+
+  result <- var_imp(forest, complete = TRUE)
+
+  # Should have all 4 predictors
+  expect_equal(nrow(result), 4)
+  expect_setequal(result$term, c("x1", "x2", "x3", "x4"))
+
+  # All estimates should be non-negative
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ObliqueForest() with complete=FALSE returns only used predictors", {
+  skip_if_not_installed("aorsf")
+
+  set.seed(683)
+  data <- get_regression_data(n = 200)
+
+  forest <- aorsf::orsf(
+    y ~ x1 + x2 + x3,
+    data = data,
+    n_tree = 10,
+    oobag_pred_type = "none"
+  )
+
+  result <- var_imp(forest, complete = FALSE)
+
+  # Should only have predictors with non-zero importance
+  expected_vars <- names(forest$get_importance_clean())
+  expect_equal(nrow(result), length(expected_vars))
+  expect_setequal(result$term, expected_vars)
+})
+
+test_that("var_imp.ObliqueForest() works with numeric predictors only", {
+  skip_if_not_installed("aorsf")
+
+  mtcars <- get_mtcars_data()
+  set.seed(127)
+  forest <- aorsf::orsf(
+    mpg ~ cyl + disp + hp + wt,
+    data = mtcars,
+    n_tree = 10,
+    oobag_pred_type = "none"
+  )
+  result <- var_imp(forest, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 4)
+  expect_setequal(result$term, c("cyl", "disp", "hp", "wt"))
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ObliqueForest() works with factor predictors", {
+  skip_if_not_installed("aorsf")
+
+  wa_trees <- get_wa_trees_data()
+  set.seed(918)
+  forest <- aorsf::orsf(
+    county ~ class + elevation + roughness,
+    data = wa_trees,
+    n_tree = 10,
+    oobag_pred_type = "none"
+  )
+  result <- var_imp(forest, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 3)
+  expect_setequal(result$term, c("class", "elevation", "roughness"))
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ObliqueForest() works with mixed numeric and factor predictors", {
+  skip_if_not_installed("aorsf")
+
+  wa_trees <- get_wa_trees_data()
+  set.seed(463)
+  forest <- aorsf::orsf(
+    elevation ~ class + county + roughness + dew_temp,
+    data = wa_trees,
+    n_tree = 10,
+    oobag_pred_type = "none"
+  )
+  result <- var_imp(forest, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 4)
+  expect_setequal(result$term, c("class", "county", "roughness", "dew_temp"))
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ObliqueForest() handles forest with constrained splits", {
+  skip_if_not_installed("aorsf")
+
+  # Force a very constrained forest that might have limited splits
+  set.seed(156)
+  small_data <- data.frame(
+    y = rnorm(100),
+    x1 = rnorm(100),
+    x2 = rnorm(100)
+  )
+
+  forest <- aorsf::orsf(
+    y ~ x1 + x2,
+    data = small_data,
+    n_tree = 5,
+    oobag_pred_type = "none",
+    leaf_min_obs = 30
+  )
+
+  result <- var_imp(forest, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("term", "estimate"))
+  expect_equal(nrow(result), 2)
+  expect_setequal(result$term, c("x1", "x2"))
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ObliqueForest() importance scores match get_importance_clean", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
+  result <- var_imp(forest, complete = FALSE)
+
+  # Match against forest$get_importance_clean()
+  expected <- forest$get_importance_clean()
+
+  for (i in seq_len(nrow(result))) {
+    term <- result$term[i]
+    estimate <- result$estimate[i]
+    expect_equal(estimate, expected[[term]], tolerance = 1e-10)
+  }
+})
+
+test_that("var_imp.ObliqueForest() works with classification forest", {
+  skip_if_not_installed("aorsf")
+  skip_if_not_installed("palmerpenguins")
+
+  forest <- get_penguins_forest()
+  result <- var_imp(forest)
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(nrow(result) > 0)
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ObliqueForest() works with regression forest", {
+  skip_if_not_installed("aorsf")
+
+  mtcars <- get_mtcars_data()
+  set.seed(731)
+  forest <- aorsf::orsf(
+    mpg ~ cyl + disp + hp,
+    data = mtcars,
+    n_tree = 10,
+    oobag_pred_type = "none"
+  )
+  result <- var_imp(forest)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 3)
+  expect_setequal(result$term, c("cyl", "disp", "hp"))
+})
+
+test_that("var_imp.ObliqueForest() handles many predictors", {
+  skip_if_not_installed("aorsf")
+
+  set.seed(974)
+  n <- 200
+  p <- 15
+  X <- as.data.frame(matrix(rnorm(n * p), nrow = n, ncol = p))
+  colnames(X) <- paste0("x", 1:p)
+  X$y <- X$x1 + X$x2 + rnorm(n)
+
+  forest <- aorsf::orsf(
+    y ~ .,
+    data = X,
+    n_tree = 10,
+    oobag_pred_type = "none"
+  )
+  result <- var_imp(forest)
+
+  expect_equal(nrow(result), p)
+  expect_setequal(result$term, paste0("x", 1:p))
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ObliqueForest() works with single tree forest", {
+  skip_if_not_installed("aorsf")
+
+  data <- get_regression_data(n = 200)
+  set.seed(542)
+  forest <- aorsf::orsf(
+    y ~ x1 + x2 + x3,
+    data = data,
+    n_tree = 1,
+    oobag_pred_type = "none"
+  )
+  result <- var_imp(forest)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 3)
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ObliqueForest() handles forest with no valid splits gracefully", {
+  skip_if_not_installed("aorsf")
+
+  # Create a scenario that's hard to split
+  set.seed(527)
+  difficult_data <- data.frame(
+    y = rep(c(1, 2), each = 25),
+    x1 = rnorm(50),
+    x2 = rnorm(50)
+  )
+
+  forest <- aorsf::orsf(
+    y ~ x1 + x2,
+    data = difficult_data,
+    n_tree = 1,
+    oobag_pred_type = "none",
+    split_min_stat = 100 # Very high threshold makes splits unlikely
+  )
+
+  result <- var_imp(forest, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("term", "estimate"))
+  expect_equal(nrow(result), 2)
+  expect_setequal(result$term, c("x1", "x2"))
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ObliqueForest() with scaled predictors", {
+  skip_if_not_installed("aorsf")
+
+  data <- get_regression_data(n = 200)
+  # Test with scale_x = TRUE (default)
+  set.seed(276)
+  forest_scaled <- aorsf::orsf(
+    y ~ x1 + x2 + x3,
+    data = data,
+    n_tree = 10,
+    oobag_pred_type = "none",
+    control = aorsf::orsf_control_regression(scale_x = TRUE)
+  )
+  result_scaled <- var_imp(forest_scaled)
+
+  expect_s3_class(result_scaled, "tbl_df")
+  expect_equal(nrow(result_scaled), 3)
+  expect_true(all(result_scaled$estimate >= 0))
+})
+
+test_that("var_imp.ObliqueForest() with unscaled predictors", {
+  skip_if_not_installed("aorsf")
+
+  data <- get_regression_data(n = 200)
+  # Test with scale_x = FALSE
+  set.seed(894)
+  forest_unscaled <- aorsf::orsf(
+    y ~ x1 + x2 + x3,
+    data = data,
+    n_tree = 10,
+    oobag_pred_type = "none",
+    control = aorsf::orsf_control_regression(scale_x = FALSE)
+  )
+  result_unscaled <- var_imp(forest_unscaled)
+
+  expect_s3_class(result_unscaled, "tbl_df")
+  expect_equal(nrow(result_unscaled), 3)
+  expect_true(all(result_unscaled$estimate >= 0))
 })

@@ -8,6 +8,9 @@
 #' @export
 partykit::as.party
 
+#' @importFrom generics var_imp
+#' @export
+generics::var_imp
 
 ## usethis namespace: end
 

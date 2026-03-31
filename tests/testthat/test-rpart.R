@@ -252,3 +252,178 @@ test_that("active_predictors.rpart() works with factor predictors", {
   expect_type(result$active_predictors[[1]], "character")
   expect_true(length(result$active_predictors[[1]]) >= 0)
 })
+
+# Tests for var_imp.rpart() -------------------------------------------------
+
+test_that("var_imp.rpart() returns correct structure", {
+  skip_if_not_installed("rpart")
+
+  wa_trees <- get_wa_trees_data()
+  tree <- rpart::rpart(
+    class ~ elevation + roughness + dew_temp,
+    data = wa_trees
+  )
+  result <- var_imp(tree)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("term", "estimate"))
+  expect_type(result$term, "character")
+  expect_type(result$estimate, "double")
+})
+
+test_that("var_imp.rpart() extracts variable importance scores", {
+  skip_if_not_installed("rpart")
+
+  wa_trees <- get_wa_trees_data()
+  tree <- rpart::rpart(
+    class ~ elevation + roughness + dew_temp,
+    data = wa_trees
+  )
+  result <- var_imp(tree)
+
+  # Should have at least one variable with non-zero importance
+  expect_true(any(result$estimate > 0))
+
+  # All estimates should be non-negative
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.rpart() with complete=TRUE fills missing predictors", {
+  skip_if_not_installed("rpart")
+
+  wa_trees <- get_wa_trees_data()
+  # Build a tree that won't use all predictors
+  tree <- rpart::rpart(
+    class ~ elevation + roughness + dew_temp + northness + eastness,
+    data = wa_trees
+  )
+  result <- var_imp(tree, complete = TRUE)
+
+  # Should have all 5 predictors
+  expect_equal(nrow(result), 5)
+  expect_setequal(
+    result$term,
+    c("elevation", "roughness", "dew_temp", "northness", "eastness")
+  )
+
+  # Unused predictors should have estimate = 0
+  unused_preds <- setdiff(
+    c("elevation", "roughness", "dew_temp", "northness", "eastness"),
+    names(tree$variable.importance)
+  )
+  if (length(unused_preds) > 0) {
+    unused_estimates <- result$estimate[result$term %in% unused_preds]
+    expect_true(all(unused_estimates == 0))
+  }
+})
+
+test_that("var_imp.rpart() with complete=FALSE returns only used predictors", {
+  skip_if_not_installed("rpart")
+
+  wa_trees <- get_wa_trees_data()
+  tree <- rpart::rpart(
+    class ~ elevation + roughness + dew_temp + northness + eastness,
+    data = wa_trees
+  )
+  result <- var_imp(tree, complete = FALSE)
+
+  # Should only have predictors that were actually used
+  expected_vars <- names(tree$variable.importance)
+  expect_equal(nrow(result), length(expected_vars))
+  expect_setequal(result$term, expected_vars)
+
+  # All should have non-zero importance
+  expect_true(all(result$estimate > 0))
+})
+
+test_that("var_imp.rpart() works with numeric predictors only", {
+  skip_if_not_installed("rpart")
+
+  mtcars <- get_mtcars_data()
+  tree <- rpart::rpart(mpg ~ cyl + disp + hp + wt, data = mtcars)
+  result <- var_imp(tree, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 4)
+  expect_setequal(result$term, c("cyl", "disp", "hp", "wt"))
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.rpart() works with factor predictors", {
+  skip_if_not_installed("rpart")
+
+  wa_trees <- get_wa_trees_data()
+  tree <- rpart::rpart(county ~ class + elevation + roughness, data = wa_trees)
+  result <- var_imp(tree, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 3)
+  expect_setequal(result$term, c("class", "elevation", "roughness"))
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.rpart() works with mixed numeric and factor predictors", {
+  skip_if_not_installed("rpart")
+
+  wa_trees <- get_wa_trees_data()
+  tree <- rpart::rpart(
+    elevation ~ class + county + roughness + dew_temp,
+    data = wa_trees
+  )
+  result <- var_imp(tree, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_equal(nrow(result), 4)
+  expect_setequal(result$term, c("class", "county", "roughness", "dew_temp"))
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.rpart() handles tree with no valid splits", {
+  skip_if_not_installed("rpart")
+
+  wa_trees <- get_wa_trees_data()
+  # Force a tree with no splits using high cp
+  tree <- rpart::rpart(class ~ elevation + roughness, data = wa_trees, cp = 1)
+  result <- var_imp(tree, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("term", "estimate"))
+
+  # Should have all predictors with zero importance
+  expect_equal(nrow(result), 2)
+  expect_setequal(result$term, c("elevation", "roughness"))
+  expect_true(all(result$estimate == 0))
+})
+
+test_that("var_imp.rpart() handles tree with no splits and complete=FALSE", {
+  skip_if_not_installed("rpart")
+
+  wa_trees <- get_wa_trees_data()
+  tree <- rpart::rpart(class ~ elevation + roughness, data = wa_trees, cp = 1)
+  result <- var_imp(tree, complete = FALSE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("term", "estimate"))
+
+  # Should have zero rows since no variables have importance
+  expect_equal(nrow(result), 0)
+})
+
+test_that("var_imp.rpart() importance scores match underlying object", {
+  skip_if_not_installed("rpart")
+
+  wa_trees <- get_wa_trees_data()
+  tree <- rpart::rpart(
+    class ~ elevation + roughness + dew_temp,
+    data = wa_trees
+  )
+  result <- var_imp(tree, complete = FALSE)
+
+  # Match against tree$variable.importance
+  expected <- tree$variable.importance
+  for (i in seq_len(nrow(result))) {
+    term <- result$term[i]
+    estimate <- result$estimate[i]
+    expect_equal(estimate, expected[[term]], tolerance = 1e-10)
+  }
+})

@@ -303,3 +303,37 @@ active_predictors.ranger <- function(x, tree = 1L, ...) {
   dplyr::bind_rows(results) |>
     dplyr::arrange(tree)
 }
+
+# ------------------------------------------------------------------------------
+# Variable importance Wrapper
+
+#' @export
+#' @rdname lorax_var_imp
+var_imp.ranger <- function(object, complete = TRUE, ...) {
+  rlang::check_installed("ranger")
+
+  # Check if variable importance was calculated
+  if (is.null(object$variable.importance)) {
+    cli::cli_abort(
+      c(
+        "{.pkg ranger} model must be fitted with {.code importance} parameter to compute variable importance.",
+        "i" = "Use {.code importance = 'impurity'} or {.code importance = 'permutation'} when calling {.fn ranger}."
+      )
+    )
+  }
+
+  # Get variable importance from ranger object
+  imp <- object$variable.importance
+
+  # Convert to tibble
+  res <- tibble::enframe(imp)
+  names(res) <- c("term", "estimate")
+
+  if (complete) {
+    # Get all predictor names from the model
+    pred_names <- object$forest$independent.variable.names
+    res <- complete_results(res, pred_names)
+  }
+
+  res
+}

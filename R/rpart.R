@@ -188,3 +188,23 @@ active_predictors.rpart <- function(x, ...) {
   # Use constructor to create result
   new_active_predictors(active_vars)
 }
+
+# ------------------------------------------------------------------------------
+# Variable importance Wrapper
+
+#' @export
+#' @rdname lorax_var_imp
+var_imp.rpart <- function(object, complete = TRUE, ...) {
+  res <- tibble::enframe(object$variable.importance)
+  names(res) <- c("term", "estimate")
+
+  # Ensure term is character (enframe returns integer when input is NULL)
+  res$term <- as.character(res$term)
+
+  if (complete) {
+    vars <- terms_predictor_names(object$terms)
+    res <- complete_results(res, vars)
+  }
+
+  res
+}

@@ -701,6 +701,73 @@ lgb_build_partynode <- function(node_id, is_leaf, tree_df, var_names) {
 }
 
 # ------------------------------------------------------------------------------
+# Variable importance Wrapper
+
+#' @export
+#' @rdname lorax_var_imp
+#' @param feature_names Character vector of feature names to include when
+#'   `complete = TRUE`. For \pkg{lightgbm} models, the model object does not
+#'   store unused feature names, so this parameter allows you to specify the
+#'   complete feature set. If `NULL` (default), only features that appear in
+#'   at least one tree will be included.
+var_imp.lgb.Booster <- function(
+  object,
+  complete = TRUE,
+  feature_names = NULL,
+  ...
+) {
+  rlang::check_installed("lightgbm")
+
+  # Try to get variable importance using lightgbm's function
+  # This returns a data.table with Feature, Gain, Cover, Frequency columns
+  # Wrap in tryCatch because it can fail for models with no splits
+  imp_dt <- tryCatch(
+    lightgbm::lgb.importance(model = object, ...),
+    error = function(e) NULL
+  )
+
+  # Check if any features were used
+  if (is.null(imp_dt) || nrow(imp_dt) == 0) {
+    # No features used in model
+    res <- tibble::tibble(
+      term = character(0),
+      estimate = numeric(0)
+    )
+  } else {
+    # Convert to data.frame to avoid data.table syntax
+    imp_df <- as.data.frame(imp_dt)
+
+    # Extract Feature and Gain columns
+    # Gain is the improvement in accuracy brought by a feature to the branches it is on
+    res <- tibble::tibble(
+      term = imp_df$Feature,
+      estimate = imp_df$Gain
+    )
+  }
+
+  if (complete) {
+    # Determine which features to include
+    if (!is.null(feature_names)) {
+      # User provided feature names - use those
+      pred_names <- feature_names
+    } else {
+      # Extract feature names from all trees
+      # Note: lightgbm models don't store unused features, so this will only
+      # include features that appear in at least one tree
+      tree_dt <- lightgbm::lgb.model.dt.tree(object)
+      tree_df <- as.data.frame(tree_dt)
+
+      # Get unique feature names (exclude NA)
+      pred_names <- unique(tree_df$split_feature[!is.na(tree_df$split_feature)])
+    }
+
+    if (length(pred_names) > 0) {
+      res <- complete_results(res, pred_names)
+    }
+  }
+
+  res
+}
 
 #' @rdname active_predictors
 #' @export

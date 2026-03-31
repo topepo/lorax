@@ -4,6 +4,7 @@
 \name{reexports}
 \alias{reexports}
 \alias{as.party}
+\alias{var_imp}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -11,6 +12,8 @@ These objects are imported from other packages. Follow the links
 below to see their documentation.
 
 \describe{
+  \item{generics}{\code{\link[generics]{var_imp}}}
+
   \item{partykit}{\code{\link[partykit:party-coercion]{as.party}}}
 }}
 
