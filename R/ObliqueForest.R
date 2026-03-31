@@ -8,8 +8,7 @@
 #' @param tree Integer specifying which tree to extract rules from (1-based).
 #'   Default is `1L` for the first tree. Must be between 1 and the number of
 #'   trees in the forest (`x$n_tree`).
-#' @param node_id An integer for the node ID to process.
-#'
+#' @param ... Other arguments passed to methods
 #' @return A tibble with columns:
 #'   * `tree`: integer, the tree number (1-based).
 #'   * `rules`: list of R expressions, one per terminal node.
@@ -92,80 +91,6 @@
 #'   rules_reg <- extract_rules(forest_reg, tree = 1L)
 #' }
 #'
-# Internal helper: build oblique split expression with scaling
-oblique_split_to_scaled_expr <- function(split_info, x) {
-  # Build linear combination with scaling: coef * ((var - mean) / sd)
-  means <- x$get_means()
-  stdevs <- x$get_stdev()
-
-  terms <- list()
-  for (i in seq_along(split_info$columns)) {
-    var_name <- split_info$columns[i]
-    coef <- split_info$values[i]
-
-    # Check if variable needs scaling (is numeric)
-    if (var_name %in% names(means)) {
-      # Numeric: coef * ((var - mean) / sd)
-      var_sym <- rlang::sym(var_name)
-      mean_val <- means[[var_name]]
-      sd_val <- stdevs[[var_name]]
-
-      scaled_var <- rlang::call2(
-        "/",
-        rlang::call2("-", var_sym, mean_val),
-        sd_val
-      )
-      term <- rlang::call2("*", coef, scaled_var)
-    } else {
-      # Factor indicator: just coef * var (no scaling)
-      term <- rlang::call2("*", coef, rlang::sym(var_name))
-    }
-
-    # Build cumulative sum
-    if (i == 1) {
-      terms[[i]] <- term
-    } else {
-      if (coef < 0 && var_name %in% names(means)) {
-        # For negative coefficients, use subtraction
-        abs_coef <- abs(coef)
-        var_sym <- rlang::sym(var_name)
-        mean_val <- means[[var_name]]
-        sd_val <- stdevs[[var_name]]
-        scaled_var <- rlang::call2(
-          "/",
-          rlang::call2("-", var_sym, mean_val),
-          sd_val
-        )
-        abs_term <- rlang::call2("*", abs_coef, scaled_var)
-        terms[[i]] <- rlang::call2("-", terms[[i - 1]], abs_term)
-      } else {
-        terms[[i]] <- rlang::call2("+", terms[[i - 1]], term)
-      }
-    }
-  }
-
-  lhs <- terms[[length(terms)]]
-  rlang::call2(split_info$operator, lhs, split_info$threshold)
-}
-
-# Internal helper: extract rule for a single terminal node
-oblique_extract_node_rule <- function(node_id, tree, x) {
-  path <- oblique_build_node_path(node_id, tree, x$forest)
-
-  split_exprs <- list()
-  for (i in seq_along(path)[-length(path)]) {
-    parent_id <- path[i]
-    child_id <- path[i + 1]
-    split_info <- oblique_get_split_info(parent_id, child_id, tree, x)
-    # Build expression with scaling transformations included
-    expr <- oblique_split_to_scaled_expr(split_info, x)
-    # Replace indicator variables with factor comparisons for interpretability
-    split_exprs[[i]] <- oblique_replace_indicators(expr, x)
-  }
-
-  combine_rule_elements(split_exprs)
-}
-
 #' @export
 extract_rules.ObliqueForest <- function(x, tree = 1L, ...) {
   rlang::check_installed("aorsf")
@@ -338,6 +263,80 @@ oblique_replace_indicators <- function(expr, x) {
   }
 
   replace_symbols(expr)
+}
+
+# Internal helper: build oblique split expression with scaling
+oblique_split_to_scaled_expr <- function(split_info, x) {
+ # Build linear combination with scaling: coef * ((var - mean) / sd)
+ means <- x$get_means()
+ stdevs <- x$get_stdev()
+
+ terms <- list()
+ for (i in seq_along(split_info$columns)) {
+  var_name <- split_info$columns[i]
+  coef <- split_info$values[i]
+
+  # Check if variable needs scaling (is numeric)
+  if (var_name %in% names(means)) {
+   # Numeric: coef * ((var - mean) / sd)
+   var_sym <- rlang::sym(var_name)
+   mean_val <- means[[var_name]]
+   sd_val <- stdevs[[var_name]]
+
+   scaled_var <- rlang::call2(
+    "/",
+    rlang::call2("-", var_sym, mean_val),
+    sd_val
+   )
+   term <- rlang::call2("*", coef, scaled_var)
+  } else {
+   # Factor indicator: just coef * var (no scaling)
+   term <- rlang::call2("*", coef, rlang::sym(var_name))
+  }
+
+  # Build cumulative sum
+  if (i == 1) {
+   terms[[i]] <- term
+  } else {
+   if (coef < 0 && var_name %in% names(means)) {
+    # For negative coefficients, use subtraction
+    abs_coef <- abs(coef)
+    var_sym <- rlang::sym(var_name)
+    mean_val <- means[[var_name]]
+    sd_val <- stdevs[[var_name]]
+    scaled_var <- rlang::call2(
+     "/",
+     rlang::call2("-", var_sym, mean_val),
+     sd_val
+    )
+    abs_term <- rlang::call2("*", abs_coef, scaled_var)
+    terms[[i]] <- rlang::call2("-", terms[[i - 1]], abs_term)
+   } else {
+    terms[[i]] <- rlang::call2("+", terms[[i - 1]], term)
+   }
+  }
+ }
+
+ lhs <- terms[[length(terms)]]
+ rlang::call2(split_info$operator, lhs, split_info$threshold)
+}
+
+# Internal helper: extract rule for a single terminal node
+oblique_extract_node_rule <- function(node_id, tree, x) {
+ path <- oblique_build_node_path(node_id, tree, x$forest)
+
+ split_exprs <- list()
+ for (i in seq_along(path)[-length(path)]) {
+  parent_id <- path[i]
+  child_id <- path[i + 1]
+  split_info <- oblique_get_split_info(parent_id, child_id, tree, x)
+  # Build expression with scaling transformations included
+  expr <- oblique_split_to_scaled_expr(split_info, x)
+  # Replace indicator variables with factor comparisons for interpretability
+  split_exprs[[i]] <- oblique_replace_indicators(expr, x)
+ }
+
+ combine_rule_elements(split_exprs)
 }
 
 # Internal helper to get expanded variable names including one-hot encoded factors
