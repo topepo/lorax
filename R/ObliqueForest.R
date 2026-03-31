@@ -8,30 +8,13 @@
 #' @param tree Integer specifying which tree to extract rules from (1-based).
 #'   Default is `1L` for the first tree. Must be between 1 and the number of
 #'   trees in the forest (`x$n_tree`).
-#' @param node_id An integer for the node ID to process.
-#'
+#' @param ... Other arguments passed to methods
 #' @return A tibble with columns:
 #'   * `tree`: integer, the tree number (1-based).
 #'   * `rules`: list of R expressions, one per terminal node.
 #'   * `id`: integer, the terminal node ID (1-based for user convenience).
 #'
 #' @details
-#'
-#' ## Known Limitation
-#'
-#' **Important**: The extracted rules currently do NOT perfectly match aorsf's
-#' internal node assignments. This is a known issue being investigated. The
-#' rules are structurally correct (using the right splits and operators) but
-#' may not evaluate to the exact same terminal nodes as aorsf's predictions.
-#'
-#' The rules are still useful for:
-#' - Understanding the general structure of oblique splits
-#' - Seeing which variables and linear combinations are used
-#' - Interpreting model behavior qualitatively
-#'
-#' But should NOT be used for:
-#' - Exactly replicating aorsf's predictions
-#' - Validating which observations belong to which nodes
 #'
 #' ## Tree and Node Indexing
 #'
@@ -45,44 +28,45 @@
 #' is automatically converted to 1-based indexing in the output for consistency
 #' with R conventions.
 #'
-#' ## Factor Variables and One-Hot Encoding
+#' ## Factor Variables and Reference Coding
 #'
-#' The \pkg{aorsf} package internally converts unordered factor variables to binary
-#' indicator (dummy) variables during tree building. However, the extracted
-#' rules automatically convert these back to factor comparisons for better
-#' interpretability:
+#' The \pkg{aorsf} package internally converts unordered factor variables using
+#' **reference coding** (also called dummy coding). For a factor with k levels,
+#' aorsf creates k-1 binary indicator variables, with the first level serving as
+#' the reference category:
 #'
-#' - Instead of `2.1 * county_adams`, rules show `2.1 * (county == "adams")`
-#' - This allows rules to be evaluated directly on data with the original factor
-#'   columns (no need to create indicator variables)
-#' - For example, a factor `color` with levels `["red", "blue", "green"]` will
-#'   appear in rules as `(color == "red")`, `(color == "blue")`, etc.
+#' - A factor `color` with levels `["red", "blue", "green"]` creates indicators
+#'   for `blue` and `green` only. When both indicators are 0, it represents `red`.
+#' - The extracted rules automatically convert these back to factor comparisons:
+#'   `2.1 * color_blue` becomes `2.1 * (color == "blue")`.
+#' - Rules can be evaluated directly on data with the original factor columns
+#'   (no need to manually create indicator variables).
+#' - Ordered factors are converted to a single integer variable representing the
+#'   ordinal level, not to multiple indicators.
 #'
-#' Ordered factors are converted to a single integer variable representing the
-#' ordinal level, not to multiple indicators.
+#' Reference coding prevents collinearity in the internal regression computations
+#' used to find optimal splits.
 #'
-#' Factor indicators are not scaled since they are binary 0/1 values.
+#' ## Predictor Scaling
 #'
-#' ## Predictor Scaling and Unscaling
+#' The \pkg{aorsf} package **always scales data during prediction**, regardless of
+#' the `scale_x` parameter setting. The coefficients stored in trees are for
+#' scaled data: `(x - mean) / sd` for numeric predictors.
 #'
-#' The \pkg{aorsf} package can optionally center and scale numeric predictors when
-#' computing linear combinations for splits. This is controlled by the `scale_x`
-#' parameter in `orsf_control_*()` functions (default is `TRUE`).
+#' To make rules work with unscaled input data, the extracted rules automatically
+#' **include the scaling transformation** in the expressions themselves. For example,
+#' instead of showing a pre-computed unscaled coefficient, rules show:
+#' ```
+#' 728.58 * ((flipper_length_mm - 200.97) / 14.02) > 400.23
+#' ```
 #'
-#' When `scale_x = TRUE`, \pkg{aorsf} uses `(x - mean) / sd` for numeric predictors
-#' during split computations. The extracted rules automatically **unscale** the
-#' coefficients and thresholds back to the original units, so rules can be
-#' directly evaluated on the original (unscaled) data.
+#' This approach:
+#' - Allows rules to be evaluated directly on original (unscaled) data
+#' - Preserves full floating-point precision (avoids errors from pre-computing
+#'   unscaled coefficients)
+#' - Makes the scaling transformation explicit and transparent
 #'
-#' When `scale_x = FALSE`, coefficients are already in the original units and
-#' no unscaling is performed.
-#'
-#' Factor indicator variables (from one-hot encoding) are not scaled since they
-#' are binary 0/1 values.
-#'
-#' Note: `x$get_means()` and `x$get_stdev()` always return the data statistics
-#' regardless of the `scale_x` setting. To determine if scaling was used, check
-#' `x$control$lincomb_scale`.
+#' Factor indicator variables are not scaled since they are binary 0/1 values.
 #'
 #' @examples
 #' if (rlang::is_installed(c("aorsf", "palmerpenguins"))) {
@@ -107,23 +91,6 @@
 #'   rules_reg <- extract_rules(forest_reg, tree = 1L)
 #' }
 #'
-# Internal helper: extract rule for a single terminal node
-oblique_extract_node_rule <- function(node_id, tree, x) {
-  path <- oblique_build_node_path(node_id, tree, x$forest)
-
-  split_exprs <- list()
-  for (i in seq_along(path)[-length(path)]) {
-    parent_id <- path[i]
-    child_id <- path[i + 1]
-    split_info <- oblique_get_split_info(parent_id, child_id, tree, x)
-    expr <- obliq_split_to_expr(split_info)
-    # Replace indicator variables with factor comparisons for interpretability
-    split_exprs[[i]] <- oblique_replace_indicators(expr, x)
-  }
-
-  combine_rule_elements(split_exprs)
-}
-
 #' @export
 extract_rules.ObliqueForest <- function(x, tree = 1L, ...) {
   rlang::check_installed("aorsf")
@@ -263,10 +230,11 @@ oblique_replace_indicators <- function(expr, x) {
   }
 
   # Build mapping from indicator name to (factor, level)
+  # Use reference coding: skip first level (reference)
   indicator_map <- list()
   for (var_name in fctr_info$cols) {
-    indicators <- fctr_info$keys[[var_name]]
-    levels <- fctr_info$lvls[[var_name]]
+    indicators <- fctr_info$keys[[var_name]][-1] # Skip reference
+    levels <- fctr_info$lvls[[var_name]][-1] # Skip reference
     for (i in seq_along(indicators)) {
       indicator_map[[indicators[i]]] <- list(
         factor = var_name,
@@ -297,6 +265,80 @@ oblique_replace_indicators <- function(expr, x) {
   replace_symbols(expr)
 }
 
+# Internal helper: build oblique split expression with scaling
+oblique_split_to_scaled_expr <- function(split_info, x) {
+  # Build linear combination with scaling: coef * ((var - mean) / sd)
+  means <- x$get_means()
+  stdevs <- x$get_stdev()
+
+  terms <- list()
+  for (i in seq_along(split_info$columns)) {
+    var_name <- split_info$columns[i]
+    coef <- split_info$values[i]
+
+    # Check if variable needs scaling (is numeric)
+    if (var_name %in% names(means)) {
+      # Numeric: coef * ((var - mean) / sd)
+      var_sym <- rlang::sym(var_name)
+      mean_val <- means[[var_name]]
+      sd_val <- stdevs[[var_name]]
+
+      scaled_var <- rlang::call2(
+        "/",
+        rlang::call2("-", var_sym, mean_val),
+        sd_val
+      )
+      term <- rlang::call2("*", coef, scaled_var)
+    } else {
+      # Factor indicator: just coef * var (no scaling)
+      term <- rlang::call2("*", coef, rlang::sym(var_name))
+    }
+
+    # Build cumulative sum
+    if (i == 1) {
+      terms[[i]] <- term
+    } else {
+      if (coef < 0 && var_name %in% names(means)) {
+        # For negative coefficients, use subtraction
+        abs_coef <- abs(coef)
+        var_sym <- rlang::sym(var_name)
+        mean_val <- means[[var_name]]
+        sd_val <- stdevs[[var_name]]
+        scaled_var <- rlang::call2(
+          "/",
+          rlang::call2("-", var_sym, mean_val),
+          sd_val
+        )
+        abs_term <- rlang::call2("*", abs_coef, scaled_var)
+        terms[[i]] <- rlang::call2("-", terms[[i - 1]], abs_term)
+      } else {
+        terms[[i]] <- rlang::call2("+", terms[[i - 1]], term)
+      }
+    }
+  }
+
+  lhs <- terms[[length(terms)]]
+  rlang::call2(split_info$operator, lhs, split_info$threshold)
+}
+
+# Internal helper: extract rule for a single terminal node
+oblique_extract_node_rule <- function(node_id, tree, x) {
+  path <- oblique_build_node_path(node_id, tree, x$forest)
+
+  split_exprs <- list()
+  for (i in seq_along(path)[-length(path)]) {
+    parent_id <- path[i]
+    child_id <- path[i + 1]
+    split_info <- oblique_get_split_info(parent_id, child_id, tree, x)
+    # Build expression with scaling transformations included
+    expr <- oblique_split_to_scaled_expr(split_info, x)
+    # Replace indicator variables with factor comparisons for interpretability
+    split_exprs[[i]] <- oblique_replace_indicators(expr, x)
+  }
+
+  combine_rule_elements(split_exprs)
+}
+
 # Internal helper to get expanded variable names including one-hot encoded factors
 oblique_get_var_names <- function(x) {
   # Get base predictor names
@@ -315,8 +357,8 @@ oblique_get_var_names <- function(x) {
 
   for (var_name in pred_names) {
     if (var_name %in% fctr_info$cols) {
-      # This is a factor - add all one-hot encoded columns
-      expanded_names <- c(expanded_names, fctr_info$keys[[var_name]])
+      # This is a factor - add non-reference indicators (reference coding)
+      expanded_names <- c(expanded_names, fctr_info$keys[[var_name]][-1])
     } else {
       # Not a factor - add as-is
       expanded_names <- c(expanded_names, var_name)
@@ -366,25 +408,16 @@ oblique_get_split_info <- function(parent_id, child_id, tree_num, x) {
     )
   }
 
-  # Unscale coefficients and adjust threshold to original units if scaling was used
-  # Only unscale if lincomb_scale = TRUE (controlled by scale_x parameter in orsf_control)
-  # When lincomb_scale = FALSE, coefficients are already in original units
-  if (isTRUE(x$control$lincomb_scale)) {
-    unscale_result <- oblique_unscale_split(columns, coef_vals, threshold, x)
-  } else {
-    unscale_result <- list(
-      columns = columns,
-      values = coef_vals,
-      threshold = threshold
-    )
-  }
-
-  # Return in format expected by obliq_split_to_expr()
+  # IMPORTANT: aorsf ALWAYS scales data during prediction (orsf_R6.R line 3168),
+  # regardless of the scale_x setting. The coefficients in the tree are for
+  # SCALED data. We DON'T unscale here - instead, we build expressions that
+  # include the scaling transformation directly (in oblique_split_to_scaled_expr).
+  # This avoids floating point precision errors from pre-computing unscaled values.
   list(
-    columns = unscale_result$columns,
-    values = unscale_result$values,
+    columns = columns,
+    values = coef_vals,
     operator = operator,
-    threshold = unscale_result$threshold
+    threshold = threshold
   )
 }
 
@@ -432,9 +465,10 @@ oblique_collapse_factor_names <- function(var_names, x) {
 
   # Build mapping from indicator name to base factor name
   # e.g., "county_adams" -> "county", "county_benton" -> "county"
+  # Use reference coding: only non-reference indicators exist
   indicator_to_base <- list()
   for (factor_name in fctr_info$cols) {
-    indicators <- fctr_info$keys[[factor_name]]
+    indicators <- fctr_info$keys[[factor_name]][-1] # Skip reference
     for (ind in indicators) {
       indicator_to_base[[ind]] <- factor_name
     }
