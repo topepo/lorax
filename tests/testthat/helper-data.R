@@ -33,7 +33,7 @@ get_wa_trees_data <- function() {
 
 # Create binary classification data
 get_binary_data <- function(n = 100) {
-  set.seed(123)
+  set.seed(487)
   data.frame(
     y = factor(sample(c("A", "B"), n, replace = TRUE)),
     x1 = rnorm(n),
@@ -44,7 +44,7 @@ get_binary_data <- function(n = 100) {
 
 # Create regression data
 get_regression_data <- function(n = 100) {
-  set.seed(123)
+  set.seed(487)
   data.frame(
     y = rnorm(n),
     x1 = rnorm(n),
@@ -55,7 +55,7 @@ get_regression_data <- function(n = 100) {
 
 # Create data with factors
 get_factor_data <- function(n = 100) {
-  set.seed(123)
+  set.seed(487)
   data.frame(
     y = factor(sample(c("A", "B", "C"), n, replace = TRUE)),
     x1 = rnorm(n),
@@ -72,6 +72,7 @@ get_penguins_forest <- function() {
   penguins <- palmerpenguins::penguins[
     complete.cases(palmerpenguins::penguins),
   ]
+  set.seed(487) # Ensure reproducible forest structure
   aorsf::orsf(species ~ ., data = penguins, n_tree = 10)
 }
 

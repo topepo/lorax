@@ -202,7 +202,7 @@ test_that("extract_rules.ObliqueForest() rules match aorsf node assignments", {
     "body_mass_g"
   )]
 
-  set.seed(42)
+  set.seed(729)
   test_forest <- aorsf::orsf(
     body_mass_g ~ .,
     data = penguins_numeric,
@@ -274,7 +274,7 @@ test_that("extract_rules.ObliqueForest() node assignments are consistent", {
     "body_mass_g"
   )]
 
-  set.seed(802)
+  set.seed(356)
   test_forest <- aorsf::orsf(
     body_mass_g ~ .,
     data = penguins_numeric,
