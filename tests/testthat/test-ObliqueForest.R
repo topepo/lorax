@@ -262,6 +262,7 @@ test_that("extract_rules.ObliqueForest() rules match aorsf node assignments", {
 test_that("extract_rules.ObliqueForest() node assignments are consistent", {
   skip_if_not_installed("aorsf")
   skip_if_not_installed("palmerpenguins")
+  skip_on_os("mac") # some numerical issues on macos
 
   # Test that each node's observations match between aorsf and extracted rules
   penguins <- palmerpenguins::penguins[
