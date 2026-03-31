@@ -86,3 +86,12 @@
       Error:
       ! ranger model must be fitted with `write.forest = TRUE` to extract active predictors.
 
+# var_imp.ranger() errors when importance not calculated
+
+    Code
+      var_imp(rf)
+    Condition
+      Error in `var_imp()`:
+      ! ranger model must be fitted with `importance` parameter to compute variable importance.
+      i Use `importance = 'impurity'` or `importance = 'permutation'` when calling `ranger()`.
+

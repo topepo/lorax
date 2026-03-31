@@ -79,7 +79,7 @@
 #' }
 #'
 #' @export
-as.party.regression_forest <- function(obj, tree = 1L, data = NULL, ...) {
+as.party.grf <- function(obj, tree = 1L, data = NULL, ...) {
   rlang::check_installed("grf")
   # Validate tree parameter
   if (!is.numeric(tree) || length(tree) != 1 || tree != as.integer(tree)) {
@@ -228,13 +228,6 @@ as.party.regression_forest <- function(obj, tree = 1L, data = NULL, ...) {
   party_obj
 }
 
-#' @rdname as.party.regression_forest
-#' @export
-as.party.grf <- function(obj, tree = 1L, data = NULL, ...) {
-  # Generic method that delegates to regression_forest method
-  as.party.regression_forest(obj, tree = tree, data = data, ...)
-}
-
 # Internal helper to recursively build partynode from grf tree structure
 #
 # @param tree_node Current node from grf::get_tree()$nodes list
@@ -310,10 +303,38 @@ grf_find_max_split_var <- function(all_nodes) {
 }
 
 # ------------------------------------------------------------------------------
+# Variable importance Wrapper
+
+#' Tree Importance Scores
+#'
+#' Methods for computing variable importance scores via the model object using
+#' a common interface.
+#'
+#' @param object A model object.
+#' @param complete A logical to filling absent importance values with zeros.
+#' @param ... Arguments passed to importance functions (if any).
+#' @return A tibble with columns `term` and `estimate`.
+#' @name lorax_var_imp
+#'
+#' @export
+var_imp.grf <- function(object, complete = TRUE, ...) {
+  rlang::check_installed("grf")
+  pred_names <- colnames(object$X.orig)
+  res <- grf::variable_importance(object, ...)[, 1]
+  names(res) <- pred_names
+  res <- tibble::enframe(res)
+  names(res) <- c("term", "estimate")
+
+  if (complete) {
+    res <- complete_results(res, pred_names)
+  }
+
+  res
+}
 
 #' @rdname active_predictors
 #' @export
-active_predictors.regression_forest <- function(x, tree = 1L, ...) {
+active_predictors.grf <- function(x, tree = 1L, ...) {
   rlang::check_installed("grf")
 
   # Validate tree argument
@@ -345,13 +366,6 @@ active_predictors.regression_forest <- function(x, tree = 1L, ...) {
   # Combine results and sort by tree
   dplyr::bind_rows(results) |>
     dplyr::arrange(tree)
-}
-
-#' @rdname active_predictors
-#' @export
-active_predictors.grf <- function(x, tree = 1L, ...) {
-  # Generic method that delegates to regression_forest method
-  active_predictors.regression_forest(x, tree = tree, ...)
 }
 
 # Internal helper to extract active predictors from one tree

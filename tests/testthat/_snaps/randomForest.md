@@ -78,3 +78,12 @@
       Error:
       ! randomForest model must be fitted with `keep.forest = TRUE` to extract active predictors.
 
+# var_imp.randomForest() errors for invalid type
+
+    Code
+      var_imp(rf, type = "invalid")
+    Condition
+      Error in `var_imp()`:
+      ! Importance type "invalid" not found.
+      i Available options: "Adelie", "Chinstrap", "Gentoo", "MeanDecreaseAccuracy", and "MeanDecreaseGini"
+

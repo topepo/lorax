@@ -494,3 +494,27 @@ active_predictors.ObliqueForest <- function(x, tree = 1L, ...) {
   dplyr::bind_rows(results) |>
     dplyr::arrange(tree)
 }
+
+# ------------------------------------------------------------------------------
+# Variable importance Wrapper
+
+#' @export
+#' @rdname lorax_var_imp
+var_imp.ObliqueForest <- function(object, complete = TRUE, ...) {
+  rlang::check_installed("aorsf")
+
+  # Get variable importance from aorsf object
+  imp <- object$get_importance_clean()
+
+  # Convert to tibble
+  res <- tibble::enframe(imp)
+  names(res) <- c("term", "estimate")
+
+  if (complete) {
+    # Get all predictor names from the model
+    pred_names <- object$get_names_x()
+    res <- complete_results(res, pred_names)
+  }
+
+  res
+}

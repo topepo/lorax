@@ -689,3 +689,436 @@ test_that("active_predictors.xgb.Booster() works with feature names", {
   expect_type(active_vars, "character")
   expect_true(length(active_vars) > 0)
 })
+
+# Tests for var_imp.xgb.Booster() ---------------------------------------------
+
+test_that("var_imp.xgb.Booster() returns correct structure", {
+  skip_if_not_installed("xgboost")
+
+  data <- get_regression_data(n = 100)
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  set.seed(423)
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = 0
+  )
+
+  result <- var_imp(bst)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("term", "estimate"))
+  expect_type(result$term, "character")
+  expect_type(result$estimate, "double")
+})
+
+test_that("var_imp.xgb.Booster() extracts variable importance scores", {
+  skip_if_not_installed("xgboost")
+
+  data <- get_regression_data(n = 100)
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  set.seed(817)
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = 0
+  )
+
+  result <- var_imp(bst)
+
+  # Should have at least one variable with non-zero importance
+  expect_true(any(result$estimate > 0))
+
+  # All estimates should be non-negative
+  expect_true(all(result$estimate >= 0))
+
+  # Should have at least one predictor
+  expect_true(nrow(result) > 0)
+})
+
+test_that("var_imp.xgb.Booster() with complete=TRUE fills missing predictors", {
+  skip_if_not_installed("xgboost")
+
+  set.seed(236)
+  data <- get_regression_data(n = 200)
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  set.seed(591)
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = 0
+  )
+
+  result <- var_imp(bst, complete = TRUE)
+
+  # Should have all predictors
+  expect_true(nrow(result) >= 1)
+  expect_true(all(c("x1", "x2", "x3") %in% result$term))
+
+  # All estimates should be non-negative
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.xgb.Booster() with complete=FALSE returns only used predictors", {
+  skip_if_not_installed("xgboost")
+
+  data <- get_regression_data(n = 200)
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  set.seed(748)
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = 0
+  )
+
+  result <- var_imp(bst, complete = FALSE)
+
+  # Should only have predictors with importance scores
+  expect_true(nrow(result) >= 1)
+  expect_true(all(result$estimate > 0))
+})
+
+test_that("var_imp.xgb.Booster() works with numeric predictors only", {
+  skip_if_not_installed("xgboost")
+
+  mtcars <- get_mtcars_data()
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(mtcars[, c("cyl", "disp", "hp", "wt")]),
+    label = mtcars$mpg
+  )
+  set.seed(312)
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = 0
+  )
+
+  result <- var_imp(bst, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(nrow(result) >= 1)
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.xgb.Booster() importance scores match underlying object", {
+  skip_if_not_installed("xgboost")
+
+  data <- get_regression_data(n = 100)
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  set.seed(659)
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = 0
+  )
+
+  result <- var_imp(bst, complete = FALSE)
+
+  # Get expected importance from xgboost
+  expected <- as.data.frame(xgboost::xgb.importance(model = bst))
+
+  # Match scores
+  for (i in seq_len(nrow(result))) {
+    term <- result$term[i]
+    estimate <- result$estimate[i]
+    expected_row <- expected[expected$Feature == term, ]
+    expect_equal(estimate, expected_row$Gain, tolerance = 1e-10)
+  }
+})
+
+test_that("var_imp.xgb.Booster() works with binary classification", {
+  skip_if_not_installed("xgboost")
+
+  data <- get_binary_data(n = 100)
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = as.numeric(data$y) - 1
+  )
+  set.seed(184)
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "binary:logistic"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = 0
+  )
+
+  result <- var_imp(bst)
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(nrow(result) >= 1)
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.xgb.Booster() works with multiclass classification", {
+  skip_if_not_installed("xgboost")
+  skip_if_not_installed("palmerpenguins")
+
+  penguins <- get_penguins_data()
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(penguins[, c(
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g"
+    )]),
+    label = as.numeric(penguins$species) - 1
+  )
+  set.seed(937)
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "multi:softmax",
+      num_class = 3
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = 0
+  )
+
+  result <- var_imp(bst)
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(nrow(result) >= 1)
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.xgb.Booster() handles model with no valid splits", {
+  skip_if_not_installed("xgboost")
+
+  # Create data that produces no splits
+  test_data <- data.frame(
+    x1 = rep(1, 10),
+    y = rep(0, 10)
+  )
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(test_data[, "x1", drop = FALSE]),
+    label = test_data$y
+  )
+  set.seed(462)
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 0,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 1,
+    verbose = 0
+  )
+
+  result <- var_imp(bst, complete = FALSE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("term", "estimate"))
+  # Should have 0 rows since no features were used
+  expect_equal(nrow(result), 0)
+
+  # With feature_names, should return the feature with 0 importance
+  result_complete <- var_imp(bst, complete = TRUE, feature_names = "x1")
+  expect_equal(nrow(result_complete), 1)
+  expect_equal(result_complete$term, "x1")
+  expect_equal(result_complete$estimate, 0)
+})
+
+test_that("var_imp.xgb.Booster() handles many predictors", {
+  skip_if_not_installed("xgboost")
+
+  set.seed(705)
+  n <- 200
+  p <- 15
+  X <- as.data.frame(matrix(rnorm(n * p), nrow = n, ncol = p))
+  colnames(X) <- paste0("x", 1:p)
+  X$y <- X$x1 + X$x2 + rnorm(n)
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(X[, paste0("x", 1:p)]),
+    label = X$y
+  )
+  set.seed(128)
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = 0
+  )
+
+  result <- var_imp(bst, complete = FALSE)
+
+  # Should have only predictors that were used
+  expect_true(nrow(result) >= 1)
+  expect_true(nrow(result) <= p)
+  expect_true(all(result$estimate >= 0))
+
+  # With feature_names parameter, should have all predictors
+  result_complete <- var_imp(
+    bst,
+    complete = TRUE,
+    feature_names = paste0("x", 1:p)
+  )
+  expect_equal(nrow(result_complete), p)
+  expect_true(all(result_complete$estimate >= 0))
+  expect_setequal(result_complete$term, paste0("x", 1:p))
+})
+
+test_that("var_imp.xgb.Booster() works with constrained trees", {
+  skip_if_not_installed("xgboost")
+
+  set.seed(873)
+  small_data <- data.frame(
+    y = rnorm(100),
+    x1 = rnorm(100),
+    x2 = rnorm(100)
+  )
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(small_data[, c("x1", "x2")]),
+    label = small_data$y
+  )
+  set.seed(546)
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 1,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 3,
+    verbose = 0
+  )
+
+  result <- var_imp(bst, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_named(result, c("term", "estimate"))
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.xgb.Booster() works with deep trees", {
+  skip_if_not_installed("xgboost")
+
+  set.seed(291)
+  data <- get_regression_data(n = 200)
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = data$y
+  )
+  set.seed(764)
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 10,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = 0
+  )
+
+  result <- var_imp(bst)
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(nrow(result) >= 1)
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.xgb.Booster() handles agaricus data", {
+  skip_if_not_installed("xgboost")
+
+  data(agaricus.train, package = "xgboost")
+
+  dtrain <- xgboost::xgb.DMatrix(
+    agaricus.train$data,
+    label = agaricus.train$label
+  )
+  set.seed(539)
+  bst <- xgboost::xgb.train(
+    params = list(max_depth = 3, objective = "binary:logistic"),
+    data = dtrain,
+    nrounds = 5,
+    verbose = 0
+  )
+
+  result <- var_imp(bst, complete = TRUE)
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(nrow(result) > 0)
+  expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.xgb.Booster() handles very shallow trees", {
+  skip_if_not_installed("xgboost")
+
+  data <- get_binary_data(n = 50)
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, c("x1", "x2", "x3")]),
+    label = as.numeric(data$y) - 1
+  )
+  set.seed(672)
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 1,
+      objective = "binary:logistic"
+    ),
+    data = dtrain,
+    nrounds = 5,
+    verbose = 0
+  )
+
+  result <- var_imp(bst)
+
+  expect_s3_class(result, "tbl_df")
+  expect_true(all(result$estimate >= 0))
+})

@@ -165,3 +165,27 @@ active_predictors.party <- function(x, ...) {
   # Use constructor to create result
   new_active_predictors(active_vars)
 }
+
+# ------------------------------------------------------------------------------
+# Variable importance for party
+
+#' @export
+#' @rdname lorax_var_imp
+var_imp.party <- function(object, complete = TRUE, ...) {
+  rlang::check_installed("partykit")
+
+  # Use partykit::varimp() to compute variable importance
+  imp <- partykit::varimp(object, ...)
+
+  # Convert to tibble
+  res <- tibble::enframe(imp)
+  names(res) <- c("term", "estimate")
+
+  if (complete) {
+    # Get all predictor names from the model
+    pred_names <- all.vars(object$terms)[-attr(object$terms, "response")]
+    res <- complete_results(res, pred_names)
+  }
+
+  res
+}

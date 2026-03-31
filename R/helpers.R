@@ -491,3 +491,22 @@ new_active_predictors <- function(x, ...) {
 
   result
 }
+
+# ------------------------------------------------------------------------------
+# Variable importance helpers
+
+terms_predictor_names <- function(trm) {
+  resp_ind <- attr(trm, "response")
+  predictor_type <- attr(trm, "dataClasses")[-resp_ind]
+  names(predictor_type)
+}
+
+complete_results <- function(x, names) {
+  preds <- unique(x$term)
+  missing_preds <- setdiff(names, preds)
+  if (length(missing_preds) > 0) {
+    extras <- tibble::tibble(term = missing_preds, estimate = 0.0)
+    x <- dplyr::bind_rows(x, extras)
+  }
+  x
+}

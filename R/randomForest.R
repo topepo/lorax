@@ -405,3 +405,78 @@ active_predictors.randomForest <- function(x, tree = 1L, ...) {
   dplyr::bind_rows(results) |>
     dplyr::arrange(tree)
 }
+
+# ------------------------------------------------------------------------------
+# Variable importance Wrapper
+
+#' @export
+#' @rdname lorax_var_imp
+#' @param type Character string specifying which importance measure to extract.
+#'   For classification forests, options are `"gini"` (default, uses
+#'   MeanDecreaseGini), `"accuracy"` (uses MeanDecreaseAccuracy), or a class
+#'   name. For regression forests, options are `"mse"` (default, uses
+#'   IncNodePurity) or `"permutation"` (uses %IncMSE). If `NULL`, uses the
+#'   default for the forest type.
+var_imp.randomForest <- function(object, complete = TRUE, type = NULL, ...) {
+  rlang::check_installed("randomForest")
+
+  # Get importance matrix
+  # Note: randomForest always computes at least IncNodePurity even with importance=FALSE
+  imp_matrix <- randomForest::importance(object)
+
+  # Determine column to extract based on type and forest type
+  if (is.null(type)) {
+    # Use defaults
+    if (object$type == "classification") {
+      type <- "gini"
+    } else {
+      type <- "mse"
+    }
+  }
+
+  # Map type to column name
+  if (object$type == "classification") {
+    col_name <- switch(
+      tolower(type),
+      gini = "MeanDecreaseGini",
+      accuracy = "MeanDecreaseAccuracy",
+      # Otherwise assume it's a class name
+      type
+    )
+  } else {
+    # Regression
+    col_name <- switch(
+      tolower(type),
+      mse = "IncNodePurity",
+      permutation = "%IncMSE",
+      # Default to IncNodePurity
+      "IncNodePurity"
+    )
+  }
+
+  # Check if column exists
+  if (!col_name %in% colnames(imp_matrix)) {
+    available_cols <- colnames(imp_matrix)
+    cli::cli_abort(
+      c(
+        "Importance type {.val {type}} not found.",
+        "i" = "Available options: {.val {available_cols}}"
+      )
+    )
+  }
+
+  # Extract the specified column
+  imp_vector <- imp_matrix[, col_name]
+
+  # Convert to tibble
+  res <- tibble::enframe(imp_vector)
+  names(res) <- c("term", "estimate")
+
+  if (complete) {
+    # Get all predictor names from the model
+    pred_names <- rownames(object$importance)
+    res <- complete_results(res, pred_names)
+  }
+
+  res
+}
