@@ -500,6 +500,26 @@ active_predictors.ObliqueForest <- function(x, tree = 1L, ...) {
 
 #' @export
 #' @rdname lorax_var_imp
+#' @details
+#'
+#' Different engines compute importances differently:
+#'
+#'  - [rpart::rpart()], [xgboost::xgb.importance()], and
+#'  [lightgbm::lgb.importance()] follow the change in the objective function
+#'  (e.g., Gini, MSE, gain, ...) as the tree is constructed and reports the
+#'  aggregate improvement in these statistics as importance.
+#'
+#' - [randomForest::importance()] and [ranger::ranger()] produce standard
+#' permutation-based importance scores.
+#'
+#' - [grf::variable_importance()] states that a "simple weighted sum of how
+#' many times feature i was split on at each depth in the forest" is used.
+#'
+#' Keep in mind that, for [rpart::rpart()], the importance calculation is
+#' affected by competing and surrogate splits. Consequently, there might be
+#' non-zero importances for predictors that were not used in any actual split
+#' in the tree. To make the splits and importances align, use the options
+#' `maxcompete = 0` and `maxsurrogate = 0`.
 var_imp.ObliqueForest <- function(object, complete = TRUE, ...) {
   rlang::check_installed("aorsf")
 
