@@ -15,6 +15,7 @@
 <url><loc>/reference/as.party.ranger.html</loc></url>
 <url><loc>/reference/as.party.xgb.Booster.html</loc></url>
 <url><loc>/reference/combine_rule_elements.html</loc></url>
+<url><loc>/reference/extract_rules.ObliqueForest.html</loc></url>
 <url><loc>/reference/extract_rules.bart.html</loc></url>
 <url><loc>/reference/extract_rules.html</loc></url>
 <url><loc>/reference/extract_rules.lgb.Booster.html</loc></url>
@@ -23,7 +24,6 @@
 <url><loc>/reference/lorax-package.html</loc></url>
 <url><loc>/reference/lorax_var_imp.html</loc></url>
 <url><loc>/reference/obliq_split_to_expr.html</loc></url>
-<url><loc>/reference/oblique_extract_node_rule.html</loc></url>
 <url><loc>/reference/rect_split_to_expr.html</loc></url>
 <url><loc>/reference/reexports.html</loc></url>
 <url><loc>/reference/rule_text.html</loc></url>

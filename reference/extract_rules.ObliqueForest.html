@@ -19,7 +19,7 @@ to a terminal node using oblique (linear combination) splits."><!-- mathjax --><
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">lorax</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.0.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0</span>
       </span>
     </div>
 
@@ -70,7 +70,7 @@ trees in the forest (<code>x$n_tree</code>).</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Not currently used</p></dd>
+<dd><p>Other arguments passed to methods</p></dd>
 
 </dl></div>
     <div id="value">
@@ -81,21 +81,6 @@ trees in the forest (<code>x$n_tree</code>).</p></dd>
 </ul></div>
     <div id="details">
     <h2>Details</h2>
-
-<div class="section">
-<h3 id="known-limitation">Known Limitation<a class="anchor" aria-label="anchor" href="#known-limitation"></a></h3>
-
-
-<p><strong>Important</strong>: The extracted rules currently do NOT perfectly match aorsf's
-internal node assignments. This is a known issue being investigated. The
-rules are structurally correct (using the right splits and operators) but
-may not evaluate to the exact same terminal nodes as aorsf's predictions.</p>
-<p>The rules are still useful for:</p><ul><li><p>Understanding the general structure of oblique splits</p></li>
-<li><p>Seeing which variables and linear combinations are used</p></li>
-<li><p>Interpreting model behavior qualitatively</p></li>
-</ul><p>But should NOT be used for:</p><ul><li><p>Exactly replicating aorsf's predictions</p></li>
-<li><p>Validating which observations belong to which nodes</p></li>
-</ul></div>
 
 <div class="section">
 <h3 id="tree-and-node-indexing">Tree and Node Indexing<a class="anchor" aria-label="anchor" href="#tree-and-node-indexing"></a></h3>
@@ -110,40 +95,40 @@ with R conventions.</p>
 </div>
 
 <div class="section">
-<h3 id="factor-variables-and-one-hot-encoding">Factor Variables and One-Hot Encoding<a class="anchor" aria-label="anchor" href="#factor-variables-and-one-hot-encoding"></a></h3>
+<h3 id="factor-variables-and-reference-coding">Factor Variables and Reference Coding<a class="anchor" aria-label="anchor" href="#factor-variables-and-reference-coding"></a></h3>
 
 
-<p>The <span class="pkg">aorsf</span> package internally converts unordered factor variables to binary
-indicator (dummy) variables during tree building. However, the extracted
-rules automatically convert these back to factor comparisons for better
-interpretability:</p><ul><li><p>Instead of <code>2.1 * county_adams</code>, rules show <code>2.1 * (county == "adams")</code></p></li>
-<li><p>This allows rules to be evaluated directly on data with the original factor
-columns (no need to create indicator variables)</p></li>
-<li><p>For example, a factor <code>color</code> with levels <code>["red", "blue", "green"]</code> will
-appear in rules as <code>(color == "red")</code>, <code>(color == "blue")</code>, etc.</p></li>
-</ul><p>Ordered factors are converted to a single integer variable representing the
-ordinal level, not to multiple indicators.</p>
-<p>Factor indicators are not scaled since they are binary 0/1 values.</p>
+<p>The <span class="pkg">aorsf</span> package internally converts unordered factor variables using
+<strong>reference coding</strong> (also called dummy coding). For a factor with k levels,
+aorsf creates k-1 binary indicator variables, with the first level serving as
+the reference category:</p><ul><li><p>A factor <code>color</code> with levels <code>["red", "blue", "green"]</code> creates indicators
+for <code>blue</code> and <code>green</code> only. When both indicators are 0, it represents <code>red</code>.</p></li>
+<li><p>The extracted rules automatically convert these back to factor comparisons:
+<code>2.1 * color_blue</code> becomes <code>2.1 * (color == "blue")</code>.</p></li>
+<li><p>Rules can be evaluated directly on data with the original factor columns
+(no need to manually create indicator variables).</p></li>
+<li><p>Ordered factors are converted to a single integer variable representing the
+ordinal level, not to multiple indicators.</p></li>
+</ul><p>Reference coding prevents collinearity in the internal regression computations
+used to find optimal splits.</p>
 </div>
 
 <div class="section">
-<h3 id="predictor-scaling-and-unscaling">Predictor Scaling and Unscaling<a class="anchor" aria-label="anchor" href="#predictor-scaling-and-unscaling"></a></h3>
+<h3 id="predictor-scaling">Predictor Scaling<a class="anchor" aria-label="anchor" href="#predictor-scaling"></a></h3>
 
 
-<p>The <span class="pkg">aorsf</span> package can optionally center and scale numeric predictors when
-computing linear combinations for splits. This is controlled by the <code>scale_x</code>
-parameter in <code>orsf_control_*()</code> functions (default is <code>TRUE</code>).</p>
-<p>When <code>scale_x = TRUE</code>, <span class="pkg">aorsf</span> uses <code>(x - mean) / sd</code> for numeric predictors
-during split computations. The extracted rules automatically <strong>unscale</strong> the
-coefficients and thresholds back to the original units, so rules can be
-directly evaluated on the original (unscaled) data.</p>
-<p>When <code>scale_x = FALSE</code>, coefficients are already in the original units and
-no unscaling is performed.</p>
-<p>Factor indicator variables (from one-hot encoding) are not scaled since they
-are binary 0/1 values.</p>
-<p>Note: <code>x$get_means()</code> and <code>x$get_stdev()</code> always return the data statistics
-regardless of the <code>scale_x</code> setting. To determine if scaling was used, check
-<code>x$control$lincomb_scale</code>.</p>
+<p>The <span class="pkg">aorsf</span> package <strong>always scales data during prediction</strong>, regardless of
+the <code>scale_x</code> parameter setting. The coefficients stored in trees are for
+scaled data: <code>(x - mean) / sd</code> for numeric predictors.</p>
+<p>To make rules work with unscaled input data, the extracted rules automatically
+<strong>include the scaling transformation</strong> in the expressions themselves. For example,
+instead of showing a pre-computed unscaled coefficient, rules show:</p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fl">728.58</span> <span class="sc">*</span> ((flipper_length_mm <span class="sc">-</span> <span class="fl">200.97</span>) <span class="sc">/</span> <span class="fl">14.02</span>) <span class="sc">&gt;</span> <span class="fl">400.23</span></span></code></pre><p></p></div>
+<p>This approach:</p><ul><li><p>Allows rules to be evaluated directly on original (unscaled) data</p></li>
+<li><p>Preserves full floating-point precision (avoids errors from pre-computing
+unscaled coefficients)</p></li>
+<li><p>Makes the scaling transformation explicit and transparent</p></li>
+</ul><p>Factor indicator variables are not scaled since they are binary 0/1 values.</p>
 </div>
 
     </div>
@@ -171,7 +156,7 @@ regardless of the <code>scale_x</code> setting. To determine if scaling was used
 <span class="r-in"><span>  <span class="va">forest_reg</span> <span class="op">&lt;-</span> <span class="fu">aorsf</span><span class="fu">::</span><span class="fu"><a href="https://docs.ropensci.org/aorsf/reference/orsf.html" class="external-link">orsf</a></span><span class="op">(</span><span class="va">mpg</span> <span class="op">~</span> <span class="va">.</span>, data <span class="op">=</span> <span class="va">mtcars</span>, n_tree <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="va">rules_reg</span> <span class="op">&lt;-</span> <span class="fu"><a href="extract_rules.html">extract_rules</a></span><span class="op">(</span><span class="va">forest_reg</span>, tree <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> * 1.276 * body_mass_g + 0.00232 * (sex == "female") - 1.884 * (island == "Torgersen") &gt; 0.9291 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> * 1.276 * (sex == "male") + 0.00232 * ((year - 2008)/0.8129) - 1.884 * ((bill_length_mm - 43.99)/5.469) &gt; 0.9291 </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
