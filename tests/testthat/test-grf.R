@@ -405,6 +405,203 @@ test_that("var_imp.grf() with max.depth argument", {
 })
 
 # ------------------------------------------------------------------------------
+# extract_rules tests
+# ------------------------------------------------------------------------------
+
+test_that("extract_rules.grf() returns correct structure", {
+  skip_if_not_installed("grf")
+
+  data <- get_regression_data(n = 100)
+  set.seed(847)
+  rf <- grf::regression_forest(
+    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    Y = data$y,
+    num.trees = 3
+  )
+  rules <- extract_rules(rf, tree = 1L)
+
+  expect_s3_class(rules, "rule_set_party")
+  expect_s3_class(rules, "rule_set")
+  expect_s3_class(rules, "tbl_df")
+  expect_named(rules, c("id", "rules", "tree"))
+  expect_type(rules$id, "integer")
+  expect_type(rules$rules, "list")
+  expect_type(rules$tree, "integer")
+})
+
+test_that("extract_rules.grf() extracts from single tree", {
+  skip_if_not_installed("grf")
+
+  data <- get_regression_data(n = 100)
+  set.seed(532)
+  rf <- grf::regression_forest(
+    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    Y = data$y,
+    num.trees = 3
+  )
+  rules <- extract_rules(rf, tree = 1L)
+
+  expect_equal(unique(rules$tree), 1L)
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
+test_that("extract_rules.grf() extracts from multiple trees", {
+  skip_if_not_installed("grf")
+
+  data <- get_regression_data(n = 100)
+  set.seed(219)
+  rf <- grf::regression_forest(
+    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    Y = data$y,
+    num.trees = 3
+  )
+  rules <- extract_rules(rf, tree = c(1L, 2L, 3L))
+
+  expect_equal(sort(unique(rules$tree)), c(1L, 2L, 3L))
+  expect_true(nrow(rules) > 0)
+
+  # Check that each tree has rules
+  for (tree_num in c(1L, 2L, 3L)) {
+    tree_rules <- rules[rules$tree == tree_num, ]
+    expect_true(nrow(tree_rules) > 0)
+  }
+})
+
+test_that("extract_rules.grf() validates tree argument", {
+  skip_if_not_installed("grf")
+
+  data <- get_regression_data(n = 100)
+  set.seed(674)
+  rf <- grf::regression_forest(
+    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    Y = data$y,
+    num.trees = 3
+  )
+
+  expect_snapshot(extract_rules(rf, tree = "1"), error = TRUE)
+  expect_snapshot(extract_rules(rf, tree = 1.5), error = TRUE)
+  expect_snapshot(extract_rules(rf, tree = 0L), error = TRUE)
+  expect_snapshot(extract_rules(rf, tree = 10L), error = TRUE)
+})
+
+test_that("extract_rules.grf() works with numeric predictors", {
+  skip_if_not_installed("grf")
+
+  data <- get_regression_data(n = 100)
+  set.seed(158)
+  rf <- grf::regression_forest(
+    X = as.matrix(data[, c("x1", "x2")]),
+    Y = data$y,
+    num.trees = 3
+  )
+  rules <- extract_rules(rf, tree = 1L)
+
+  expect_s3_class(rules, "rule_set_party")
+  expect_true(nrow(rules) > 0)
+})
+
+test_that("extract_rules.grf() rules are sorted by tree then id", {
+  skip_if_not_installed("grf")
+
+  data <- get_regression_data(n = 100)
+  set.seed(803)
+  rf <- grf::regression_forest(
+    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    Y = data$y,
+    num.trees = 3
+  )
+  rules <- extract_rules(rf, tree = c(2L, 1L, 3L))
+
+  # Check sorting
+  expect_true(all(diff(rules$tree) >= 0))
+
+  # Within each tree, ids should be sorted
+  for (tree_num in unique(rules$tree)) {
+    tree_rules <- rules[rules$tree == tree_num, ]
+    expect_true(all(diff(tree_rules$id) > 0))
+  }
+})
+
+test_that("extract_rules.grf() handles duplicate tree numbers", {
+  skip_if_not_installed("grf")
+
+  data <- get_regression_data(n = 100)
+  set.seed(456)
+  rf <- grf::regression_forest(
+    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    Y = data$y,
+    num.trees = 3
+  )
+  rules <- extract_rules(rf, tree = c(1L, 1L, 2L))
+
+  # Should have results for tree 1 twice
+  tree_counts <- table(rules$tree)
+  expect_equal(as.numeric(names(tree_counts)), c(1, 2))
+})
+
+test_that("extract_rules.grf() works with all trees", {
+  skip_if_not_installed("grf")
+
+  data <- get_regression_data(n = 100)
+  set.seed(927)
+  rf <- grf::regression_forest(
+    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    Y = data$y,
+    num.trees = 3
+  )
+  n_trees <- 3
+  rules <- extract_rules(rf, tree = 1:n_trees)
+
+  expect_equal(sort(unique(rules$tree)), 1:n_trees)
+  expect_true(nrow(rules) > 0)
+})
+
+test_that("extract_rules.grf() handles tree with no valid splits", {
+  skip_if_not_installed("grf")
+
+  # Create data where tree may have no splits
+  null_data <- data.frame(
+    y = 1:10,
+    x1 = rep(1:5, each = 2),
+    x2 = rep(1:5, each = 2)
+  )
+  set.seed(614)
+  rf <- grf::regression_forest(
+    X = as.matrix(null_data[, c("x1", "x2")]),
+    Y = null_data$y,
+    num.trees = 2,
+    min.node.size = 5
+  )
+  rules <- extract_rules(rf, tree = 1L)
+
+  expect_s3_class(rules, "rule_set_party")
+  # Even with no splits, should return at least one rule (TRUE)
+  expect_true(nrow(rules) >= 1)
+})
+
+test_that("extract_rules.grf() works with causal_forest", {
+  skip_if_not_installed("grf")
+
+  data <- get_regression_data(n = 100)
+  set.seed(391)
+  cf <- grf::causal_forest(
+    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    Y = data$y,
+    W = rbinom(100, 1, 0.5),
+    num.trees = 3
+  )
+  rules <- extract_rules(cf, tree = 1L)
+
+  expect_s3_class(rules, "rule_set_party")
+  expect_true(nrow(rules) > 0)
+})
+
+# ------------------------------------------------------------------------------
 # active_predictors tests
 # ------------------------------------------------------------------------------
 

@@ -139,6 +139,206 @@ test_that("as.party.ranger does not show asterisks in node summaries", {
   expect_false(has_asterisk_summary)
 })
 
+# Tests for extract_rules.ranger() -------------------------------------------
+
+test_that("extract_rules.ranger() returns correct structure", {
+  skip_if_not_installed("ranger")
+
+  data <- get_regression_data(n = 100)
+  set.seed(527)
+  rf <- ranger::ranger(y ~ x1 + x2 + x3, data = data, num.trees = 3)
+  rules <- extract_rules(rf, tree = 1L, data = data)
+
+  expect_s3_class(rules, "rule_set_party")
+  expect_s3_class(rules, "rule_set")
+  expect_s3_class(rules, "tbl_df")
+  expect_named(rules, c("id", "rules", "tree"))
+  expect_type(rules$id, "integer")
+  expect_type(rules$rules, "list")
+  expect_type(rules$tree, "integer")
+})
+
+test_that("extract_rules.ranger() extracts from single tree", {
+  skip_if_not_installed("ranger")
+
+  data <- get_regression_data(n = 100)
+  set.seed(638)
+  rf <- ranger::ranger(y ~ x1 + x2 + x3, data = data, num.trees = 3)
+  rules <- extract_rules(rf, tree = 1L, data = data)
+
+  expect_equal(unique(rules$tree), 1L)
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
+test_that("extract_rules.ranger() extracts from multiple trees", {
+  skip_if_not_installed("ranger")
+
+  data <- get_regression_data(n = 100)
+  set.seed(749)
+  rf <- ranger::ranger(y ~ x1 + x2 + x3, data = data, num.trees = 3)
+  rules <- extract_rules(rf, tree = c(1L, 2L, 3L), data = data)
+
+  expect_equal(sort(unique(rules$tree)), c(1L, 2L, 3L))
+  expect_true(nrow(rules) > 0)
+
+  # Check that each tree has rules
+  for (tree_num in c(1L, 2L, 3L)) {
+    tree_rules <- rules[rules$tree == tree_num, ]
+    expect_true(nrow(tree_rules) > 0)
+  }
+})
+
+test_that("extract_rules.ranger() validates tree argument", {
+  skip_if_not_installed("ranger")
+
+  data <- get_regression_data(n = 100)
+  set.seed(851)
+  rf <- ranger::ranger(y ~ x1 + x2 + x3, data = data, num.trees = 3)
+
+  expect_snapshot(extract_rules(rf, tree = "1", data = data), error = TRUE)
+  expect_snapshot(extract_rules(rf, tree = 1.5, data = data), error = TRUE)
+  expect_snapshot(extract_rules(rf, tree = 0L, data = data), error = TRUE)
+  expect_snapshot(extract_rules(rf, tree = 10L, data = data), error = TRUE)
+})
+
+test_that("extract_rules.ranger() requires data parameter", {
+  skip_if_not_installed("ranger")
+
+  data <- get_regression_data(n = 100)
+  set.seed(962)
+  rf <- ranger::ranger(y ~ x1 + x2 + x3, data = data, num.trees = 3)
+
+  expect_snapshot(extract_rules(rf, tree = 1L), error = TRUE)
+  expect_snapshot(extract_rules(rf, tree = 1L, data = NULL), error = TRUE)
+})
+
+test_that("extract_rules.ranger() requires write.forest = TRUE", {
+  skip_if_not_installed("ranger")
+
+  data <- get_regression_data(n = 100)
+  set.seed(173)
+  rf <- ranger::ranger(
+    y ~ x1 + x2 + x3,
+    data = data,
+    num.trees = 3,
+    write.forest = FALSE
+  )
+
+  expect_snapshot(extract_rules(rf, tree = 1L, data = data), error = TRUE)
+})
+
+test_that("extract_rules.ranger() works with numeric predictors", {
+  skip_if_not_installed("ranger")
+
+  data <- get_regression_data(n = 100)
+  set.seed(284)
+  rf <- ranger::ranger(y ~ x1 + x2, data = data, num.trees = 3)
+  rules <- extract_rules(rf, tree = 1L, data = data)
+
+  expect_s3_class(rules, "rule_set_party")
+  expect_true(nrow(rules) > 0)
+})
+
+test_that("extract_rules.ranger() works with factor predictors", {
+  skip_if_not_installed("ranger")
+
+  data <- get_factor_data(n = 100)
+  set.seed(395)
+  rf <- ranger::ranger(y ~ x2 + x4, data = data, num.trees = 3)
+  rules <- extract_rules(rf, tree = 1L, data = data)
+
+  expect_s3_class(rules, "rule_set_party")
+  expect_true(nrow(rules) > 0)
+})
+
+test_that("extract_rules.ranger() works with mixed predictors", {
+  skip_if_not_installed("ranger")
+
+  wa_trees <- get_wa_trees_data()[1:200, ]
+  set.seed(416)
+  rf <- ranger::ranger(
+    class ~ elevation + county,
+    data = wa_trees,
+    num.trees = 3
+  )
+  rules <- extract_rules(rf, tree = 1L, data = wa_trees)
+
+  expect_s3_class(rules, "rule_set_party")
+  expect_true(nrow(rules) > 0)
+})
+
+test_that("extract_rules.ranger() rules are sorted by tree then id", {
+  skip_if_not_installed("ranger")
+
+  data <- get_regression_data(n = 100)
+  set.seed(527)
+  rf <- ranger::ranger(y ~ x1 + x2 + x3, data = data, num.trees = 3)
+  rules <- extract_rules(rf, tree = c(2L, 1L, 3L), data = data)
+
+  # Check sorting
+  expect_true(all(diff(rules$tree) >= 0))
+
+  # Within each tree, ids should be sorted
+  for (tree_num in unique(rules$tree)) {
+    tree_rules <- rules[rules$tree == tree_num, ]
+    expect_true(all(diff(tree_rules$id) > 0))
+  }
+})
+
+test_that("extract_rules.ranger() handles duplicate tree numbers", {
+  skip_if_not_installed("ranger")
+
+  data <- get_regression_data(n = 100)
+  set.seed(638)
+  rf <- ranger::ranger(y ~ x1 + x2 + x3, data = data, num.trees = 3)
+  rules <- extract_rules(rf, tree = c(1L, 1L, 2L), data = data)
+
+  # Should have results for tree 1 twice
+  tree_counts <- table(rules$tree)
+  expect_equal(as.numeric(names(tree_counts)), c(1, 2))
+})
+
+test_that("extract_rules.ranger() works with all trees", {
+  skip_if_not_installed("ranger")
+
+  data <- get_regression_data(n = 100)
+  set.seed(749)
+  rf <- ranger::ranger(y ~ x1 + x2 + x3, data = data, num.trees = 3)
+  n_trees <- 3
+  rules <- extract_rules(rf, tree = 1:n_trees, data = data)
+
+  expect_equal(sort(unique(rules$tree)), 1:n_trees)
+  expect_true(nrow(rules) > 0)
+})
+
+test_that("extract_rules.ranger() handles tree with no valid splits", {
+  skip_if_not_installed("ranger")
+
+  # Create data where tree may have no splits
+  null_data <- data.frame(
+    y = 1:10,
+    x1 = rep(1:5, each = 2),
+    x2 = rep(1:5, each = 2)
+  )
+  set.seed(851)
+  rf <- ranger::ranger(
+    y ~ .,
+    data = null_data,
+    num.trees = 2,
+    min.node.size = 5
+  )
+  rules <- extract_rules(rf, tree = 1L, data = null_data)
+
+  expect_s3_class(rules, "rule_set_party")
+  # Even with no splits, should return at least one rule (TRUE)
+  expect_true(nrow(rules) >= 1)
+})
+
 # Tests for active_predictors.ranger() ---------------------------------------
 
 test_that("active_predictors.ranger() returns correct structure", {

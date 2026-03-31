@@ -46,6 +46,62 @@
       Error in `as.party()`:
       ! ranger model must have `write.forest = TRUE` to extract trees.
 
+# extract_rules.ranger() validates tree argument
+
+    Code
+      extract_rules(rf, tree = "1", data = data)
+    Condition
+      Error:
+      ! `tree` must be an integer vector, not a string.
+
+---
+
+    Code
+      extract_rules(rf, tree = 1.5, data = data)
+    Condition
+      Error:
+      ! `tree` must be an integer vector, not a number.
+
+---
+
+    Code
+      extract_rules(rf, tree = 0L, data = data)
+    Condition
+      Error:
+      ! `tree` values must be between 1 and 3.
+
+---
+
+    Code
+      extract_rules(rf, tree = 10L, data = data)
+    Condition
+      Error:
+      ! `tree` values must be between 1 and 3.
+
+# extract_rules.ranger() requires data parameter
+
+    Code
+      extract_rules(rf, tree = 1L)
+    Condition
+      Error in `extract_rules()`:
+      ! `data` is required for `extract_rules.ranger()`.
+
+---
+
+    Code
+      extract_rules(rf, tree = 1L, data = NULL)
+    Condition
+      Error in `extract_rules()`:
+      ! `data` is required for `extract_rules.ranger()`.
+
+# extract_rules.ranger() requires write.forest = TRUE
+
+    Code
+      extract_rules(rf, tree = 1L, data = data)
+    Condition
+      Error:
+      ! ranger model must have `write.forest = TRUE` to extract rules.
+
 # active_predictors.ranger() validates tree argument
 
     Code
