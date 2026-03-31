@@ -64,6 +64,114 @@
 <!-- badges: start -->
 
 <p>The goal of lorax is to help look at different aspects of tree- and rule-based models.</p>
+<p>lorax supports a few APIs:</p>
+<ul>
+<li>
+<code><a href="https://rdrr.io/pkg/partykit/man/party-coercion.html" class="external-link">as.party()</a></code> converts trees to the format used by <code><a href="https://rdrr.io/pkg/partykit/man/ctree.html" class="external-link">partykit::ctree()</a></code>, mostly because it has an amazing <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> method.</li>
+<li>
+<code><a href="reference/extract_rules.html">extract_rules()</a></code> helps write out the logical paths to the terminal nodes.</li>
+<li>
+<code><a href="reference/active_predictors.html">active_predictors()</a></code> enumerates which predictors were actually used in a split.</li>
+<li>
+<code><a href="https://generics.r-lib.org/reference/var_imp.html" class="external-link">var_imp()</a></code> is a wrapper for any importance method contained in the package. This is a wrapper that enables a common interface to the scores.</li>
+</ul>
+<p>Here is a list of which classes have which methods:</p>
+<table class="table">
+<colgroup>
+<col width="22%">
+<col width="13%">
+<col width="27%">
+<col width="14%">
+<col width="22%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">class</th>
+<th align="left">var_imp</th>
+<th align="left">active_predictors</th>
+<th align="left">as.party</th>
+<th align="left">extract_rules</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">bart</td>
+<td align="left">n/a</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+</tr>
+<tr class="even">
+<td align="left">C5.0</td>
+<td align="left">n/a</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+</tr>
+<tr class="odd">
+<td align="left">cforest</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+<td align="left">n/a</td>
+<td align="left">✔</td>
+</tr>
+<tr class="even">
+<td align="left">grf</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+</tr>
+<tr class="odd">
+<td align="left">lgb.Booster</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+</tr>
+<tr class="even">
+<td align="left">ObliqueForest</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+<td align="left">✖</td>
+<td align="left">✔</td>
+</tr>
+<tr class="odd">
+<td align="left">party</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+<td align="left">n/a</td>
+<td align="left">✔</td>
+</tr>
+<tr class="even">
+<td align="left">randomForest</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+</tr>
+<tr class="odd">
+<td align="left">ranger</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+</tr>
+<tr class="even">
+<td align="left">rpart</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+<td align="left">n/a</td>
+<td align="left">✔</td>
+</tr>
+<tr class="odd">
+<td align="left">xgb.Booster</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+<td align="left">✔</td>
+</tr>
+</tbody>
+</table>
+<p>Note that <code>as.party.rpart()</code> is in the partykit package and that cforest is made out of party objects.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -75,20 +183,10 @@
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tibble.tidyverse.org/" class="external-link">tibble</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">lorax</span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://imbs-hl.github.io/ranger/" class="external-link">ranger</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://allisonhorst.github.io/palmerpenguins/" class="external-link">palmerpenguins</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'palmerpenguins'</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:datasets':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     penguins, penguins_raw</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">822</span><span class="op">)</span></span>
-<span><span class="va">rngr_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="http://imbs-hl.github.io/ranger/reference/ranger.html" class="external-link">ranger</a></span><span class="op">(</span><span class="va">species</span> <span class="op">~</span> <span class="va">.</span>, data <span class="op">=</span> <span class="va">penguins</span>, max.depth <span class="op">=</span> <span class="fl">3</span>, num.trees <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">822</span><span class="op">)</span></span>
+<span><span class="va">rngr_fit</span> <span class="op">&lt;-</span> <span class="fu">ranger</span><span class="op">(</span><span class="va">species</span> <span class="op">~</span> <span class="va">.</span>, data <span class="op">=</span> <span class="va">penguins</span>, max.depth <span class="op">=</span> <span class="fl">3</span>, num.trees <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">rngr_party</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/partykit/man/party-coercion.html" class="external-link">as.party</a></span><span class="op">(</span><span class="va">rngr_fit</span>, tree <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">rngr_party</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/partykit/man/party-coercion.html" class="external-link">as.party</a></span><span class="op">(</span><span class="va">rngr_fit</span>, data <span class="op">=</span> <span class="va">penguins</span>, tree <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">rngr_party</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Model formula:</span></span>
@@ -124,7 +222,7 @@
 <span></span>
 <span><span class="co"># Substitutions</span></span>
 <span><span class="va">new_names</span> <span class="op">&lt;-</span> </span>
-<span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tribble.html" class="external-link">tribble</a></span><span class="op">(</span></span>
+<span> <span class="fu">tribble</span><span class="op">(</span></span>
 <span>  <span class="op">~</span> <span class="va">original</span>, <span class="op">~</span> <span class="va">label</span>,</span>
 <span>  <span class="st">"flipper_length_mm"</span>, <span class="st">"Flipper Length"</span>,</span>
 <span>  <span class="st">"body_mass_g"</span>, <span class="st">"Body Mass"</span></span>

@@ -114,6 +114,22 @@ default for the forest type.</p></dd>
     <h2>Value</h2>
     <p>A tibble with columns <code>term</code> and <code>estimate</code>.</p>
     </div>
+    <div id="details">
+    <h2>Details</h2>
+    <p>Different engines compute importances differently:</p><ul><li><p><code><a href="https://rdrr.io/pkg/rpart/man/rpart.html" class="external-link">rpart::rpart()</a></code>, <code><a href="https://rdrr.io/pkg/xgboost/man/xgb.importance.html" class="external-link">xgboost::xgb.importance()</a></code>, and
+<code><a href="https://rdrr.io/pkg/lightgbm/man/lgb.importance.html" class="external-link">lightgbm::lgb.importance()</a></code> follow the change in the objective function
+(e.g., Gini, MSE, gain, ...) as the tree is constructed and reports the
+aggregate improvement in these statistics as importance.</p></li>
+<li><p><code><a href="https://rdrr.io/pkg/randomForest/man/importance.html" class="external-link">randomForest::importance()</a></code> and <code><a href="http://imbs-hl.github.io/ranger/reference/ranger.html" class="external-link">ranger::ranger()</a></code> produce standard
+permutation-based importance scores.</p></li>
+<li><p><code><a href="https://rdrr.io/pkg/grf/man/variable_importance.html" class="external-link">grf::variable_importance()</a></code> states that a "simple weighted sum of how
+many times feature i was split on at each depth in the forest" is used.</p></li>
+</ul><p>Keep in mind that, for <code><a href="https://rdrr.io/pkg/rpart/man/rpart.html" class="external-link">rpart::rpart()</a></code>, the importance calculation is
+affected by competing and surrogate splits. Consequently, there might be
+non-zero importances for predictors that were not used in any actual split
+in the tree. To make the splits and importances align, use the options
+<code>maxcompete = 0</code> and <code>maxsurrogate = 0</code>.</p>
+    </div>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
