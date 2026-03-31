@@ -344,6 +344,68 @@ rf_build_partynode <- function(
 }
 
 # ------------------------------------------------------------------------------
+# Extract rules from randomForest
+
+# Internal helper: extract rules for one tree from randomForest
+rf_extract_rules_one <- function(tree_num, x, data) {
+  # Convert to party
+  tree_party <- as.party(x, tree = tree_num, data = data)
+
+  # Extract rules using party method
+  rules <- extract_rules.party(tree_party)
+
+  # Add tree column
+  rules$tree <- tree_num
+
+  rules
+}
+
+#' @rdname extract_rules
+#' @param tree Integer vector specifying which trees to extract rules from.
+#'   Default is `1L` for the first tree. Values must be between 1 and the
+#'   number of trees in the forest (`x$ntree`).
+#' @param data Optional data.frame containing the training data. If NULL,
+#'   a placeholder will be created. Providing data enables better rule
+#'   extraction with proper variable context.
+#' @export
+extract_rules.randomForest <- function(x, tree = 1L, data = NULL, ...) {
+  rlang::check_installed("randomForest")
+
+  # Validate tree argument
+  if (!is.numeric(tree) || !all(tree == as.integer(tree))) {
+    cli::cli_abort(
+      "{.arg tree} must be an integer vector, not {.obj_type_friendly {tree}}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  tree <- as.integer(tree)
+
+  # Check that forest exists
+  if (is.null(x$forest)) {
+    cli::cli_abort(
+      "{.pkg randomForest} model must have {.code keep.forest = TRUE} to extract rules.",
+      call = rlang::caller_env()
+    )
+  }
+
+  # Validate tree range
+  if (any(tree < 1L) || any(tree > x$ntree)) {
+    cli::cli_abort(
+      "{.arg tree} values must be between 1 and {x$ntree}.",
+      call = rlang::caller_env()
+    )
+  }
+
+  # Extract for each tree
+  results <- lapply(tree, rf_extract_rules_one, x = x, data = data)
+
+  # Combine and sort by tree then id
+  dplyr::bind_rows(results) |>
+    dplyr::arrange(tree, id)
+}
+
+# ------------------------------------------------------------------------------
 
 # Internal helper: extract active predictors for one tree and wrap in constructor
 rf_extract_one <- function(tree_num, x) {

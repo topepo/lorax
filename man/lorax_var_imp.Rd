@@ -60,3 +60,22 @@ A tibble with columns \code{term} and \code{estimate}.
 Methods for computing variable importance scores via the model object using
 a common interface.
 }
+\details{
+Different engines compute importances differently:
+\itemize{
+\item \code{\link[rpart:rpart]{rpart::rpart()}}, \code{\link[xgboost:xgb.importance]{xgboost::xgb.importance()}}, and
+\code{\link[lightgbm:lgb.importance]{lightgbm::lgb.importance()}} follow the change in the objective function
+(e.g., Gini, MSE, gain, ...) as the tree is constructed and reports the
+aggregate improvement in these statistics as importance.
+\item \code{\link[randomForest:importance]{randomForest::importance()}} and \code{\link[ranger:ranger]{ranger::ranger()}} produce standard
+permutation-based importance scores.
+\item \code{\link[grf:variable_importance]{grf::variable_importance()}} states that a "simple weighted sum of how
+many times feature i was split on at each depth in the forest" is used.
+}
+
+Keep in mind that, for \code{\link[rpart:rpart]{rpart::rpart()}}, the importance calculation is
+affected by competing and surrogate splits. Consequently, there might be
+non-zero importances for predictors that were not used in any actual split
+in the tree. To make the splits and importances align, use the options
+\code{maxcompete = 0} and \code{maxsurrogate = 0}.
+}

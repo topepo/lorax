@@ -13,6 +13,37 @@ coverage](https://codecov.io/gh/topepo/lorax/graph/badge.svg)](https://app.codec
 The goal of lorax is to help look at different aspects of tree- and
 rule-based models.
 
+lorax supports a few APIs:
+
+- `as.party()` converts trees to the format used by `partykit::ctree()`,
+  mostly because it has an amazing `plot()` method.
+- `extract_rules()` helps write out the logical paths to the terminal
+  nodes.
+- `active_predictors()` enumerates which predictors were actually used
+  in a split.
+- `var_imp()` is a wrapper for any importance method contained in the
+  package. This is a wrapper that enables a common interface to the
+  scores.
+
+Here is a list of which classes have which methods:
+
+| class         | var_imp | active_predictors | as.party | extract_rules |
+|:--------------|:--------|:------------------|:---------|:--------------|
+| bart          | n/a     | ✔                 | ✔        | ✔             |
+| C5.0          | n/a     | ✔                 | ✔        | ✔             |
+| cforest       | ✔       | ✔                 | n/a      | ✔             |
+| grf           | ✔       | ✔                 | ✔        | ✔             |
+| lgb.Booster   | ✔       | ✔                 | ✔        | ✔             |
+| ObliqueForest | ✔       | ✔                 | ✖        | ✔             |
+| party         | ✔       | ✔                 | n/a      | ✔             |
+| randomForest  | ✔       | ✔                 | ✔        | ✔             |
+| ranger        | ✔       | ✔                 | ✔        | ✔             |
+| rpart         | ✔       | ✔                 | n/a      | ✔             |
+| xgb.Booster   | ✔       | ✔                 | ✔        | ✔             |
+
+Note that `as.party.rpart()` is in the partykit package and that cforest
+is made out of party objects.
+
 ## Installation
 
 You can install the development version of lorax like so:
@@ -25,22 +56,12 @@ pak::pak("topepo/lorax)
 ## Example
 
 ``` r
-library(tibble)
-library(lorax)
-library(ranger)
-library(palmerpenguins)
-#> 
-#> Attaching package: 'palmerpenguins'
-#> The following objects are masked from 'package:datasets':
-#> 
-#>     penguins, penguins_raw
-
 set.seed(822)
 rngr_fit <- ranger(species ~ ., data = penguins, max.depth = 3, num.trees = 10)
 ```
 
 ``` r
-rngr_party <- as.party(rngr_fit, tree = 1)
+rngr_party <- as.party(rngr_fit, data = penguins, tree = 1)
 rngr_party
 #> 
 #> Model formula:
