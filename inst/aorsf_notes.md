@@ -80,15 +80,17 @@ scaled_x = (x - mean) / sd
 
 **Critical finding**: `get_means()` and `get_stdev()` are ALWAYS populated regardless of `scale_x`. Must check `x$control$lincomb_scale` to determine if scaling was actually used.
 
-#### 2. Factor One-Hot Encoding
+#### 2. Factor Reference Coding
 
-aorsf creates k indicator variables for k-level factors (NOT k-1 reference coding):
+aorsf uses **reference coding** (k-1 indicators for k-level factors):
 
 ```r
 # Factor with levels ["red", "blue", "green"] becomes:
-# color_red, color_blue, color_green (all 3 levels)
+# color_blue, color_green (red is the reference)
+# When both indicators are 0, it represents red
 ```
 
+This prevents collinearity in internal regression computations.
 Factor indicators are NOT scaled (remain 0/1).
 
 **Enhancement**: We automatically convert indicators back to factor comparisons for interpretability:
@@ -366,7 +368,50 @@ print(paste("Our rules assign to node:", our_node))
 - **2026-03-14**: Initial implementation completed
 - **2026-03-14**: Node assignment mismatch discovered during validation test creation
 - **2026-03-14**: Extensive debugging conducted, issue documented but unresolved
-- **Status**: Issue remains open, awaiting deeper C++ investigation
+- **2026-03-30**: Root causes identified and fixed
+
+## Resolution
+
+### Root Cause #1: Reference Coding
+
+**Problem**: The implementation incorrectly assumed aorsf uses full one-hot encoding (k indicators for k levels), but aorsf actually uses reference coding (k-1 indicators, with the first level as reference).
+
+**Evidence**: In `aorsf/R/ref_code.R` line 39: `seq(length(fi$keys[[i]]) - 1)` creates only k-1 indicators, and line 84: `fi$keys[[i]][-1]` excludes the first level.
+
+**Impact**: Variable indices were off by one for each factor, causing coefficients to map to wrong variables.
+
+**Fix**: Modified three functions in `R/ObliqueForest.R`:
+- `oblique_get_var_names()`: Use `fctr_info$keys[[var_name]][-1]`
+- `oblique_replace_indicators()`: Use `[-1]` for both keys and levels
+- `oblique_collapse_factor_names()`: Use `fctr_info$keys[[factor_name]][-1]`
+
+### Root Cause #2: Floating Point Precision Loss
+
+**Problem**: The `oblique_unscale_split()` function pre-computed unscaled coefficients and thresholds. Multiple floating-point operations accumulated precision errors, causing comparisons like `5238.959... <= 5238.959...` to fail due to tiny differences (9e-13).
+
+**Evidence**: Manual tracing with scaled data matched aorsf predictions, but rules with unscaled coefficients did not. Direct evaluation showed threshold values differing in the last decimal places.
+
+**Key insight**: aorsf ALWAYS scales data during prediction (line 3168 in `orsf_R6.R`), regardless of `scale_x` setting. Coefficients in trees are for SCALED data.
+
+**Fix**: Instead of pre-computing unscaled coefficients, include scaling transformations directly in rule expressions:
+```r
+# Before (loses precision):
+51.98 * flipper_length_mm + 32.87 * bill_depth_mm > 11411.28
+
+# After (full precision):
+728.58 * ((flipper_length_mm - 200.97) / 14.02) +
+  64.73 * ((bill_depth_mm - 17.16) / 1.97) > 400.23
+```
+
+Implementation: New function `oblique_split_to_scaled_expr()` builds expressions with scaling included, avoiding pre-computation errors.
+
+### Validation
+
+All 17 tests pass, including the two that were previously skipped:
+- `extract_rules.ObliqueForest() rules match aorsf node assignments`
+- `extract_rules.ObliqueForest() node assignments are consistent`
+
+Rules now exactly replicate aorsf's internal predictions.
 
 ## Contact
 

@@ -188,7 +188,6 @@ test_that("extract_rules.ObliqueForest() sorts results by id", {
 test_that("extract_rules.ObliqueForest() rules match aorsf node assignments", {
   skip_if_not_installed("aorsf")
   skip_if_not_installed("palmerpenguins")
-  skip("TODO: Debug rule extraction - node assignments don't match aorsf")
 
   # Test with numeric data only to avoid factor comparison issues
   penguins <- palmerpenguins::penguins[
@@ -261,7 +260,6 @@ test_that("extract_rules.ObliqueForest() rules match aorsf node assignments", {
 test_that("extract_rules.ObliqueForest() node assignments are consistent", {
   skip_if_not_installed("aorsf")
   skip_if_not_installed("palmerpenguins")
-  skip("TODO: Debug rule extraction - node assignments don't match aorsf")
 
   # Test that each node's observations match between aorsf and extracted rules
   penguins <- palmerpenguins::penguins[
@@ -308,11 +306,7 @@ test_that("extract_rules.ObliqueForest() node assignments are consistent", {
     # Should be the same observations
     expect_setequal(
       obs_in_node_aorsf,
-      obs_in_node_rule,
-      info = sprintf(
-        "node %d (1-idx) should have same obs from aorsf and rule",
-        rule_id_1based
-      )
+      obs_in_node_rule
     )
   }
 })
