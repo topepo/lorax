@@ -88,8 +88,8 @@ indexing for the <code>tree</code> parameter and output <code>id</code> column (
 <p>Split conditions in <span class="pkg">lightgbm</span> follow the pattern: left child when feature &lt;=
 threshold, right child when feature &gt; threshold. Rules are combinations of
 these conditions using AND logic.</p>
-<p>Note: This function does not work with <span class="pkg">lightgbm</span> models containing categorical
-features.</p>
+<p>Note: This function does not work with <span class="pkg">lightgbm</span> models containing
+categorical features.</p>
     </div>
 
     <div id="ref-examples">
@@ -97,7 +97,10 @@ features.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu">rlang</span><span class="fu">::</span><span class="fu"><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">is_installed</a></span><span class="op">(</span><span class="st">"lightgbm"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="co"># Binary classification</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">agaricus.train</span>, package <span class="op">=</span> <span class="st">"lightgbm"</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="va">dtrain</span> <span class="op">&lt;-</span> <span class="fu">lightgbm</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/lightgbm/man/lgb.Dataset.html" class="external-link">lgb.Dataset</a></span><span class="op">(</span><span class="va">agaricus.train</span><span class="op">$</span><span class="va">data</span>, label <span class="op">=</span> <span class="va">agaricus.train</span><span class="op">$</span><span class="va">label</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="va">dtrain</span> <span class="op">&lt;-</span> <span class="fu">lightgbm</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/lightgbm/man/lgb.Dataset.html" class="external-link">lgb.Dataset</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="va">agaricus.train</span><span class="op">$</span><span class="va">data</span>,</span></span>
+<span class="r-in"><span>    label <span class="op">=</span> <span class="va">agaricus.train</span><span class="op">$</span><span class="va">label</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2847</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="va">bst</span> <span class="op">&lt;-</span> <span class="fu">lightgbm</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/lightgbm/man/lgb.train.html" class="external-link">lgb.train</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>    params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>objective <span class="op">=</span> <span class="st">"binary"</span>, max_depth <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span></span>
