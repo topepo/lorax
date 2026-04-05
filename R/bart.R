@@ -368,7 +368,8 @@ bart_contains_row <- function(node, target_row) {
 #' Convert BART model to party object
 #'
 #' Convert a single tree from a BART (Bayesian Additive Regression Trees) model
-#' to a party object for use with \pkg{partykit} visualization and analysis tools.
+#' to a party object for use with \pkg{partykit} visualization and analysis
+#' tools.
 #'
 #' @param obj A `bart` object from the \pkg{dbarts} package fitted with
 #'   `keeptrees = TRUE`.
@@ -453,7 +454,8 @@ bart_contains_row <- function(node, target_row) {
 #'   )
 #'
 #'   # Convert first tree - data parameter is required
-#'   # Response will be preserved in original format (e.g., factor for classification)
+#'   # Response will be preserved in original format (e.g., factor for
+#'   # classification)
 #'   party_tree <- as.party(fit, tree = 1L, chain = 1L, data = train_data)
 #'   print(party_tree)
 #'   plot(party_tree)

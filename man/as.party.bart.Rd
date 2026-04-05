@@ -31,7 +31,8 @@ A \code{constparty} object from the \pkg{partykit} package.
 }
 \description{
 Convert a single tree from a BART (Bayesian Additive Regression Trees) model
-to a party object for use with \pkg{partykit} visualization and analysis tools.
+to a party object for use with \pkg{partykit} visualization and analysis
+tools.
 }
 \details{
 \subsection{Important note on data transformation}{
@@ -111,7 +112,8 @@ if (rlang::is_installed(c("dbarts", "palmerpenguins"))) {
   )
 
   # Convert first tree - data parameter is required
-  # Response will be preserved in original format (e.g., factor for classification)
+  # Response will be preserved in original format (e.g., factor for
+  # classification)
   party_tree <- as.party(fit, tree = 1L, chain = 1L, data = train_data)
   print(party_tree)
   plot(party_tree)

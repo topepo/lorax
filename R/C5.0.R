@@ -44,7 +44,8 @@
 #' ## Split encoding
 #'
 #' - Numeric splits: typically binary (<=, >) or ternary (<=, missing, >)
-#' - Ternary numeric splits are simplified to binary by omitting the missing branch
+#' - Ternary numeric splits are simplified to binary by omitting the missing
+#'   branch
 #' - Categorical splits: can have 2+ branches, one for each level group
 #' - Multiway categorical splits are preserved in the party object
 #'

@@ -95,7 +95,7 @@ You can install the development version of lorax like so:
 
 ``` r
 require(pak)
-pak::pak("topepo/lorax)
+pak::pak("topepo/lorax")
 ```
 
 ## Example

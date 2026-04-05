@@ -99,7 +99,10 @@ if (rlang::is_installed("lightgbm")) {
   train_data <- as.data.frame(as.matrix(agaricus.train$data))
   train_data$label <- agaricus.train$label
 
-  dtrain <- lightgbm::lgb.Dataset(agaricus.train$data, label = agaricus.train$label)
+  dtrain <- lightgbm::lgb.Dataset(
+    agaricus.train$data,
+    label = agaricus.train$label
+  )
 
   set.seed(7264)
   bst <- lightgbm::lgb.train(

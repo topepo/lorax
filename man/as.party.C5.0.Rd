@@ -63,7 +63,8 @@ format uses indented lines with key-value pairs:
 \subsection{Split encoding}{
 \itemize{
 \item Numeric splits: typically binary (<=, >) or ternary (<=, missing, >)
-\item Ternary numeric splits are simplified to binary by omitting the missing branch
+\item Ternary numeric splits are simplified to binary by omitting the missing
+branch
 \item Categorical splits: can have 2+ branches, one for each level group
 \item Multiway categorical splits are preserved in the party object
 }

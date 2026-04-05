@@ -25,14 +25,17 @@
 #' threshold, right child when feature > threshold. Rules are combinations of
 #' these conditions using AND logic.
 #'
-#' Note: This function does not work with \pkg{lightgbm} models containing categorical
-#' features.
+#' Note: This function does not work with \pkg{lightgbm} models containing
+#' categorical features.
 #'
 #' @examples
 #' if (rlang::is_installed("lightgbm")) {
 #'   # Binary classification
 #'   data(agaricus.train, package = "lightgbm")
-#'   dtrain <- lightgbm::lgb.Dataset(agaricus.train$data, label = agaricus.train$label)
+#'   dtrain <- lightgbm::lgb.Dataset(
+#'     agaricus.train$data,
+#'     label = agaricus.train$label
+#'   )
 #'   set.seed(2847)
 #'   bst <- lightgbm::lgb.train(
 #'     params = list(objective = "binary", max_depth = 3),
@@ -328,7 +331,10 @@ lgb_get_split_info <- function(
 #'   train_data <- as.data.frame(as.matrix(agaricus.train$data))
 #'   train_data$label <- agaricus.train$label
 #'
-#'   dtrain <- lightgbm::lgb.Dataset(agaricus.train$data, label = agaricus.train$label)
+#'   dtrain <- lightgbm::lgb.Dataset(
+#'     agaricus.train$data,
+#'     label = agaricus.train$label
+#'   )
 #'
 #'   set.seed(7264)
 #'   bst <- lightgbm::lgb.train(

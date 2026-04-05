@@ -10,3 +10,7 @@
 ^[.]?air[.]toml$
 ^\.vscode$
 ^train_dir$
+^inst/.*_notes\.md$
+^inst/.*_optimization.*\.md$
+^inst/party-skill\.md$
+^cran-comments\.md$
