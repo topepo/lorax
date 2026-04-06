@@ -869,3 +869,72 @@ test_that("active_predictors.C5.0() rule model with numerics", {
   active_vars <- result$active_predictors[[1]]
   expect_true(all(active_vars %in% c("mpg", "hp", "wt")))
 })
+
+test_that("extract_rules.C5.0() works with single numeric predictor", {
+  skip_if_not_installed("C50")
+  skip_on_os("linux")
+
+  # C5.0 requires factor outcome - use single factor data
+  data <- get_single_factor_data()
+  # Create numeric predictor version
+  data$x_num <- rnorm(nrow(data))
+  model <- C50::C5.0(y ~ x_num, data = data, trials = 3)
+  rules <- extract_rules(model, tree = 1, data = data)
+
+  expect_s3_class(rules, "rule_set")
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
+test_that("extract_rules.C5.0() works with single factor predictor", {
+  skip_if_not_installed("C50")
+  skip_on_os("linux")
+
+  data <- get_single_factor_data()
+  model <- C50::C5.0(y ~ x, data = data, trials = 3)
+  rules <- extract_rules(model, tree = 1, data = data)
+
+  expect_s3_class(rules, "rule_set")
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
+test_that("active_predictors.C5.0() works with single numeric predictor", {
+  skip_if_not_installed("C50")
+  skip_on_os("linux")
+
+  # C5.0 requires factor outcome
+  data <- get_single_factor_data()
+  data$x_num <- rnorm(nrow(data))
+  model <- C50::C5.0(y ~ x_num, data = data, trials = 3)
+  active <- active_predictors(model)
+
+  expect_s3_class(active, "tbl_df")
+  # If the model made splits, should have "x_num" as active predictor
+  if (length(unique(unlist(active$active_predictors))) > 0) {
+    expect_setequal(unique(unlist(active$active_predictors)), "x_num")
+  }
+})
+
+test_that("active_predictors.C5.0() works with single factor predictor", {
+  skip_if_not_installed("C50")
+  skip_on_os("linux")
+
+  data <- get_single_factor_data()
+  model <- C50::C5.0(y ~ x, data = data, trials = 3)
+  active <- active_predictors(model)
+
+  expect_s3_class(active, "tbl_df")
+  # If the model made splits, should have "x" as active predictor
+  if (length(unique(unlist(active$active_predictors))) > 0) {
+    expect_setequal(unique(unlist(active$active_predictors)), "x")
+  }
+})

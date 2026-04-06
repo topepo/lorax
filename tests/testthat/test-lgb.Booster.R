@@ -439,6 +439,31 @@ test_that("as.party.lgb.Booster extracts different trees", {
   expect_false(identical(p1$node, p2$node))
 })
 
+test_that("as.party.lgb.Booster works with single numeric predictor", {
+  skip_if_not_installed("lightgbm")
+
+  data <- get_single_numeric_data()
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, "x", drop = FALSE]),
+    label = data$y
+  )
+  set.seed(487)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "regression"
+    ),
+    data = dtrain,
+    nrounds = 3,
+    verbose = -1
+  )
+  p <- as.party(bst, tree = 1, data = data)
+
+  expect_s3_class(p, "party")
+  expect_s3_class(p$node, "partynode")
+})
+
 test_that("as.party.lgb.Booster does not show asterisks in node summaries", {
   skip_if_not_installed("lightgbm")
 
@@ -707,6 +732,34 @@ test_that("active_predictors.lgb.Booster() works with feature names", {
 })
 
 # Tests for var_imp.lgb.Booster() ---------------------------------------------
+
+test_that("active_predictors.lgb.Booster() works with single numeric predictor", {
+  skip_if_not_installed("lightgbm")
+
+  data <- get_single_numeric_data()
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, "x", drop = FALSE]),
+    label = data$y
+  )
+  set.seed(127)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "regression"
+    ),
+    data = dtrain,
+    nrounds = 3,
+    verbose = -1
+  )
+  active <- active_predictors(bst)
+
+  expect_s3_class(active, "tbl_df")
+  # If the model made splits, should have "x" as active predictor
+  if (length(unique(unlist(active$active_predictors))) > 0) {
+    expect_setequal(unique(unlist(active$active_predictors)), "x")
+  }
+})
 
 test_that("var_imp.lgb.Booster() returns correct structure", {
   skip_if_not_installed("lightgbm")
@@ -1165,4 +1218,33 @@ test_that("var_imp.lgb.Booster() works with many boosting rounds", {
   expect_s3_class(result, "tbl_df")
   expect_true(nrow(result) >= 1)
   expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.lgb.Booster() works with single numeric predictor", {
+  skip_if_not_installed("lightgbm")
+
+  data <- get_single_numeric_data()
+
+  dtrain <- lightgbm::lgb.Dataset(
+    as.matrix(data[, "x", drop = FALSE]),
+    label = data$y
+  )
+  set.seed(298)
+  bst <- lightgbm::lgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "regression"
+    ),
+    data = dtrain,
+    nrounds = 3,
+    verbose = -1
+  )
+  importance <- var_imp(bst)
+
+  expect_s3_class(importance, "tbl_df")
+  # If the model made splits, "x" should have importance
+  if (nrow(importance) > 0) {
+    expect_equal(importance$term, "x")
+    expect_true(importance$estimate >= 0)
+  }
 })

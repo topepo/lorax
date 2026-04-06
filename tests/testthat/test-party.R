@@ -530,3 +530,93 @@ test_that("var_imp.party() handles constrained splits", {
   expect_equal(nrow(result), 2)
   expect_setequal(result$term, c("x1", "x2"))
 })
+
+test_that("extract_rules.party() works with single numeric predictor", {
+  skip_if_not_installed("partykit")
+
+  data <- get_single_numeric_data()
+  model <- partykit::ctree(y ~ x, data = data)
+  rules <- extract_rules(model)
+
+  expect_s3_class(rules, "rule_set")
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
+test_that("extract_rules.party() works with single factor predictor", {
+  skip_if_not_installed("partykit")
+
+  data <- get_single_factor_data()
+  model <- partykit::ctree(y ~ x, data = data)
+  rules <- extract_rules(model)
+
+  expect_s3_class(rules, "rule_set")
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
+test_that("active_predictors.party() works with single numeric predictor", {
+  skip_if_not_installed("partykit")
+
+  data <- get_single_numeric_data()
+  model <- partykit::ctree(y ~ x, data = data)
+  active <- active_predictors(model)
+
+  expect_s3_class(active, "tbl_df")
+  # If the tree made a split, should have "x" as active predictor
+  if (length(unique(unlist(active$active_predictors))) > 0) {
+    expect_setequal(unique(unlist(active$active_predictors)), "x")
+  }
+})
+
+test_that("active_predictors.party() works with single factor predictor", {
+  skip_if_not_installed("partykit")
+
+  data <- get_single_factor_data()
+  model <- partykit::ctree(y ~ x, data = data)
+  active <- active_predictors(model)
+
+  expect_s3_class(active, "tbl_df")
+  # If the tree made a split, should have "x" as active predictor
+  if (length(unique(unlist(active$active_predictors))) > 0) {
+    expect_setequal(unique(unlist(active$active_predictors)), "x")
+  }
+})
+
+test_that("var_imp.party() works with single numeric predictor", {
+  skip_if_not_installed("partykit")
+
+  data <- get_single_numeric_data()
+  model <- partykit::ctree(y ~ x, data = data)
+  importance <- var_imp(model)
+
+  expect_s3_class(importance, "tbl_df")
+  # If the tree made a split, "x" should have importance
+  if (nrow(importance) > 0) {
+    expect_equal(importance$term, "x")
+    expect_true(importance$estimate >= 0)
+  }
+})
+
+test_that("var_imp.party() works with single factor predictor", {
+  skip_if_not_installed("partykit")
+
+  data <- get_single_factor_data()
+  model <- partykit::ctree(y ~ x, data = data)
+  importance <- var_imp(model)
+
+  expect_s3_class(importance, "tbl_df")
+  # If the tree made a split, "x" should have importance
+  if (nrow(importance) > 0) {
+    expect_equal(importance$term, "x")
+    expect_true(importance$estimate >= 0)
+  }
+})

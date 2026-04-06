@@ -1122,3 +1122,85 @@ test_that("var_imp.xgb.Booster() handles very shallow trees", {
   expect_s3_class(result, "tbl_df")
   expect_true(all(result$estimate >= 0))
 })
+
+test_that("as.party.xgb.Booster works with single numeric predictor", {
+  skip_if_not_installed("xgboost")
+
+  data <- get_single_numeric_data()
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, "x", drop = FALSE]),
+    label = data$y
+  )
+  set.seed(127)
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 3,
+    verbose = 0
+  )
+  p <- as.party(bst, tree = 1, data = data)
+
+  expect_s3_class(p, "party")
+  expect_s3_class(p$node, "partynode")
+})
+
+test_that("active_predictors.xgb.Booster() works with single numeric predictor", {
+  skip_if_not_installed("xgboost")
+
+  data <- get_single_numeric_data()
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, "x", drop = FALSE]),
+    label = data$y
+  )
+  set.seed(298)
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 3,
+    verbose = 0
+  )
+  active <- active_predictors(bst)
+
+  expect_s3_class(active, "tbl_df")
+  # If the model made splits, should have "x" as active predictor
+  if (length(unique(unlist(active$active_predictors))) > 0) {
+    expect_setequal(unique(unlist(active$active_predictors)), "x")
+  }
+})
+
+test_that("var_imp.xgb.Booster() works with single numeric predictor", {
+  skip_if_not_installed("xgboost")
+
+  data <- get_single_numeric_data()
+
+  dtrain <- xgboost::xgb.DMatrix(
+    as.matrix(data[, "x", drop = FALSE]),
+    label = data$y
+  )
+  set.seed(413)
+  bst <- xgboost::xgb.train(
+    params = list(
+      max_depth = 3,
+      objective = "reg:squarederror"
+    ),
+    data = dtrain,
+    nrounds = 3,
+    verbose = 0
+  )
+  importance <- var_imp(bst)
+
+  expect_s3_class(importance, "tbl_df")
+  # If the model made splits, "x" should have importance
+  if (nrow(importance) > 0) {
+    expect_equal(importance$term, "x")
+    expect_true(importance$estimate >= 0)
+  }
+})

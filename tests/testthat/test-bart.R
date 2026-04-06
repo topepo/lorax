@@ -668,3 +668,48 @@ test_that("active_predictors.bart() handles duplicate tree numbers", {
   expect_equal(nrow(result), 3)
   expect_equal(result$tree, c(1L, 1L, 2L))
 })
+
+test_that("as.party.bart works with single numeric predictor", {
+  skip_if_not_installed("dbarts")
+
+  data <- get_single_numeric_data()
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = data[, "x", drop = FALSE],
+    y.train = data$y,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 5,
+    nskip = 100,
+    ndpost = 1
+  ))
+
+  p <- as.party(fit, tree = 1, data = data)
+
+  expect_s3_class(p, "party")
+  expect_s3_class(p$node, "partynode")
+})
+
+test_that("active_predictors.bart() works with single numeric predictor", {
+  skip_if_not_installed("dbarts")
+
+  data <- get_single_numeric_data()
+
+  fit <- suppressWarnings(dbarts::bart(
+    x.train = data[, "x", drop = FALSE],
+    y.train = data$y,
+    keeptrees = TRUE,
+    verbose = FALSE,
+    ntree = 5,
+    nskip = 100,
+    ndpost = 1
+  ))
+
+  active <- active_predictors(fit)
+
+  expect_s3_class(active, "tbl_df")
+  # If the model made splits, should have "x" as active predictor
+  if (length(unique(unlist(active$active_predictors))) > 0) {
+    expect_setequal(unique(unlist(active$active_predictors)), "x")
+  }
+})

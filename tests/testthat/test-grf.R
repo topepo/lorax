@@ -404,6 +404,24 @@ test_that("var_imp.grf() with max.depth argument", {
   expect_true(all(result$estimate >= 0))
 })
 
+test_that("var_imp.grf() works with single numeric predictor", {
+  skip_if_not_installed("grf")
+
+  data <- get_single_numeric_data()
+
+  model <- grf::regression_forest(
+    X = as.matrix(data[, "x", drop = FALSE]),
+    Y = data$y,
+    num.trees = 5
+  )
+
+  importance <- var_imp(model)
+
+  expect_s3_class(importance, "tbl_df")
+  expect_equal(importance$term, "x")
+  expect_true(importance$estimate >= 0)
+})
+
 # ------------------------------------------------------------------------------
 # extract_rules tests
 # ------------------------------------------------------------------------------
@@ -599,6 +617,28 @@ test_that("extract_rules.grf() works with causal_forest", {
 
   expect_s3_class(rules, "rule_set_party")
   expect_true(nrow(rules) > 0)
+})
+
+test_that("extract_rules.grf() works with single numeric predictor", {
+  skip_if_not_installed("grf")
+
+  data <- get_single_numeric_data()
+
+  model <- grf::regression_forest(
+    X = as.matrix(data[, "x", drop = FALSE]),
+    Y = data$y,
+    num.trees = 5
+  )
+
+  rules <- extract_rules(model, tree = 1L)
+
+  expect_s3_class(rules, "rule_set")
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
 })
 
 # ------------------------------------------------------------------------------
@@ -832,4 +872,24 @@ test_that("active_predictors.grf() method works", {
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 1)
   expect_equal(result$tree, 1L)
+})
+
+test_that("active_predictors.grf() works with single numeric predictor", {
+  skip_if_not_installed("grf")
+
+  data <- get_single_numeric_data()
+
+  model <- grf::regression_forest(
+    X = as.matrix(data[, "x", drop = FALSE]),
+    Y = data$y,
+    num.trees = 5
+  )
+
+  active <- active_predictors(model)
+
+  expect_s3_class(active, "tbl_df")
+  # If the model made splits, should have "x" as active predictor
+  if (length(unique(unlist(active$active_predictors))) > 0) {
+    expect_setequal(unique(unlist(active$active_predictors)), "x")
+  }
 })

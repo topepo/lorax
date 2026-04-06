@@ -867,3 +867,93 @@ test_that("var_imp.ObliqueForest() with unscaled predictors", {
   expect_equal(nrow(result_unscaled), 3)
   expect_true(all(result_unscaled$estimate >= 0))
 })
+
+test_that("extract_rules.ObliqueForest() works with single numeric predictor", {
+  skip_if_not_installed("aorsf")
+
+  data <- get_single_numeric_data()
+  set.seed(487)
+  model <- aorsf::orsf(y ~ x, data = data, n_tree = 5)
+  rules <- extract_rules(model, tree = 1)
+
+  expect_s3_class(rules, "rule_set")
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
+test_that("extract_rules.ObliqueForest() works with single factor predictor", {
+  skip_if_not_installed("aorsf")
+
+  data <- get_single_factor_data()
+  set.seed(127)
+  model <- aorsf::orsf(y ~ x, data = data, n_tree = 5)
+  rules <- extract_rules(model, tree = 1)
+
+  expect_s3_class(rules, "rule_set")
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
+test_that("active_predictors.ObliqueForest() works with single numeric predictor", {
+  skip_if_not_installed("aorsf")
+
+  data <- get_single_numeric_data()
+  set.seed(298)
+  model <- aorsf::orsf(y ~ x, data = data, n_tree = 5)
+  active <- active_predictors(model)
+
+  expect_s3_class(active, "tbl_df")
+  # If the model made splits, should have "x" as active predictor
+  if (length(unique(unlist(active$active_predictors))) > 0) {
+    expect_setequal(unique(unlist(active$active_predictors)), "x")
+  }
+})
+
+test_that("active_predictors.ObliqueForest() works with single factor predictor", {
+  skip_if_not_installed("aorsf")
+
+  data <- get_single_factor_data()
+  set.seed(413)
+  model <- aorsf::orsf(y ~ x, data = data, n_tree = 5)
+  active <- active_predictors(model)
+
+  expect_s3_class(active, "tbl_df")
+  # If the model made splits, should have "x" as active predictor
+  if (length(unique(unlist(active$active_predictors))) > 0) {
+    expect_setequal(unique(unlist(active$active_predictors)), "x")
+  }
+})
+
+test_that("var_imp.ObliqueForest() works with single numeric predictor", {
+  skip_if_not_installed("aorsf")
+
+  data <- get_single_numeric_data()
+  set.seed(564)
+  model <- aorsf::orsf(y ~ x, data = data, n_tree = 5)
+  importance <- var_imp(model)
+
+  expect_s3_class(importance, "tbl_df")
+  expect_equal(importance$term, "x")
+  expect_true(importance$estimate >= 0)
+})
+
+test_that("var_imp.ObliqueForest() works with single factor predictor", {
+  skip_if_not_installed("aorsf")
+
+  data <- get_single_factor_data()
+  set.seed(685)
+  model <- aorsf::orsf(y ~ x, data = data, n_tree = 5)
+  importance <- var_imp(model)
+
+  expect_s3_class(importance, "tbl_df")
+  expect_equal(importance$term, "x")
+  expect_true(importance$estimate >= 0)
+})

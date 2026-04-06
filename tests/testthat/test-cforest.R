@@ -1,5 +1,4 @@
 # Tests for extract_rules.cforest() --------------------------------------------
-skip("TOOOO LONG")
 
 test_that("extract_rules.cforest() returns correct structure", {
   skip_if_not_installed("partykit")
@@ -383,7 +382,7 @@ test_that("var_imp.cforest() returns correct structure", {
   cf <- partykit::cforest(
     class ~ elevation + county,
     data = wa_trees,
-    ntree = 5
+    ntree = 3
   )
   result <- var_imp(cf)
 
@@ -401,7 +400,7 @@ test_that("var_imp.cforest() extracts variable importance scores", {
   cf <- partykit::cforest(
     class ~ elevation + county,
     data = wa_trees,
-    ntree = 5
+    ntree = 3
   )
   result <- var_imp(cf)
 
@@ -420,7 +419,7 @@ test_that("var_imp.cforest() with complete=TRUE fills missing predictors", {
   cf <- partykit::cforest(
     class ~ elevation + roughness + dew_temp,
     data = wa_trees,
-    ntree = 5
+    ntree = 3
   )
   result <- var_imp(cf, complete = TRUE)
 
@@ -437,7 +436,7 @@ test_that("var_imp.cforest() with complete=FALSE returns only used predictors", 
   cf <- partykit::cforest(
     class ~ elevation + county,
     data = wa_trees,
-    ntree = 5
+    ntree = 3
   )
   result <- var_imp(cf, complete = FALSE)
 
@@ -469,7 +468,7 @@ test_that("var_imp.cforest() works with factor predictors", {
   cf <- partykit::cforest(
     county ~ class + elevation,
     data = wa_trees,
-    ntree = 5
+    ntree = 3
   )
   result <- var_imp(cf, complete = TRUE)
 
@@ -486,7 +485,7 @@ test_that("var_imp.cforest() works with mixed numeric and factor predictors", {
   cf <- partykit::cforest(
     elevation ~ class + roughness,
     data = wa_trees,
-    ntree = 5
+    ntree = 3
   )
   result <- var_imp(cf, complete = TRUE)
 
@@ -503,7 +502,7 @@ test_that("var_imp.cforest() returns all expected predictors", {
   cf <- partykit::cforest(
     class ~ elevation + county,
     data = wa_trees,
-    ntree = 5
+    ntree = 3
   )
   result <- var_imp(cf, complete = FALSE)
 
@@ -523,7 +522,7 @@ test_that("var_imp.cforest() works with classification forest", {
   cf <- partykit::cforest(
     class ~ elevation + county,
     data = wa_trees,
-    ntree = 5
+    ntree = 3
   )
   result <- var_imp(cf)
 
@@ -587,4 +586,98 @@ test_that("var_imp.cforest() handles constrained splits", {
   expect_named(result, c("term", "estimate"))
   expect_equal(nrow(result), 2)
   expect_setequal(result$term, c("x1", "x2"))
+})
+
+test_that("extract_rules.cforest() works with single numeric predictor", {
+  skip_if_not_installed("partykit")
+
+  data <- get_single_numeric_data()
+  set.seed(847)
+  model <- partykit::cforest(y ~ x, data = data, ntree = 3)
+  rules <- extract_rules(model, tree = 1L)
+
+  expect_s3_class(rules, "rule_set")
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
+test_that("extract_rules.cforest() works with single factor predictor", {
+  skip_if_not_installed("partykit")
+
+  data <- get_single_factor_data()
+  set.seed(532)
+  model <- partykit::cforest(y ~ x, data = data, ntree = 3)
+  rules <- extract_rules(model, tree = 1L)
+
+  expect_s3_class(rules, "rule_set")
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
+test_that("active_predictors.cforest() works with single numeric predictor", {
+  skip_if_not_installed("partykit")
+
+  data <- get_single_numeric_data()
+  set.seed(219)
+  model <- partykit::cforest(y ~ x, data = data, ntree = 3)
+  active <- active_predictors(model, tree = 1L)
+
+  expect_s3_class(active, "tbl_df")
+  # If the tree made a split, should have "x" as active predictor
+  if (length(unique(unlist(active$active_predictors))) > 0) {
+    expect_setequal(unique(unlist(active$active_predictors)), "x")
+  }
+})
+
+test_that("active_predictors.cforest() works with single factor predictor", {
+  skip_if_not_installed("partykit")
+
+  data <- get_single_factor_data()
+  set.seed(674)
+  model <- partykit::cforest(y ~ x, data = data, ntree = 3)
+  active <- active_predictors(model, tree = 1L)
+
+  expect_s3_class(active, "tbl_df")
+  # If the tree made a split, should have "x" as active predictor
+  if (length(unique(unlist(active$active_predictors))) > 0) {
+    expect_setequal(unique(unlist(active$active_predictors)), "x")
+  }
+})
+
+test_that("var_imp.cforest() works with single numeric predictor", {
+  skip_if_not_installed("partykit")
+
+  data <- get_single_numeric_data()
+  set.seed(158)
+  model <- partykit::cforest(y ~ x, data = data, ntree = 3)
+  importance <- var_imp(model)
+
+  expect_s3_class(importance, "tbl_df")
+  # var_imp for cforest should return results
+  expect_true(nrow(importance) > 0)
+  expect_equal(importance$term, "x")
+  expect_true(all(is.numeric(importance$estimate)))
+})
+
+test_that("var_imp.cforest() works with single factor predictor", {
+  skip_if_not_installed("partykit")
+
+  data <- get_single_factor_data()
+  set.seed(391)
+  model <- partykit::cforest(y ~ x, data = data, ntree = 3)
+  importance <- var_imp(model)
+
+  expect_s3_class(importance, "tbl_df")
+  # var_imp for cforest should return results
+  expect_true(nrow(importance) > 0)
+  expect_equal(importance$term, "x")
+  expect_true(all(is.numeric(importance$estimate)))
 })

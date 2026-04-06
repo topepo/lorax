@@ -89,3 +89,21 @@ get_iris_rpart_tree <- function() {
   skip_if_not_installed("rpart")
   rpart::rpart(Species ~ ., data = iris)
 }
+
+# Single numeric predictor data
+get_single_numeric_data <- function(n = 100) {
+  set.seed(487)
+  data.frame(
+    y = rnorm(n),
+    x = rnorm(n)
+  )
+}
+
+# Single factor predictor data
+get_single_factor_data <- function(n = 100) {
+  set.seed(487)
+  data.frame(
+    y = factor(sample(c("A", "B", "C"), n, replace = TRUE)),
+    x = factor(sample(c("Low", "Medium", "High"), n, replace = TRUE))
+  )
+}

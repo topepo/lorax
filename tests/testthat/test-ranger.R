@@ -272,6 +272,40 @@ test_that("extract_rules.ranger() works with mixed predictors", {
   expect_true(nrow(rules) > 0)
 })
 
+test_that("extract_rules.ranger() works with single numeric predictor", {
+  skip_if_not_installed("ranger")
+
+  data <- get_single_numeric_data()
+  set.seed(527)
+  model <- ranger::ranger(y ~ x, data = data, num.trees = 5)
+  rules <- extract_rules(model, tree = 1L, data = data)
+
+  expect_s3_class(rules, "rule_set")
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
+test_that("extract_rules.ranger() works with single factor predictor", {
+  skip_if_not_installed("ranger")
+
+  data <- get_single_factor_data()
+  set.seed(638)
+  model <- ranger::ranger(y ~ x, data = data, num.trees = 5)
+  rules <- extract_rules(model, tree = 1L, data = data)
+
+  expect_s3_class(rules, "rule_set")
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
 test_that("extract_rules.ranger() rules are sorted by tree then id", {
   skip_if_not_installed("ranger")
 
@@ -500,6 +534,30 @@ test_that("active_predictors.ranger() handles duplicate tree numbers", {
 
   expect_equal(nrow(result), 3)
   expect_equal(result$tree, c(1L, 1L, 2L))
+})
+
+test_that("active_predictors.ranger() works with single numeric predictor", {
+  skip_if_not_installed("ranger")
+
+  data <- get_single_numeric_data()
+  set.seed(749)
+  model <- ranger::ranger(y ~ x, data = data, num.trees = 5)
+  active <- active_predictors(model)
+
+  expect_s3_class(active, "tbl_df")
+  expect_setequal(unique(unlist(active$active_predictors)), "x")
+})
+
+test_that("active_predictors.ranger() works with single factor predictor", {
+  skip_if_not_installed("ranger")
+
+  data <- get_single_factor_data()
+  set.seed(851)
+  model <- ranger::ranger(y ~ x, data = data, num.trees = 5)
+  active <- active_predictors(model)
+
+  expect_s3_class(active, "tbl_df")
+  expect_setequal(unique(unlist(active$active_predictors)), "x")
 })
 
 # Tests for var_imp.ranger() -------------------------------------------------
@@ -832,4 +890,40 @@ test_that("var_imp.ranger() handles forest with very deep trees", {
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 3)
   expect_true(all(result$estimate >= 0))
+})
+
+test_that("var_imp.ranger() works with single numeric predictor", {
+  skip_if_not_installed("ranger")
+
+  data <- get_single_numeric_data()
+  set.seed(962)
+  model <- ranger::ranger(
+    y ~ x,
+    data = data,
+    num.trees = 5,
+    importance = "impurity"
+  )
+  importance <- var_imp(model)
+
+  expect_s3_class(importance, "tbl_df")
+  expect_equal(importance$term, "x")
+  expect_true(importance$estimate >= 0)
+})
+
+test_that("var_imp.ranger() works with single factor predictor", {
+  skip_if_not_installed("ranger")
+
+  data <- get_single_factor_data()
+  set.seed(173)
+  model <- ranger::ranger(
+    y ~ x,
+    data = data,
+    num.trees = 5,
+    importance = "impurity"
+  )
+  importance <- var_imp(model)
+
+  expect_s3_class(importance, "tbl_df")
+  expect_equal(importance$term, "x")
+  expect_true(importance$estimate >= 0)
 })

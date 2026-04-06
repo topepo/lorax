@@ -527,12 +527,12 @@ var_imp.randomForest <- function(object, complete = TRUE, type = NULL, ...) {
     )
   }
 
-  # Extract the specified column
-  imp_vector <- imp_matrix[, col_name]
+  # Extract the specified column (keep as matrix to preserve row names)
+  imp_vector <- imp_matrix[, col_name, drop = FALSE]
 
   # Convert to tibble
-  res <- tibble::enframe(imp_vector)
-  names(res) <- c("term", "estimate")
+  res <- tibble::as_tibble(imp_vector, rownames = "term")
+  names(res)[2] <- "estimate"
 
   if (complete) {
     # Get all predictor names from the model

@@ -77,6 +77,38 @@ test_that("extract_rules.rpart() works with categorical splits", {
   expect_true(nrow(rules) > 0)
 })
 
+test_that("extract_rules.rpart() works with single numeric predictor", {
+  skip_if_not_installed("rpart")
+
+  data <- get_single_numeric_data()
+  model <- rpart::rpart(y ~ x, data = data)
+  rules <- extract_rules(model)
+
+  expect_s3_class(rules, "rule_set")
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
+test_that("extract_rules.rpart() works with single factor predictor", {
+  skip_if_not_installed("rpart")
+
+  data <- get_single_factor_data()
+  model <- rpart::rpart(y ~ x, data = data)
+  rules <- extract_rules(model)
+
+  expect_s3_class(rules, "rule_set")
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
 test_that("extract_rules.rpart() works with single-node tree", {
   skip_if_not_installed("rpart")
 
@@ -253,6 +285,40 @@ test_that("active_predictors.rpart() works with factor predictors", {
   expect_true(length(result$active_predictors[[1]]) >= 0)
 })
 
+test_that("active_predictors.rpart() works with single numeric predictor", {
+  skip_if_not_installed("rpart")
+
+  data <- get_single_numeric_data()
+  model <- rpart::rpart(y ~ x, data = data)
+  active <- active_predictors(model)
+
+  expect_s3_class(active, "tbl_df")
+  # If the tree made a split, should have "x" as active predictor
+  if (nrow(model$frame) > 1) {
+    expect_setequal(unique(unlist(active$active_predictors)), "x")
+  } else {
+    # No split, no active predictors
+    expect_length(active$active_predictors[[1]], 0)
+  }
+})
+
+test_that("active_predictors.rpart() works with single factor predictor", {
+  skip_if_not_installed("rpart")
+
+  data <- get_single_factor_data()
+  model <- rpart::rpart(y ~ x, data = data)
+  active <- active_predictors(model)
+
+  expect_s3_class(active, "tbl_df")
+  # If the tree made a split, should have "x" as active predictor
+  if (nrow(model$frame) > 1) {
+    expect_setequal(unique(unlist(active$active_predictors)), "x")
+  } else {
+    # No split, no active predictors
+    expect_length(active$active_predictors[[1]], 0)
+  }
+})
+
 # Tests for var_imp.rpart() -------------------------------------------------
 
 test_that("var_imp.rpart() returns correct structure", {
@@ -425,5 +491,41 @@ test_that("var_imp.rpart() importance scores match underlying object", {
     term <- result$term[i]
     estimate <- result$estimate[i]
     expect_equal(estimate, expected[[term]], tolerance = 1e-10)
+  }
+})
+
+test_that("var_imp.rpart() works with single numeric predictor", {
+  skip_if_not_installed("rpart")
+
+  data <- get_single_numeric_data()
+  model <- rpart::rpart(y ~ x, data = data)
+  importance <- var_imp(model)
+
+  expect_s3_class(importance, "tbl_df")
+  # If the tree made a split, "x" should have importance
+  if (nrow(model$frame) > 1) {
+    expect_equal(importance$term, "x")
+    expect_true(importance$estimate > 0)
+  } else {
+    # No split, no importance
+    expect_equal(nrow(importance), 0)
+  }
+})
+
+test_that("var_imp.rpart() works with single factor predictor", {
+  skip_if_not_installed("rpart")
+
+  data <- get_single_factor_data()
+  model <- rpart::rpart(y ~ x, data = data)
+  importance <- var_imp(model)
+
+  expect_s3_class(importance, "tbl_df")
+  # If the tree made a split, "x" should have importance
+  if (nrow(model$frame) > 1) {
+    expect_equal(importance$term, "x")
+    expect_true(importance$estimate > 0)
+  } else {
+    # No split, no importance
+    expect_equal(nrow(importance), 0)
   }
 })

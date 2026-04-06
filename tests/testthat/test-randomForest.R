@@ -278,6 +278,40 @@ test_that("extract_rules.randomForest() works with mixed predictors", {
   expect_true(nrow(rules) > 0)
 })
 
+test_that("extract_rules.randomForest() works with single numeric predictor", {
+  skip_if_not_installed("randomForest")
+
+  data <- get_single_numeric_data()
+  set.seed(127)
+  model <- randomForest::randomForest(y ~ x, data = data, ntree = 5)
+  rules <- extract_rules(model, tree = 1L, data = data)
+
+  expect_s3_class(rules, "rule_set")
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
+test_that("extract_rules.randomForest() works with single factor predictor", {
+  skip_if_not_installed("randomForest")
+
+  data <- get_single_factor_data()
+  set.seed(298)
+  model <- randomForest::randomForest(y ~ x, data = data, ntree = 5)
+  rules <- extract_rules(model, tree = 1L, data = data)
+
+  expect_s3_class(rules, "rule_set")
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules are valid expressions
+  for (i in seq_len(nrow(rules))) {
+    expect_true(is.language(rules$rules[[i]]))
+  }
+})
+
 test_that("extract_rules.randomForest() rules are sorted by tree then id", {
   skip_if_not_installed("randomForest")
 
@@ -516,6 +550,30 @@ test_that("active_predictors.randomForest() handles duplicate tree numbers", {
 
   expect_equal(nrow(result), 3)
   expect_equal(result$tree, c(1L, 1L, 2L))
+})
+
+test_that("active_predictors.randomForest() works with single numeric predictor", {
+  skip_if_not_installed("randomForest")
+
+  data <- get_single_numeric_data()
+  set.seed(413)
+  model <- randomForest::randomForest(y ~ x, data = data, ntree = 5)
+  active <- active_predictors(model)
+
+  expect_s3_class(active, "tbl_df")
+  expect_setequal(unique(unlist(active$active_predictors)), "x")
+})
+
+test_that("active_predictors.randomForest() works with single factor predictor", {
+  skip_if_not_installed("randomForest")
+
+  data <- get_single_factor_data()
+  set.seed(564)
+  model <- randomForest::randomForest(y ~ x, data = data, ntree = 5)
+  active <- active_predictors(model)
+
+  expect_s3_class(active, "tbl_df")
+  expect_setequal(unique(unlist(active$active_predictors)), "x")
 })
 
 # Tests for var_imp.randomForest() -------------------------------------------
@@ -985,4 +1043,40 @@ test_that("var_imp.randomForest() handles multiclass classification", {
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 2)
   expect_setequal(result$term, c("x1", "x3"))
+})
+
+test_that("var_imp.randomForest() works with single numeric predictor", {
+  skip_if_not_installed("randomForest")
+
+  data <- get_single_numeric_data()
+  set.seed(685)
+  model <- randomForest::randomForest(
+    y ~ x,
+    data = data,
+    ntree = 5,
+    importance = TRUE
+  )
+  importance <- var_imp(model)
+
+  expect_s3_class(importance, "tbl_df")
+  expect_equal(importance$term, "x")
+  expect_true(importance$estimate >= 0)
+})
+
+test_that("var_imp.randomForest() works with single factor predictor", {
+  skip_if_not_installed("randomForest")
+
+  data <- get_single_factor_data()
+  set.seed(729)
+  model <- randomForest::randomForest(
+    y ~ x,
+    data = data,
+    ntree = 5,
+    importance = TRUE
+  )
+  importance <- var_imp(model)
+
+  expect_s3_class(importance, "tbl_df")
+  expect_equal(importance$term, "x")
+  expect_true(importance$estimate >= 0)
 })
