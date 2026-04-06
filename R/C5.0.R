@@ -810,6 +810,206 @@ c5_extract_one <- function(tree_num, tree_lines, num_trials) {
 # ------------------------------------------------------------------------------
 # Extract rules from C5.0
 
+# Extract rules from C5.0 rule-based model
+#
+# @param x C5.0 model object with rules
+# @param tree Integer vector of trial numbers to extract
+# @param data Training data for factor level information
+#
+# @return Tibble with id, rules, and tree columns
+c5_extract_rules_from_rules_text <- function(x, tree, data) {
+  # Parse rules text
+  rules_lines <- strsplit(x$rules, "\n")[[1]]
+
+  # Extract for each requested trial
+  results <- lapply(
+    tree,
+    c5_extract_rules_one_trial,
+    rules_lines = rules_lines,
+    num_trials = x$trials["Actual"],
+    data = data
+  )
+
+  # Combine and format
+  dplyr::bind_rows(results) |>
+    dplyr::arrange(tree, id) |>
+    tibble::new_tibble(class = c("rule_set_C5.0", "rule_set"))
+}
+
+# Extract rules for one trial from rules text
+c5_extract_rules_one_trial <- function(
+  tree_num,
+  rules_lines,
+  num_trials,
+  data
+) {
+  # Find rule set boundaries for this trial
+  if (num_trials == 1) {
+    # Single trial - use entire rules text after header
+    rules_start_idx <- which(grepl("^rules=", rules_lines))[1]
+    start_idx <- rules_start_idx
+    end_idx <- length(rules_lines)
+  } else {
+    # Multiple trials - find correct rules="N" section
+    rules_headers <- grep('^rules="\\d+"', rules_lines)
+
+    if (tree_num > length(rules_headers)) {
+      cli::cli_abort(
+        "Tree {tree_num} not found in rule-based model with {num_trials} trials."
+      )
+    }
+
+    start_idx <- rules_headers[tree_num]
+    end_idx <- if (tree_num < length(rules_headers)) {
+      rules_headers[tree_num + 1] - 1
+    } else {
+      length(rules_lines)
+    }
+  }
+
+  # Extract rules from this block
+  rules_block <- rules_lines[start_idx:end_idx]
+  rules_list <- c5_parse_rules_block(rules_block, data)
+
+  # Return tibble with tree column
+  tibble::tibble(
+    id = seq_along(rules_list),
+    rules = rules_list,
+    tree = tree_num
+  )
+}
+
+# Parse a block of C5.0 rules into list of expressions
+c5_parse_rules_block <- function(rules_lines, data) {
+  # Find rule boundaries (lines with conds=)
+  rule_starts <- grep('^conds="\\d+"', rules_lines)
+
+  if (length(rule_starts) == 0) {
+    return(list())
+  }
+
+  # Parse each rule
+  rules_list <- list()
+  for (i in seq_along(rule_starts)) {
+    start_line <- rule_starts[i] + 1 # Skip conds= line
+    end_line <- if (i < length(rule_starts)) {
+      rule_starts[i + 1] - 1
+    } else {
+      length(rules_lines)
+    }
+
+    # Get condition lines (type="1", "2", or "3")
+    rule_block <- rules_lines[start_line:end_line]
+    condition_lines <- rule_block[grepl('type="[123]"', rule_block)]
+
+    # Parse conditions into expression
+    rules_list[[i]] <- c5_parse_rule_conditions(condition_lines, data)
+  }
+
+  rules_list
+}
+
+# Parse condition lines into R expression
+c5_parse_rule_conditions <- function(condition_lines, data) {
+  if (length(condition_lines) == 0) {
+    return(rlang::expr(TRUE))
+  }
+
+  # Parse each condition
+  split_exprs <- list()
+  expr_idx <- 1
+
+  for (i in seq_along(condition_lines)) {
+    # Use existing c5_parse_attributes helper
+    attrs <- c5_parse_attributes(condition_lines[i])
+
+    cond_type <- attrs$type
+    if (is.null(cond_type)) {
+      next
+    }
+
+    var_name <- attrs$att
+    if (is.null(var_name)) {
+      next
+    }
+
+    # Handle different condition types
+    if (cond_type == "1") {
+      # Type 1: Single categorical value (att="county" val="asotin")
+      cat_value <- attrs$val
+      if (!is.null(cat_value)) {
+        # Create equality condition
+        split_info <- list(
+          column = var_name,
+          value = cat_value,
+          operator = "=="
+        )
+        split_exprs[[expr_idx]] <- rect_split_to_expr(split_info)
+        expr_idx <- expr_idx + 1
+      }
+    } else if (cond_type == "2") {
+      # Type 2: Numeric comparison (att="size" cut="15.6" result="<")
+      threshold <- as.numeric(attrs$cut)
+      result <- attrs$result
+
+      if (!is.null(result) && !is.na(threshold)) {
+        # Map C5.0 result to operator
+        operator <- switch(
+          result,
+          "<" = "<",
+          ">" = ">",
+          "<=" = "<=",
+          ">=" = ">=",
+          cli::cli_abort("Unknown result type: {result}")
+        )
+
+        # Create split and convert to expression
+        split_info <- list(
+          column = var_name,
+          value = threshold,
+          operator = operator
+        )
+        split_exprs[[expr_idx]] <- rect_split_to_expr(split_info)
+        expr_idx <- expr_idx + 1
+      }
+    } else if (cond_type == "3") {
+      # Type 3: Multiple categorical values (att="county" elts="asotin","garfield")
+      cat_values <- attrs$elts
+      if (!is.null(cat_values) && length(cat_values) > 0) {
+        # Combine all elts values into a single vector
+        all_values <- character()
+        for (elt in cat_values) {
+          # Split on comma if multiple values in one element
+          vals <- strsplit(elt, ",")[[1]]
+          # Remove quotes and trim
+          vals <- gsub('"', '', vals)
+          vals <- trimws(vals)
+          all_values <- c(all_values, vals)
+        }
+
+        if (length(all_values) > 0) {
+          # Create %in% condition
+          split_info <- list(
+            column = var_name,
+            value = all_values,
+            operator = "%in%"
+          )
+          split_exprs[[expr_idx]] <- rect_split_to_expr(split_info)
+          expr_idx <- expr_idx + 1
+        }
+      }
+    }
+  }
+
+  # Return TRUE if no valid conditions were found
+  if (length(split_exprs) == 0) {
+    return(rlang::expr(TRUE))
+  }
+
+  # Combine with AND operator
+  combine_rule_elements(split_exprs, operator = "&")
+}
+
 # Internal helper: extract rules for one tree from C5.0
 c5_extract_rules_one <- function(tree_num, x, data) {
   # Convert to party
@@ -826,10 +1026,11 @@ c5_extract_rules_one <- function(tree_num, x, data) {
 
 #' @rdname extract_rules
 #' @param tree Integer vector specifying which trees (boosting trials) to
-#'   extract rules from. Default is `1L` for the first tree. Values must be
+#'   extract rules from. Default is `1L` for the first tree or trial. Values must be
 #'   between 1 and the number of actual trials (`x$trials["Actual"]`).
+#'   For rule-based models, this parameter refers to the trial number.
 #' @param data Data.frame containing the training data. Required for C5.0
-#'   models to properly parse tree structure with correct factor levels.
+#'   models to properly parse tree or rule structure with correct factor levels.
 #' @export
 extract_rules.C5.0 <- function(x, tree = 1L, data = NULL, ...) {
   rlang::check_installed("C50")
@@ -841,6 +1042,9 @@ extract_rules.C5.0 <- function(x, tree = 1L, data = NULL, ...) {
       "i" = "Provide the training data to extract rules correctly."
     )
   }
+
+  # Detect model type
+  is_rule_model <- !is.null(x$rules) && nchar(x$rules) > 0
 
   # Validate tree argument
   if (!is.numeric(tree) || !all(tree == as.integer(tree))) {
@@ -863,7 +1067,12 @@ extract_rules.C5.0 <- function(x, tree = 1L, data = NULL, ...) {
     )
   }
 
-  # Extract for each tree
+  if (is_rule_model) {
+    # Parse rule-based models directly
+    return(c5_extract_rules_from_rules_text(x, tree, data))
+  }
+
+  # Tree-based model: existing logic
   results <- lapply(tree, c5_extract_rules_one, x = x, data = data)
 
   # Combine and sort by tree then id

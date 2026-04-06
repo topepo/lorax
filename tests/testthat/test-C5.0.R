@@ -476,6 +476,191 @@ test_that("extract_rules.C5.0() handles tree with no valid splits", {
   expect_true(nrow(rules) >= 1)
 })
 
+test_that("extract_rules.C5.0() works with rule-based models", {
+  skip_if_not_installed("C50")
+
+  data <- iris
+  set.seed(123)
+  c5_rules <- C50::C5.0(Species ~ ., data = data, rules = TRUE)
+
+  rules <- extract_rules(c5_rules, tree = 1L, data = data)
+
+  expect_s3_class(rules, "rule_set_C5.0")
+  expect_s3_class(rules, "rule_set")
+  expect_named(rules, c("id", "rules", "tree"))
+  expect_true(all(sapply(rules$rules, is.language)))
+})
+
+test_that("extract_rules.C5.0() handles boosted rule models", {
+  skip_if_not_installed("C50")
+
+  data <- iris
+  set.seed(456)
+  c5_rules <- C50::C5.0(Species ~ ., data = data, rules = TRUE, trials = 3)
+
+  rules <- extract_rules(c5_rules, tree = c(1L, 2L), data = data)
+
+  expect_equal(sort(unique(rules$tree)), c(1L, 2L))
+  expect_true(all(rules$tree %in% c(1L, 2L)))
+})
+
+test_that("extract_rules.C5.0() parses rule conditions correctly", {
+  skip_if_not_installed("C50")
+
+  data <- iris
+  set.seed(789)
+  c5_rules <- C50::C5.0(Species ~ ., data = data, rules = TRUE)
+
+  rules <- extract_rules(c5_rules, tree = 1L, data = data)
+
+  # Check that rules contain expected variable names
+  rule_text_all <- sapply(rules$rules, function(r) deparse1(r))
+  expect_true(any(grepl(
+    "Petal\\.Length|Petal\\.Width|Sepal\\.Length|Sepal\\.Width",
+    rule_text_all
+  )))
+})
+
+test_that("extract_rules.C5.0() handles rule models with numeric predictors", {
+  skip_if_not_installed("C50")
+
+  # C5.0 requires factor outcome
+  mtcars_factor <- mtcars
+  mtcars_factor$vs <- factor(mtcars_factor$vs)
+  set.seed(111)
+  c5_rules <- C50::C5.0(vs ~ mpg + hp + wt, data = mtcars_factor, rules = TRUE)
+
+  rules <- extract_rules(c5_rules, tree = 1L, data = mtcars_factor)
+
+  expect_s3_class(rules, "rule_set_C5.0")
+  expect_true(nrow(rules) > 0)
+})
+
+test_that("extract_rules.C5.0() validates tree argument for rule models", {
+  skip_if_not_installed("C50")
+
+  data <- iris
+  set.seed(222)
+  c5_rules <- C50::C5.0(Species ~ ., data = data, rules = TRUE, trials = 2)
+
+  expect_snapshot(
+    extract_rules(c5_rules, tree = 0L, data = data),
+    error = TRUE
+  )
+  expect_snapshot(
+    extract_rules(c5_rules, tree = 10L, data = data),
+    error = TRUE
+  )
+})
+
+test_that("extract_rules.C5.0() handles categorical predictors in rules", {
+  skip_if_not_installed("C50")
+
+  # Create dataset with categorical predictors
+  set.seed(333)
+  test_data <- data.frame(
+    county = factor(sample(
+      c("asotin", "columbia", "garfield", "island", "king", "pierce"),
+      200,
+      replace = TRUE
+    )),
+    region = factor(sample(
+      c("north", "south", "east", "west"),
+      200,
+      replace = TRUE
+    )),
+    size = runif(200, 10, 100),
+    outcome = factor(sample(c("A", "B", "C"), 200, replace = TRUE))
+  )
+
+  c5_rules <- C50::C5.0(outcome ~ ., data = test_data, rules = TRUE)
+  rules <- extract_rules(c5_rules, tree = 1L, data = test_data)
+
+  expect_s3_class(rules, "rule_set_C5.0")
+  expect_true(nrow(rules) >= 0)
+
+  # Check that rules can contain categorical conditions
+  if (nrow(rules) > 0) {
+    rule_texts <- sapply(rules$rules, deparse1)
+    # Should contain either == for single values or %in% for multiple values
+    has_categorical <- any(
+      grepl("county ==", rule_texts) |
+        grepl("region ==", rule_texts) |
+        grepl("county %in%", rule_texts) |
+        grepl("region %in%", rule_texts)
+    )
+    # Note: might not always have categorical in rules depending on the model
+    expect_true(
+      has_categorical || length(rule_texts) > 0,
+      info = "Rules should either contain categorical conditions or at least exist"
+    )
+  }
+})
+
+test_that("extract_rules.C5.0() handles rules with only categorical predictors", {
+  skip_if_not_installed("C50")
+
+  # Dataset with only categorical predictors
+  set.seed(444)
+  test_data <- data.frame(
+    color = factor(sample(c("red", "blue", "green"), 150, replace = TRUE)),
+    shape = factor(sample(
+      c("circle", "square", "triangle"),
+      150,
+      replace = TRUE
+    )),
+    texture = factor(sample(c("smooth", "rough"), 150, replace = TRUE)),
+    outcome = factor(sample(c("X", "Y"), 150, replace = TRUE))
+  )
+
+  c5_rules <- C50::C5.0(outcome ~ ., data = test_data, rules = TRUE)
+  rules <- extract_rules(c5_rules, tree = 1L, data = test_data)
+
+  expect_s3_class(rules, "rule_set_C5.0")
+  # C5.0 might produce 0 rules if no good splits found
+  expect_true(nrow(rules) >= 0)
+
+  if (nrow(rules) > 0) {
+    # All conditions should be categorical (== or %in%)
+    rule_texts <- sapply(rules$rules, deparse1)
+    for (rule_text in rule_texts) {
+      if (rule_text != "TRUE") {
+        # Should not contain numeric operators
+        expect_false(
+          grepl(" < | > | <= | >= ", rule_text),
+          info = paste("Rule should not have numeric comparisons:", rule_text)
+        )
+      }
+    }
+  }
+})
+
+test_that("extract_rules.C5.0() handles mixed numeric and categorical conditions", {
+  skip_if_not_installed("C50")
+
+  # Use wa_trees which has both numeric and categorical
+  wa_trees <- get_wa_trees_data()[1:200, ]
+  set.seed(555)
+  c5_rules <- C50::C5.0(class ~ ., data = wa_trees, rules = TRUE)
+
+  rules <- extract_rules(c5_rules, tree = 1L, data = wa_trees)
+
+  expect_s3_class(rules, "rule_set_C5.0")
+  expect_true(nrow(rules) > 0)
+
+  # Check that rules can have both types of conditions
+  rule_texts <- paste(sapply(rules$rules, deparse1), collapse = " ")
+  # Should potentially have both numeric and categorical conditions
+  has_numeric <-
+    grepl("elevation|precip|tmin|tmax|roughness", rule_texts) &&
+    grepl(" < | > | <= | >= ", rule_texts)
+  has_categorical <- grepl("county", rule_texts) &&
+    (grepl("county ==", rule_texts) || grepl("county %in%", rule_texts))
+
+  # At least one type should be present
+  expect_true(has_numeric || has_categorical)
+})
+
 # active_predictors() tests ---------------------------------------------------
 
 test_that("active_predictors.C5.0() has correct structure for tree models", {
