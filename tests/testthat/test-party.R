@@ -382,9 +382,9 @@ test_that("var_imp.party() with complete=FALSE returns only used predictors", {
 test_that("var_imp.party() works with numeric predictors only", {
   skip_if_not_installed("partykit")
 
-  data <- get_regression_data(n = 80)
+  data <- get_regression_data()
   set.seed(963)
-  tree <- partykit::ctree(y ~ x1 + x2, data = data)
+  tree <- partykit::ctree(y ~ predictor_01 + predictor_02, data = data)
   result <- var_imp(tree, complete = TRUE)
 
   expect_s3_class(result, "tbl_df")
@@ -461,9 +461,9 @@ test_that("var_imp.party() works with classification tree", {
 test_that("var_imp.party() works with regression tree", {
   skip_if_not_installed("partykit")
 
-  data <- get_regression_data(n = 80)
+  data <- get_regression_data()
   set.seed(618)
-  tree <- partykit::ctree(y ~ x1 + x2, data = data)
+  tree <- partykit::ctree(y ~ predictor_01 + predictor_02, data = data)
   result <- var_imp(tree)
 
   expect_s3_class(result, "tbl_df")
@@ -518,7 +518,7 @@ test_that("var_imp.party() handles constrained splits", {
 
   set.seed(263)
   tree <- partykit::ctree(
-    y ~ x1 + x2,
+    y ~ predictor_01 + predictor_02,
     data = small_data,
     control = partykit::ctree_control(minsplit = 20)
   )

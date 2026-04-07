@@ -20,49 +20,47 @@ get_mtcars_data <- function() {
   mtcars
 }
 
-# Get iris data (classification with numeric predictors)
-get_iris_data <- function() {
-  iris
-}
-
 # Get wa_trees data (mixed predictors with factors)
 get_wa_trees_data <- function() {
   load(system.file(package = "lorax", "wa_trees.RData"), envir = environment())
   get("wa_trees", envir = environment())
 }
 
-# Create binary classification data
-get_binary_data <- function(n = 100) {
+# Create binary classification data with predictive ability
+get_binary_data <- function() {
+  skip_if_not_installed("modeldata")
   set.seed(487)
-  data.frame(
-    y = factor(sample(c("A", "B"), n, replace = TRUE)),
-    x1 = rnorm(n),
-    x2 = rnorm(n),
-    x3 = rnorm(n)
-  )
+  data <- modeldata::sim_classification(100, num_linear = 3)
+  # Rename class to y for consistency
+  names(data)[names(data) == "class"] <- "y"
+  data
 }
 
-# Create regression data
-get_regression_data <- function(n = 100) {
+# Create regression data with predictive ability
+get_regression_data <- function() {
+  skip_if_not_installed("modeldata")
   set.seed(487)
-  data.frame(
-    y = rnorm(n),
-    x1 = rnorm(n),
-    x2 = rnorm(n),
-    x3 = rnorm(n)
-  )
+  data <- modeldata::sim_regression(100)
+  # Rename outcome to y for consistency
+  names(data)[names(data) == "outcome"] <- "y"
+  data
 }
 
-# Create data with factors
-get_factor_data <- function(n = 100) {
-  set.seed(487)
-  data.frame(
-    y = factor(sample(c("A", "B", "C"), n, replace = TRUE)),
-    x1 = rnorm(n),
-    x2 = factor(sample(c("Low", "Medium", "High"), n, replace = TRUE)),
-    x3 = rnorm(n),
-    x4 = factor(sample(c("Red", "Blue"), n, replace = TRUE))
-  )
+# Get penguins data with factor predictors
+get_factor_data <- function() {
+  skip_if_not_installed("palmerpenguins")
+  data("penguins", package = "palmerpenguins", envir = environment())
+  penguins <- get("penguins", envir = environment())
+  # Use species as outcome and island, sex as predictors
+  data <- na.omit(penguins[, c(
+    "species",
+    "island",
+    "sex",
+    "bill_length_mm",
+    "bill_depth_mm"
+  )])
+  names(data)[names(data) == "species"] <- "y"
+  data
 }
 
 # Get penguins forest for ObliqueForest tests
@@ -84,26 +82,36 @@ get_penguins_tree <- function() {
   partykit::ctree(species ~ ., data = penguins)
 }
 
-# Get iris rpart tree for rpart tests
-get_iris_rpart_tree <- function() {
+# Get penguins rpart tree for rpart tests
+get_penguins_rpart_tree <- function() {
   skip_if_not_installed("rpart")
-  rpart::rpart(Species ~ ., data = iris)
+  skip_if_not_installed("palmerpenguins")
+  data("penguins", package = "palmerpenguins", envir = environment())
+  penguins <- get("penguins", envir = environment())
+  penguins <- na.omit(penguins)
+  rpart::rpart(species ~ ., data = penguins)
 }
 
-# Single numeric predictor data
-get_single_numeric_data <- function(n = 100) {
-  set.seed(487)
-  data.frame(
-    y = rnorm(n),
-    x = rnorm(n)
-  )
+# Get penguins data with single numeric predictor
+get_single_numeric_data <- function() {
+  skip_if_not_installed("palmerpenguins")
+  data("penguins", package = "palmerpenguins", envir = environment())
+  penguins <- get("penguins", envir = environment())
+  # Use species as outcome and flipper_length_mm as single numeric predictor
+  data <- na.omit(penguins[, c("species", "flipper_length_mm")])
+  names(data)[names(data) == "species"] <- "y"
+  names(data)[names(data) == "flipper_length_mm"] <- "x"
+  data
 }
 
-# Single factor predictor data
-get_single_factor_data <- function(n = 100) {
-  set.seed(487)
-  data.frame(
-    y = factor(sample(c("A", "B", "C"), n, replace = TRUE)),
-    x = factor(sample(c("Low", "Medium", "High"), n, replace = TRUE))
-  )
+# Get penguins data with single factor predictor
+get_single_factor_data <- function() {
+  skip_if_not_installed("palmerpenguins")
+  data("penguins", package = "palmerpenguins", envir = environment())
+  penguins <- get("penguins", envir = environment())
+  # Use species as outcome and island as single factor predictor
+  data <- na.omit(penguins[, c("species", "island")])
+  names(data)[names(data) == "species"] <- "y"
+  names(data)[names(data) == "island"] <- "x"
+  data
 }

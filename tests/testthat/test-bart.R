@@ -30,7 +30,7 @@ test_that("as.party.bart returns valid party object with numeric data", {
 test_that("as.party.bart works with regression data", {
   skip_if_not_installed("dbarts")
 
-  data <- get_regression_data(n = 50)
+  data <- get_regression_data()
 
   fit <- suppressWarnings(dbarts::bart(
     x.train = data[, c("x1", "x2", "x3")],
@@ -51,10 +51,10 @@ test_that("as.party.bart works with regression data", {
 test_that("as.party.bart works with factor predictors", {
   skip_if_not_installed("dbarts")
 
-  data <- get_factor_data(n = 50)
+  data <- get_factor_data()
 
   fit <- suppressWarnings(dbarts::bart(
-    x.train = data[, c("x1", "x2", "x3", "x4")],
+    x.train = data[, c("bill_length_mm", "island", "bill_depth_mm", "sex")],
     y.train = as.numeric(data$y),
     keeptrees = TRUE,
     verbose = FALSE,
@@ -240,7 +240,7 @@ test_that("as.party.bart handles models with missing values in training data", {
   )
 
   fit <- suppressWarnings(dbarts::bart(
-    x.train = data[, c("x1", "x2", "x3", "x4")],
+    x.train = data[, c("bill_length_mm", "island", "bill_depth_mm", "sex")],
     y.train = data$y,
     keeptrees = TRUE,
     verbose = FALSE,
@@ -592,7 +592,7 @@ test_that("active_predictors.bart() returns sorted unique variables", {
 test_that("active_predictors.bart() handles numeric-only predictors", {
   skip_if_not_installed("dbarts")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
 
   fit <- suppressWarnings(dbarts::bart(
     x.train = data[, c("x1", "x2", "x3")],

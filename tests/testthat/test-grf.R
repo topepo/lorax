@@ -24,7 +24,7 @@ test_that("as.party.regression_forest returns valid party object", {
 test_that("as.party.regression_forest works with simple data", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
 
   rf <- grf::regression_forest(
     X = as.matrix(data[, c("x1", "x2", "x3")]),
@@ -177,7 +177,7 @@ test_that("as.party.grf does not show asterisks in node summaries", {
 test_that("var_imp.grf() returns correct structure", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
   forest <- grf::regression_forest(
     X = as.matrix(data[, c("x1", "x2", "x3")]),
     Y = data$y,
@@ -194,7 +194,7 @@ test_that("var_imp.grf() returns correct structure", {
 test_that("var_imp.grf() extracts variable importance scores", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
   forest <- grf::regression_forest(
     X = as.matrix(data[, c("x1", "x2", "x3")]),
     Y = data$y,
@@ -217,7 +217,7 @@ test_that("var_imp.grf() extracts variable importance scores", {
 test_that("var_imp.grf() with complete=TRUE includes all predictors", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
   # Create a scenario where one predictor might have very low importance
   data$x3 <- rnorm(200, mean = 1000, sd = 0.001) # Near-constant predictor
 
@@ -237,7 +237,7 @@ test_that("var_imp.grf() with complete=FALSE matches complete=TRUE for grf", {
 
   # For grf, variable_importance always returns all predictors
   # so complete should not matter much
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
   forest <- grf::regression_forest(
     X = as.matrix(data[, c("x1", "x2", "x3")]),
     Y = data$y,
@@ -274,7 +274,7 @@ test_that("var_imp.grf() works with numeric predictors", {
 test_that("var_imp.grf() passes additional arguments to variable_importance", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
   forest <- grf::regression_forest(
     X = as.matrix(data[, c("x1", "x2", "x3")]),
     Y = data$y,
@@ -292,7 +292,7 @@ test_that("var_imp.grf() passes additional arguments to variable_importance", {
 test_that("var_imp.grf() importance scores match grf::variable_importance", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
   forest <- grf::regression_forest(
     X = as.matrix(data[, c("x1", "x2", "x3")]),
     Y = data$y,
@@ -314,7 +314,7 @@ test_that("var_imp.grf() importance scores match grf::variable_importance", {
 test_that("var_imp.grf() works with regression_forest", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
   forest <- grf::regression_forest(
     X = as.matrix(data[, c("x1", "x2", "x3")]),
     Y = data$y,
@@ -329,7 +329,7 @@ test_that("var_imp.grf() works with regression_forest", {
 test_that("var_imp.grf() works with causal_forest", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
   data$w <- rbinom(200, 1, 0.5)
 
   forest <- grf::causal_forest(
@@ -348,7 +348,7 @@ test_that("var_imp.grf() works with causal_forest", {
 test_that("var_imp.grf() handles forest with named predictors", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
   X <- as.matrix(data[, c("x1", "x2", "x3")])
   colnames(X) <- c("predictor_a", "predictor_b", "predictor_c")
 
@@ -389,7 +389,7 @@ test_that("var_imp.grf() handles forest with many predictors", {
 test_that("var_imp.grf() with max.depth argument", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
   forest <- grf::regression_forest(
     X = as.matrix(data[, c("x1", "x2", "x3")]),
     Y = data$y,
@@ -429,7 +429,7 @@ test_that("var_imp.grf() works with single numeric predictor", {
 test_that("extract_rules.grf() returns correct structure", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(847)
   rf <- grf::regression_forest(
     X = as.matrix(data[, c("x1", "x2", "x3")]),
@@ -450,7 +450,7 @@ test_that("extract_rules.grf() returns correct structure", {
 test_that("extract_rules.grf() extracts from single tree", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(532)
   rf <- grf::regression_forest(
     X = as.matrix(data[, c("x1", "x2", "x3")]),
@@ -471,7 +471,7 @@ test_that("extract_rules.grf() extracts from single tree", {
 test_that("extract_rules.grf() extracts from multiple trees", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(219)
   rf <- grf::regression_forest(
     X = as.matrix(data[, c("x1", "x2", "x3")]),
@@ -493,7 +493,7 @@ test_that("extract_rules.grf() extracts from multiple trees", {
 test_that("extract_rules.grf() validates tree argument", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(674)
   rf <- grf::regression_forest(
     X = as.matrix(data[, c("x1", "x2", "x3")]),
@@ -510,7 +510,7 @@ test_that("extract_rules.grf() validates tree argument", {
 test_that("extract_rules.grf() works with numeric predictors", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(158)
   rf <- grf::regression_forest(
     X = as.matrix(data[, c("x1", "x2")]),
@@ -526,7 +526,7 @@ test_that("extract_rules.grf() works with numeric predictors", {
 test_that("extract_rules.grf() rules are sorted by tree then id", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(803)
   rf <- grf::regression_forest(
     X = as.matrix(data[, c("x1", "x2", "x3")]),
@@ -548,7 +548,7 @@ test_that("extract_rules.grf() rules are sorted by tree then id", {
 test_that("extract_rules.grf() handles duplicate tree numbers", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(456)
   rf <- grf::regression_forest(
     X = as.matrix(data[, c("x1", "x2", "x3")]),
@@ -565,7 +565,7 @@ test_that("extract_rules.grf() handles duplicate tree numbers", {
 test_that("extract_rules.grf() works with all trees", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(927)
   rf <- grf::regression_forest(
     X = as.matrix(data[, c("x1", "x2", "x3")]),
@@ -605,7 +605,7 @@ test_that("extract_rules.grf() handles tree with no valid splits", {
 test_that("extract_rules.grf() works with causal_forest", {
   skip_if_not_installed("grf")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(391)
   cf <- grf::causal_forest(
     X = as.matrix(data[, c("x1", "x2", "x3")]),

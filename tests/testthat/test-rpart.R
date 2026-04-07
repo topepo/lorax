@@ -1,7 +1,7 @@
 test_that("extract_rules.rpart() returns correct structure", {
   skip_if_not_installed("rpart")
 
-  tree <- get_iris_rpart_tree()
+  tree <- get_penguins_rpart_tree()
   rules <- extract_rules(tree)
 
   expect_s3_class(rules, "rule_set_rpart")
@@ -15,7 +15,7 @@ test_that("extract_rules.rpart() returns correct structure", {
 test_that("extract_rules.rpart() extracts all terminal nodes", {
   skip_if_not_installed("rpart")
 
-  tree <- get_iris_rpart_tree()
+  tree <- get_penguins_rpart_tree()
   rules <- extract_rules(tree)
   terminal_nodes <- as.integer(rownames(tree$frame[
     tree$frame$var == "<leaf>",
@@ -26,7 +26,7 @@ test_that("extract_rules.rpart() extracts all terminal nodes", {
 test_that("extract_rules.rpart() produces valid R expressions", {
   skip_if_not_installed("rpart")
 
-  tree <- get_iris_rpart_tree()
+  tree <- get_penguins_rpart_tree()
   rules <- extract_rules(tree)
 
   for (i in seq_len(nrow(rules))) {
@@ -36,26 +36,36 @@ test_that("extract_rules.rpart() produces valid R expressions", {
 
 test_that("extract_rules.rpart() rules evaluate correctly", {
   skip_if_not_installed("rpart")
+  skip_if_not_installed("palmerpenguins")
 
-  tree <- get_iris_rpart_tree()
+  tree <- get_penguins_rpart_tree()
   rules <- extract_rules(tree)
+
+  data("penguins", package = "palmerpenguins", envir = environment())
+  penguins <- get("penguins", envir = environment())
+  penguins <- na.omit(penguins)
 
   for (i in seq_len(nrow(rules))) {
     rule_expr <- rules$rules[[i]]
-    result <- eval(rule_expr, iris)
+    result <- eval(rule_expr, penguins)
 
     expect_type(result, "logical")
-    expect_equal(length(result), nrow(iris))
+    expect_equal(length(result), nrow(penguins))
     expect_true(sum(result) > 0)
   }
 })
 
 test_that("extract_rules.rpart() works with numeric-only splits", {
   skip_if_not_installed("rpart")
+  skip_if_not_installed("palmerpenguins")
+
+  data("penguins", package = "palmerpenguins", envir = environment())
+  penguins <- get("penguins", envir = environment())
+  penguins <- na.omit(penguins)
 
   num_tree <- rpart::rpart(
-    Petal.Length ~ Sepal.Length + Sepal.Width,
-    data = iris
+    bill_length_mm ~ flipper_length_mm + body_mass_g,
+    data = penguins
   )
   rules <- extract_rules(num_tree)
 
@@ -69,8 +79,13 @@ test_that("extract_rules.rpart() works with numeric-only splits", {
 
 test_that("extract_rules.rpart() works with categorical splits", {
   skip_if_not_installed("rpart")
+  skip_if_not_installed("palmerpenguins")
 
-  cat_tree <- rpart::rpart(Species ~ ., data = iris)
+  data("penguins", package = "palmerpenguins", envir = environment())
+  penguins <- get("penguins", envir = environment())
+  penguins <- na.omit(penguins)
+
+  cat_tree <- rpart::rpart(species ~ ., data = penguins)
   rules <- extract_rules(cat_tree)
 
   expect_s3_class(rules, "rule_set_rpart")
@@ -111,9 +126,18 @@ test_that("extract_rules.rpart() works with single factor predictor", {
 
 test_that("extract_rules.rpart() works with single-node tree", {
   skip_if_not_installed("rpart")
+  skip_if_not_installed("palmerpenguins")
+
+  data("penguins", package = "palmerpenguins", envir = environment())
+  penguins <- get("penguins", envir = environment())
+  penguins <- na.omit(penguins)
 
   # Create a tree with no splits
-  single_tree <- rpart::rpart(Sepal.Length ~ Sepal.Width, data = iris, cp = 1)
+  single_tree <- rpart::rpart(
+    bill_length_mm ~ bill_depth_mm,
+    data = penguins,
+    cp = 1
+  )
   rules <- extract_rules(single_tree)
 
   expect_s3_class(rules, "rule_set_rpart")
@@ -125,7 +149,7 @@ test_that("extract_rules.rpart() works with single-node tree", {
 test_that("extract_rules.rpart() integrates with rule_text()", {
   skip_if_not_installed("rpart")
 
-  tree <- get_iris_rpart_tree()
+  tree <- get_penguins_rpart_tree()
   rules <- extract_rules(tree)
 
   for (i in seq_len(nrow(rules))) {

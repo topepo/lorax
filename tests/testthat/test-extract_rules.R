@@ -1,7 +1,7 @@
 test_that("extract_rules.xgb.Booster returns valid rule set", {
   skip_if_not_installed("xgboost")
 
-  data <- get_binary_data(n = 100)
+  data <- get_binary_data()
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
     label = as.numeric(data$y) - 1
@@ -28,7 +28,7 @@ test_that("extract_rules.xgb.Booster returns valid rule set", {
 test_that("extract_rules.xgb.Booster validates tree parameter", {
   skip_if_not_installed("xgboost")
 
-  data <- get_binary_data(n = 50)
+  data <- get_binary_data()
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
     label = as.numeric(data$y) - 1
@@ -73,7 +73,7 @@ test_that("extract_rules.xgb.Booster handles single-node trees", {
 test_that("extract_rules.xgb.Booster extracts different trees", {
   skip_if_not_installed("xgboost")
 
-  data <- get_binary_data(n = 100)
+  data <- get_binary_data()
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
     label = as.numeric(data$y) - 1
@@ -97,7 +97,7 @@ test_that("extract_rules.xgb.Booster extracts different trees", {
 test_that("extract_rules.lgb.Booster returns valid rule set", {
   skip_if_not_installed("lightgbm")
 
-  data <- get_binary_data(n = 100)
+  data <- get_binary_data()
   dtrain <- lightgbm::lgb.Dataset(
     as.matrix(data[, c("x1", "x2", "x3")]),
     label = as.numeric(data$y) - 1
@@ -124,7 +124,7 @@ test_that("extract_rules.lgb.Booster returns valid rule set", {
 test_that("extract_rules.lgb.Booster validates tree parameter", {
   skip_if_not_installed("lightgbm")
 
-  data <- get_binary_data(n = 50)
+  data <- get_binary_data()
   dtrain <- lightgbm::lgb.Dataset(
     as.matrix(data[, c("x1", "x2", "x3")]),
     label = as.numeric(data$y) - 1
@@ -177,7 +177,7 @@ test_that("extract_rules.lgb.Booster handles shallow trees", {
 test_that("extract_rules.lgb.Booster extracts different trees", {
   skip_if_not_installed("lightgbm")
 
-  data <- get_binary_data(n = 100)
+  data <- get_binary_data()
   dtrain <- lightgbm::lgb.Dataset(
     as.matrix(data[, c("x1", "x2", "x3")]),
     label = as.numeric(data$y) - 1
@@ -240,7 +240,7 @@ test_that("extract_rules works with multiclass models", {
 test_that("rule_text formats rules as text", {
   skip_if_not_installed("xgboost")
 
-  data <- get_binary_data(n = 50)
+  data <- get_binary_data()
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
     label = as.numeric(data$y) - 1
@@ -265,7 +265,7 @@ test_that("rule_text formats rules as text", {
 test_that("extract_rules handles regression trees", {
   skip_if_not_installed("xgboost")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
     label = data$y
@@ -287,7 +287,7 @@ test_that("extract_rules handles regression trees", {
 test_that("extract_rules IDs are 1-based", {
   skip_if_not_installed("xgboost")
 
-  data <- get_binary_data(n = 100)
+  data <- get_binary_data()
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
     label = as.numeric(data$y) - 1
@@ -310,7 +310,7 @@ test_that("extract_rules IDs are 1-based", {
 test_that("extract_rules returns sorted by ID", {
   skip_if_not_installed("lightgbm")
 
-  data <- get_binary_data(n = 100)
+  data <- get_binary_data()
   dtrain <- lightgbm::lgb.Dataset(
     as.matrix(data[, c("x1", "x2", "x3")]),
     label = as.numeric(data$y) - 1

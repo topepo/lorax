@@ -16,7 +16,7 @@ test_that("as.party.ranger returns valid party object", {
 test_that("as.party.ranger works with binary classification", {
   skip_if_not_installed("ranger")
 
-  data <- get_binary_data(n = 100)
+  data <- get_binary_data()
 
   rf <- ranger::ranger(y ~ ., data = data, num.trees = 5)
   p <- as.party(rf, tree = 1, data = data)
@@ -28,7 +28,7 @@ test_that("as.party.ranger works with binary classification", {
 test_that("as.party.ranger works with regression", {
   skip_if_not_installed("ranger")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
 
   rf <- ranger::ranger(y ~ ., data = data, num.trees = 5)
   p <- as.party(rf, tree = 1, data = data)
@@ -40,7 +40,7 @@ test_that("as.party.ranger works with regression", {
 test_that("as.party.ranger works with factor predictors", {
   skip_if_not_installed("ranger")
 
-  data <- get_factor_data(n = 100)
+  data <- get_factor_data()
 
   rf <- ranger::ranger(y ~ ., data = data, num.trees = 5)
   p <- as.party(rf, tree = 1, data = data)
@@ -77,8 +77,13 @@ test_that("as.party.ranger validates tree parameter", {
 
 test_that("as.party.ranger requires data parameter", {
   skip_if_not_installed("ranger")
+  skip_if_not_installed("palmerpenguins")
 
-  rf <- ranger::ranger(Species ~ ., data = iris, num.trees = 5)
+  data("penguins", package = "palmerpenguins", envir = environment())
+  penguins <- get("penguins", envir = environment())
+  penguins <- na.omit(penguins)
+
+  rf <- ranger::ranger(species ~ ., data = penguins, num.trees = 5)
 
   expect_snapshot(as.party(rf, tree = 1), error = TRUE)
 })
@@ -144,9 +149,13 @@ test_that("as.party.ranger does not show asterisks in node summaries", {
 test_that("extract_rules.ranger() returns correct structure", {
   skip_if_not_installed("ranger")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(527)
-  rf <- ranger::ranger(y ~ x1 + x2 + x3, data = data, num.trees = 3)
+  rf <- ranger::ranger(
+    y ~ predictor_01 + predictor_02 + predictor_03,
+    data = data,
+    num.trees = 3
+  )
   rules <- extract_rules(rf, tree = 1L, data = data)
 
   expect_s3_class(rules, "rule_set_party")
@@ -161,9 +170,13 @@ test_that("extract_rules.ranger() returns correct structure", {
 test_that("extract_rules.ranger() extracts from single tree", {
   skip_if_not_installed("ranger")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(638)
-  rf <- ranger::ranger(y ~ x1 + x2 + x3, data = data, num.trees = 3)
+  rf <- ranger::ranger(
+    y ~ predictor_01 + predictor_02 + predictor_03,
+    data = data,
+    num.trees = 3
+  )
   rules <- extract_rules(rf, tree = 1L, data = data)
 
   expect_equal(unique(rules$tree), 1L)
@@ -178,9 +191,13 @@ test_that("extract_rules.ranger() extracts from single tree", {
 test_that("extract_rules.ranger() extracts from multiple trees", {
   skip_if_not_installed("ranger")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(749)
-  rf <- ranger::ranger(y ~ x1 + x2 + x3, data = data, num.trees = 3)
+  rf <- ranger::ranger(
+    y ~ predictor_01 + predictor_02 + predictor_03,
+    data = data,
+    num.trees = 3
+  )
   rules <- extract_rules(rf, tree = c(1L, 2L, 3L), data = data)
 
   expect_equal(sort(unique(rules$tree)), c(1L, 2L, 3L))
@@ -196,9 +213,13 @@ test_that("extract_rules.ranger() extracts from multiple trees", {
 test_that("extract_rules.ranger() validates tree argument", {
   skip_if_not_installed("ranger")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(851)
-  rf <- ranger::ranger(y ~ x1 + x2 + x3, data = data, num.trees = 3)
+  rf <- ranger::ranger(
+    y ~ predictor_01 + predictor_02 + predictor_03,
+    data = data,
+    num.trees = 3
+  )
 
   expect_snapshot(extract_rules(rf, tree = "1", data = data), error = TRUE)
   expect_snapshot(extract_rules(rf, tree = 1.5, data = data), error = TRUE)
@@ -209,9 +230,13 @@ test_that("extract_rules.ranger() validates tree argument", {
 test_that("extract_rules.ranger() requires data parameter", {
   skip_if_not_installed("ranger")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(962)
-  rf <- ranger::ranger(y ~ x1 + x2 + x3, data = data, num.trees = 3)
+  rf <- ranger::ranger(
+    y ~ predictor_01 + predictor_02 + predictor_03,
+    data = data,
+    num.trees = 3
+  )
 
   expect_snapshot(extract_rules(rf, tree = 1L), error = TRUE)
   expect_snapshot(extract_rules(rf, tree = 1L, data = NULL), error = TRUE)
@@ -220,10 +245,10 @@ test_that("extract_rules.ranger() requires data parameter", {
 test_that("extract_rules.ranger() requires write.forest = TRUE", {
   skip_if_not_installed("ranger")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(173)
   rf <- ranger::ranger(
-    y ~ x1 + x2 + x3,
+    y ~ predictor_01 + predictor_02 + predictor_03,
     data = data,
     num.trees = 3,
     write.forest = FALSE
@@ -235,9 +260,13 @@ test_that("extract_rules.ranger() requires write.forest = TRUE", {
 test_that("extract_rules.ranger() works with numeric predictors", {
   skip_if_not_installed("ranger")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(284)
-  rf <- ranger::ranger(y ~ x1 + x2, data = data, num.trees = 3)
+  rf <- ranger::ranger(
+    y ~ predictor_01 + predictor_02,
+    data = data,
+    num.trees = 3
+  )
   rules <- extract_rules(rf, tree = 1L, data = data)
 
   expect_s3_class(rules, "rule_set_party")
@@ -247,9 +276,9 @@ test_that("extract_rules.ranger() works with numeric predictors", {
 test_that("extract_rules.ranger() works with factor predictors", {
   skip_if_not_installed("ranger")
 
-  data <- get_factor_data(n = 100)
+  data <- get_factor_data()
   set.seed(395)
-  rf <- ranger::ranger(y ~ x2 + x4, data = data, num.trees = 3)
+  rf <- ranger::ranger(y ~ island + sex, data = data, num.trees = 3)
   rules <- extract_rules(rf, tree = 1L, data = data)
 
   expect_s3_class(rules, "rule_set_party")
@@ -309,9 +338,13 @@ test_that("extract_rules.ranger() works with single factor predictor", {
 test_that("extract_rules.ranger() rules are sorted by tree then id", {
   skip_if_not_installed("ranger")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(527)
-  rf <- ranger::ranger(y ~ x1 + x2 + x3, data = data, num.trees = 3)
+  rf <- ranger::ranger(
+    y ~ predictor_01 + predictor_02 + predictor_03,
+    data = data,
+    num.trees = 3
+  )
   rules <- extract_rules(rf, tree = c(2L, 1L, 3L), data = data)
 
   # Check sorting
@@ -327,9 +360,13 @@ test_that("extract_rules.ranger() rules are sorted by tree then id", {
 test_that("extract_rules.ranger() handles duplicate tree numbers", {
   skip_if_not_installed("ranger")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(638)
-  rf <- ranger::ranger(y ~ x1 + x2 + x3, data = data, num.trees = 3)
+  rf <- ranger::ranger(
+    y ~ predictor_01 + predictor_02 + predictor_03,
+    data = data,
+    num.trees = 3
+  )
   rules <- extract_rules(rf, tree = c(1L, 1L, 2L), data = data)
 
   # Should have results for tree 1 twice
@@ -340,9 +377,13 @@ test_that("extract_rules.ranger() handles duplicate tree numbers", {
 test_that("extract_rules.ranger() works with all trees", {
   skip_if_not_installed("ranger")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(749)
-  rf <- ranger::ranger(y ~ x1 + x2 + x3, data = data, num.trees = 3)
+  rf <- ranger::ranger(
+    y ~ predictor_01 + predictor_02 + predictor_03,
+    data = data,
+    num.trees = 3
+  )
   n_trees <- 3
   rules <- extract_rules(rf, tree = 1:n_trees, data = data)
 
@@ -499,7 +540,7 @@ test_that("active_predictors.ranger() returns sorted unique variables", {
 test_that("active_predictors.ranger() handles numeric-only predictors", {
   skip_if_not_installed("ranger")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   rf <- ranger::ranger(y ~ ., data = data, num.trees = 5)
 
   result <- active_predictors(rf, tree = 1L)
@@ -611,12 +652,12 @@ test_that("var_imp.ranger() with complete=TRUE fills missing predictors", {
 
   # Create a scenario where some predictors might have zero importance
   set.seed(614)
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
   # Add a near-constant predictor
   data$x4 <- rnorm(200, mean = 1000, sd = 0.001)
 
   rf <- ranger::ranger(
-    y ~ x1 + x2 + x3 + x4,
+    y ~ predictor_01 + predictor_02 + predictor_03 + predictor_04,
     data = data,
     importance = "impurity",
     num.trees = 10
@@ -636,10 +677,10 @@ test_that("var_imp.ranger() with complete=FALSE returns only used predictors", {
   skip_if_not_installed("ranger")
 
   set.seed(759)
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
 
   rf <- ranger::ranger(
-    y ~ x1 + x2 + x3,
+    y ~ predictor_01 + predictor_02 + predictor_03,
     data = data,
     importance = "impurity",
     num.trees = 10
@@ -856,7 +897,7 @@ test_that("var_imp.ranger() handles forest with constrained splits", {
   )
 
   rf <- ranger::ranger(
-    y ~ x1 + x2,
+    y ~ predictor_01 + predictor_02,
     data = small_data,
     importance = "impurity",
     num.trees = 5,
@@ -876,10 +917,10 @@ test_that("var_imp.ranger() handles forest with very deep trees", {
   skip_if_not_installed("ranger")
 
   set.seed(568)
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
 
   rf <- ranger::ranger(
-    y ~ x1 + x2 + x3,
+    y ~ predictor_01 + predictor_02 + predictor_03,
     data = data,
     importance = "impurity",
     num.trees = 10,

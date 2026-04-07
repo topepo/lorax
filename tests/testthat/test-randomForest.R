@@ -16,7 +16,7 @@ test_that("as.party.randomForest returns valid party object", {
 test_that("as.party.randomForest works with binary classification", {
   skip_if_not_installed("randomForest")
 
-  data <- get_binary_data(n = 100)
+  data <- get_binary_data()
 
   set.seed(267)
   rf <- randomForest::randomForest(y ~ ., data = data, ntree = 5)
@@ -29,7 +29,7 @@ test_that("as.party.randomForest works with binary classification", {
 test_that("as.party.randomForest works with regression", {
   skip_if_not_installed("randomForest")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
 
   set.seed(551)
   rf <- randomForest::randomForest(y ~ ., data = data, ntree = 5)
@@ -42,7 +42,7 @@ test_that("as.party.randomForest works with regression", {
 test_that("as.party.randomForest works with factor predictors", {
   skip_if_not_installed("randomForest")
 
-  data <- get_factor_data(n = 100)
+  data <- get_factor_data()
 
   set.seed(912)
   rf <- randomForest::randomForest(y ~ ., data = data, ntree = 5)
@@ -88,9 +88,14 @@ test_that("as.party.randomForest validates tree parameter", {
 test_that("as.party.randomForest works without data parameter", {
   skip_if_not_installed("randomForest")
 
-  # Use mtcars which is in global environment
+  # Use penguins data
+  skip_if_not_installed("palmerpenguins")
+  data("penguins", package = "palmerpenguins", envir = environment())
+  penguins <- get("penguins", envir = environment())
+  penguins <- na.omit(penguins)
+
   set.seed(189)
-  rf <- randomForest::randomForest(Species ~ ., data = iris, ntree = 5)
+  rf <- randomForest::randomForest(species ~ ., data = penguins, ntree = 5)
   p <- as.party(rf, tree = 1)
 
   expect_s3_class(p, "party")
@@ -161,9 +166,13 @@ test_that("as.party.randomForest does not show asterisks in node summaries", {
 test_that("extract_rules.randomForest() returns correct structure", {
   skip_if_not_installed("randomForest")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(127)
-  rf <- randomForest::randomForest(y ~ x1 + x2 + x3, data = data, ntree = 3)
+  rf <- randomForest::randomForest(
+    y ~ predictor_01 + predictor_02 + predictor_03,
+    data = data,
+    ntree = 3
+  )
   rules <- extract_rules(rf, tree = 1L, data = data)
 
   expect_s3_class(rules, "rule_set_party")
@@ -178,9 +187,13 @@ test_that("extract_rules.randomForest() returns correct structure", {
 test_that("extract_rules.randomForest() extracts from single tree", {
   skip_if_not_installed("randomForest")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(298)
-  rf <- randomForest::randomForest(y ~ x1 + x2 + x3, data = data, ntree = 3)
+  rf <- randomForest::randomForest(
+    y ~ predictor_01 + predictor_02 + predictor_03,
+    data = data,
+    ntree = 3
+  )
   rules <- extract_rules(rf, tree = 1L, data = data)
 
   expect_equal(unique(rules$tree), 1L)
@@ -195,9 +208,13 @@ test_that("extract_rules.randomForest() extracts from single tree", {
 test_that("extract_rules.randomForest() extracts from multiple trees", {
   skip_if_not_installed("randomForest")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(413)
-  rf <- randomForest::randomForest(y ~ x1 + x2 + x3, data = data, ntree = 3)
+  rf <- randomForest::randomForest(
+    y ~ predictor_01 + predictor_02 + predictor_03,
+    data = data,
+    ntree = 3
+  )
   rules <- extract_rules(rf, tree = c(1L, 2L, 3L), data = data)
 
   expect_equal(sort(unique(rules$tree)), c(1L, 2L, 3L))
@@ -213,9 +230,13 @@ test_that("extract_rules.randomForest() extracts from multiple trees", {
 test_that("extract_rules.randomForest() validates tree argument", {
   skip_if_not_installed("randomForest")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(564)
-  rf <- randomForest::randomForest(y ~ x1 + x2 + x3, data = data, ntree = 3)
+  rf <- randomForest::randomForest(
+    y ~ predictor_01 + predictor_02 + predictor_03,
+    data = data,
+    ntree = 3
+  )
 
   expect_snapshot(extract_rules(rf, tree = "1"), error = TRUE)
   expect_snapshot(extract_rules(rf, tree = 1.5), error = TRUE)
@@ -226,10 +247,10 @@ test_that("extract_rules.randomForest() validates tree argument", {
 test_that("extract_rules.randomForest() requires keep.forest = TRUE", {
   skip_if_not_installed("randomForest")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(685)
   rf <- randomForest::randomForest(
-    y ~ x1 + x2 + x3,
+    y ~ predictor_01 + predictor_02 + predictor_03,
     data = data,
     ntree = 3,
     keep.forest = FALSE
@@ -241,9 +262,13 @@ test_that("extract_rules.randomForest() requires keep.forest = TRUE", {
 test_that("extract_rules.randomForest() works with numeric predictors", {
   skip_if_not_installed("randomForest")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(729)
-  rf <- randomForest::randomForest(y ~ x1 + x2, data = data, ntree = 3)
+  rf <- randomForest::randomForest(
+    y ~ predictor_01 + predictor_02,
+    data = data,
+    ntree = 3
+  )
   rules <- extract_rules(rf, tree = 1L, data = data)
 
   expect_s3_class(rules, "rule_set_party")
@@ -253,9 +278,9 @@ test_that("extract_rules.randomForest() works with numeric predictors", {
 test_that("extract_rules.randomForest() works with factor predictors", {
   skip_if_not_installed("randomForest")
 
-  data <- get_factor_data(n = 100)
+  data <- get_factor_data()
   set.seed(841)
-  rf <- randomForest::randomForest(y ~ x2 + x4, data = data, ntree = 3)
+  rf <- randomForest::randomForest(y ~ island + sex, data = data, ntree = 3)
   rules <- extract_rules(rf, tree = 1L, data = data)
 
   expect_s3_class(rules, "rule_set_party")
@@ -315,9 +340,13 @@ test_that("extract_rules.randomForest() works with single factor predictor", {
 test_that("extract_rules.randomForest() rules are sorted by tree then id", {
   skip_if_not_installed("randomForest")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(176)
-  rf <- randomForest::randomForest(y ~ x1 + x2 + x3, data = data, ntree = 3)
+  rf <- randomForest::randomForest(
+    y ~ predictor_01 + predictor_02 + predictor_03,
+    data = data,
+    ntree = 3
+  )
   rules <- extract_rules(rf, tree = c(2L, 1L, 3L), data = data)
 
   # Check sorting
@@ -333,9 +362,13 @@ test_that("extract_rules.randomForest() rules are sorted by tree then id", {
 test_that("extract_rules.randomForest() handles duplicate tree numbers", {
   skip_if_not_installed("randomForest")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(287)
-  rf <- randomForest::randomForest(y ~ x1 + x2 + x3, data = data, ntree = 3)
+  rf <- randomForest::randomForest(
+    y ~ predictor_01 + predictor_02 + predictor_03,
+    data = data,
+    ntree = 3
+  )
   rules <- extract_rules(rf, tree = c(1L, 1L, 2L), data = data)
 
   # Should have results for tree 1 twice
@@ -346,9 +379,13 @@ test_that("extract_rules.randomForest() handles duplicate tree numbers", {
 test_that("extract_rules.randomForest() works with all trees", {
   skip_if_not_installed("randomForest")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(398)
-  rf <- randomForest::randomForest(y ~ x1 + x2 + x3, data = data, ntree = 3)
+  rf <- randomForest::randomForest(
+    y ~ predictor_01 + predictor_02 + predictor_03,
+    data = data,
+    ntree = 3
+  )
   n_trees <- 3
   rules <- extract_rules(rf, tree = 1:n_trees, data = data)
 
@@ -512,7 +549,7 @@ test_that("active_predictors.randomForest() returns sorted unique variables", {
 test_that("active_predictors.randomForest() handles numeric-only predictors", {
   skip_if_not_installed("randomForest")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   set.seed(314)
   rf <- randomForest::randomForest(y ~ ., data = data, ntree = 5)
 
@@ -520,7 +557,9 @@ test_that("active_predictors.randomForest() handles numeric-only predictors", {
   active_vars <- result$active_predictors[[1]]
 
   expect_type(active_vars, "character")
-  expect_true(all(active_vars %in% c("x1", "x2", "x3")))
+  expect_true(all(
+    active_vars %in% c("predictor_01", "predictor_02", "predictor_03")
+  ))
 })
 
 test_that("active_predictors.randomForest() works with all trees", {
@@ -784,13 +823,13 @@ test_that("var_imp.randomForest() with complete=TRUE fills missing predictors", 
   skip_if_not_installed("randomForest")
 
   set.seed(426)
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
   # Add a near-constant predictor
   data$x4 <- rnorm(200, mean = 1000, sd = 0.001)
 
   set.seed(138)
   rf <- randomForest::randomForest(
-    y ~ x1 + x2 + x3 + x4,
+    y ~ predictor_01 + predictor_02 + predictor_03 + predictor_04,
     data = data,
     importance = TRUE,
     ntree = 10
@@ -800,7 +839,10 @@ test_that("var_imp.randomForest() with complete=TRUE fills missing predictors", 
 
   # Should have all 4 predictors
   expect_equal(nrow(result), 4)
-  expect_setequal(result$term, c("x1", "x2", "x3", "x4"))
+  expect_setequal(
+    result$term,
+    c("predictor_01", "predictor_02", "predictor_03", "predictor_04")
+  )
 
   # All estimates should be numeric
   expect_true(all(is.numeric(result$estimate)))
@@ -810,10 +852,10 @@ test_that("var_imp.randomForest() with complete=FALSE returns only used predicto
   skip_if_not_installed("randomForest")
 
   set.seed(593)
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
 
   rf <- randomForest::randomForest(
-    y ~ x1 + x2 + x3,
+    y ~ predictor_01 + predictor_02 + predictor_03,
     data = data,
     importance = TRUE,
     ntree = 10
@@ -953,7 +995,7 @@ test_that("var_imp.randomForest() handles forest with constrained splits", {
 
   set.seed(651)
   rf <- randomForest::randomForest(
-    y ~ x1 + x2,
+    y ~ predictor_01 + predictor_02,
     data = small_data,
     importance = TRUE,
     ntree = 5,
@@ -972,10 +1014,10 @@ test_that("var_imp.randomForest() handles forest with very deep trees", {
   skip_if_not_installed("randomForest")
 
   set.seed(149)
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
 
   rf <- randomForest::randomForest(
-    y ~ x1 + x2 + x3,
+    y ~ predictor_01 + predictor_02 + predictor_03,
     data = data,
     importance = TRUE,
     ntree = 10,
@@ -1011,10 +1053,10 @@ test_that("var_imp.randomForest() handles binary classification", {
   skip_if_not_installed("randomForest")
 
   set.seed(512)
-  data <- get_binary_data(n = 200)
+  data <- get_binary_data()
 
   rf <- randomForest::randomForest(
-    y ~ x1 + x2 + x3,
+    y ~ predictor_01 + predictor_02 + predictor_03,
     data = data,
     importance = TRUE,
     ntree = 10
@@ -1023,17 +1065,20 @@ test_that("var_imp.randomForest() handles binary classification", {
 
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 3)
-  expect_setequal(result$term, c("x1", "x2", "x3"))
+  expect_setequal(
+    result$term,
+    c("predictor_01", "predictor_02", "predictor_03")
+  )
 })
 
 test_that("var_imp.randomForest() handles multiclass classification", {
   skip_if_not_installed("randomForest")
 
   set.seed(296)
-  data <- get_factor_data(n = 200)
+  data <- get_factor_data()
 
   rf <- randomForest::randomForest(
-    y ~ x1 + x3,
+    y ~ bill_length_mm + bill_depth_mm,
     data = data,
     importance = TRUE,
     ntree = 10
@@ -1042,7 +1087,7 @@ test_that("var_imp.randomForest() handles multiclass classification", {
 
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 2)
-  expect_setequal(result$term, c("x1", "x3"))
+  expect_setequal(result$term, c("bill_length_mm", "bill_depth_mm"))
 })
 
 test_that("var_imp.randomForest() works with single numeric predictor", {

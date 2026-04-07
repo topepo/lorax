@@ -15,7 +15,7 @@ test_that("as.party.C5.0 returns valid party object for single tree", {
 test_that("as.party.C5.0 works with binary classification", {
   skip_if_not_installed("C50")
 
-  data <- get_binary_data(n = 100)
+  data <- get_binary_data()
 
   c5_model <- C50::C5.0(y ~ ., data = data)
   p <- as.party(c5_model, tree = 1, data = data)
@@ -24,13 +24,13 @@ test_that("as.party.C5.0 works with binary classification", {
   expect_s3_class(p$node, "partynode")
 })
 
-test_that("as.party.C5.0 works with iris data", {
+test_that("as.party.C5.0 works with penguins data", {
   skip_if_not_installed("C50")
 
-  iris_data <- get_iris_data()
+  penguins_data <- get_penguins_data()
 
-  c5_model <- C50::C5.0(Species ~ ., data = iris_data)
-  p <- as.party(c5_model, tree = 1, data = iris_data)
+  c5_model <- C50::C5.0(species ~ ., data = penguins_data)
+  p <- as.party(c5_model, tree = 1, data = penguins_data)
 
   expect_s3_class(p, "party")
   expect_s3_class(p$node, "partynode")
@@ -256,9 +256,9 @@ test_that("as.party.C5.0 handles multiway categorical splits correctly", {
 test_that("extract_rules.C5.0() returns correct structure", {
   skip_if_not_installed("C50")
 
-  data <- get_factor_data(n = 100)
+  data <- get_factor_data()
   set.seed(327)
-  c5_tree <- C50::C5.0(y ~ x1 + x2 + x3, data = data)
+  c5_tree <- C50::C5.0(y ~ bill_length_mm + island + bill_depth_mm, data = data)
   rules <- extract_rules(c5_tree, tree = 1L, data = data)
 
   expect_s3_class(rules, "rule_set_party")
@@ -273,9 +273,9 @@ test_that("extract_rules.C5.0() returns correct structure", {
 test_that("extract_rules.C5.0() extracts from single tree", {
   skip_if_not_installed("C50")
 
-  data <- get_factor_data(n = 100)
+  data <- get_factor_data()
   set.seed(438)
-  c5_tree <- C50::C5.0(y ~ x1 + x2 + x3, data = data)
+  c5_tree <- C50::C5.0(y ~ bill_length_mm + island + bill_depth_mm, data = data)
   rules <- extract_rules(c5_tree, tree = 1L, data = data)
 
   expect_equal(unique(rules$tree), 1L)
@@ -343,9 +343,9 @@ test_that("extract_rules.C5.0() validates tree argument", {
 test_that("extract_rules.C5.0() requires data parameter", {
   skip_if_not_installed("C50")
 
-  data <- get_factor_data(n = 100)
+  data <- get_factor_data()
   set.seed(762)
-  c5_tree <- C50::C5.0(y ~ x1 + x2 + x3, data = data)
+  c5_tree <- C50::C5.0(y ~ bill_length_mm + island + bill_depth_mm, data = data)
 
   expect_snapshot(extract_rules(c5_tree, tree = 1L), error = TRUE)
   expect_snapshot(extract_rules(c5_tree, tree = 1L, data = NULL), error = TRUE)
@@ -354,10 +354,10 @@ test_that("extract_rules.C5.0() requires data parameter", {
 test_that("extract_rules.C5.0() works with numeric predictors", {
   skip_if_not_installed("C50")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
   data$y_cat <- cut(data$y, breaks = 3, labels = c("low", "med", "high"))
   set.seed(873)
-  c5_tree <- C50::C5.0(y_cat ~ x1 + x2, data = data)
+  c5_tree <- C50::C5.0(y_cat ~ predictor_01 + predictor_02, data = data)
   rules <- extract_rules(c5_tree, tree = 1L, data = data)
 
   expect_s3_class(rules, "rule_set_party")
@@ -367,9 +367,9 @@ test_that("extract_rules.C5.0() works with numeric predictors", {
 test_that("extract_rules.C5.0() works with factor predictors", {
   skip_if_not_installed("C50")
 
-  data <- get_factor_data(n = 100)
+  data <- get_factor_data()
   set.seed(984)
-  c5_tree <- C50::C5.0(y ~ x2 + x4, data = data)
+  c5_tree <- C50::C5.0(y ~ island + sex, data = data)
   rules <- extract_rules(c5_tree, tree = 1L, data = data)
 
   expect_s3_class(rules, "rule_set_party")
@@ -479,9 +479,9 @@ test_that("extract_rules.C5.0() handles tree with no valid splits", {
 test_that("extract_rules.C5.0() works with rule-based models", {
   skip_if_not_installed("C50")
 
-  data <- iris
+  data <- get_penguins_data()
   set.seed(123)
-  c5_rules <- C50::C5.0(Species ~ ., data = data, rules = TRUE)
+  c5_rules <- C50::C5.0(species ~ ., data = data, rules = TRUE)
 
   rules <- extract_rules(c5_rules, tree = 1L, data = data)
 
@@ -494,9 +494,9 @@ test_that("extract_rules.C5.0() works with rule-based models", {
 test_that("extract_rules.C5.0() handles boosted rule models", {
   skip_if_not_installed("C50")
 
-  data <- iris
+  data <- get_penguins_data()
   set.seed(456)
-  c5_rules <- C50::C5.0(Species ~ ., data = data, rules = TRUE, trials = 3)
+  c5_rules <- C50::C5.0(species ~ ., data = data, rules = TRUE, trials = 3)
 
   rules <- extract_rules(c5_rules, tree = c(1L, 2L), data = data)
 
@@ -507,16 +507,16 @@ test_that("extract_rules.C5.0() handles boosted rule models", {
 test_that("extract_rules.C5.0() parses rule conditions correctly", {
   skip_if_not_installed("C50")
 
-  data <- iris
+  data <- get_penguins_data()
   set.seed(789)
-  c5_rules <- C50::C5.0(Species ~ ., data = data, rules = TRUE)
+  c5_rules <- C50::C5.0(species ~ ., data = data, rules = TRUE)
 
   rules <- extract_rules(c5_rules, tree = 1L, data = data)
 
   # Check that rules contain expected variable names
   rule_text_all <- sapply(rules$rules, function(r) deparse1(r))
   expect_true(any(grepl(
-    "Petal\\.Length|Petal\\.Width|Sepal\\.Length|Sepal\\.Width",
+    "bill_length_mm|bill_depth_mm|flipper_length_mm|body_mass_g",
     rule_text_all
   )))
 })
@@ -539,9 +539,9 @@ test_that("extract_rules.C5.0() handles rule models with numeric predictors", {
 test_that("extract_rules.C5.0() validates tree argument for rule models", {
   skip_if_not_installed("C50")
 
-  data <- iris
+  data <- get_penguins_data()
   set.seed(222)
-  c5_rules <- C50::C5.0(Species ~ ., data = data, rules = TRUE, trials = 2)
+  c5_rules <- C50::C5.0(species ~ ., data = data, rules = TRUE, trials = 2)
 
   expect_snapshot(
     extract_rules(c5_rules, tree = 0L, data = data),
@@ -874,11 +874,9 @@ test_that("extract_rules.C5.0() works with single numeric predictor", {
   skip_if_not_installed("C50")
   skip_on_os("linux")
 
-  # C5.0 requires factor outcome - use single factor data
-  data <- get_single_factor_data()
-  # Create numeric predictor version
-  data$x_num <- rnorm(nrow(data))
-  model <- C50::C5.0(y ~ x_num, data = data, trials = 3)
+  # C5.0 requires factor outcome - use single numeric data
+  data <- get_single_numeric_data()
+  model <- C50::C5.0(y ~ x, data = data, trials = 3)
   rules <- extract_rules(model, tree = 1, data = data)
 
   expect_s3_class(rules, "rule_set")

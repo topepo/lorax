@@ -585,12 +585,12 @@ test_that("var_imp.ObliqueForest() with complete=TRUE fills missing predictors",
 
   # Create a scenario where some predictors might not be used
   set.seed(419)
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
   # Add a near-constant predictor that might not be used
   data$x4 <- rnorm(200, mean = 1000, sd = 0.001)
 
   forest <- aorsf::orsf(
-    y ~ x1 + x2 + x3 + x4,
+    y ~ predictor_01 + predictor_02 + predictor_03 + x4,
     data = data,
     n_tree = 10,
     oobag_pred_type = "none"
@@ -610,10 +610,10 @@ test_that("var_imp.ObliqueForest() with complete=FALSE returns only used predict
   skip_if_not_installed("aorsf")
 
   set.seed(683)
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
 
   forest <- aorsf::orsf(
-    y ~ x1 + x2 + x3,
+    y ~ predictor_01 + predictor_02 + predictor_03,
     data = data,
     n_tree = 10,
     oobag_pred_type = "none"
@@ -696,7 +696,7 @@ test_that("var_imp.ObliqueForest() handles forest with constrained splits", {
   )
 
   forest <- aorsf::orsf(
-    y ~ x1 + x2,
+    y ~ predictor_01 + predictor_02,
     data = small_data,
     n_tree = 5,
     oobag_pred_type = "none",
@@ -785,10 +785,10 @@ test_that("var_imp.ObliqueForest() handles many predictors", {
 test_that("var_imp.ObliqueForest() works with single tree forest", {
   skip_if_not_installed("aorsf")
 
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
   set.seed(542)
   forest <- aorsf::orsf(
-    y ~ x1 + x2 + x3,
+    y ~ predictor_01 + predictor_02 + predictor_03,
     data = data,
     n_tree = 1,
     oobag_pred_type = "none"
@@ -812,7 +812,7 @@ test_that("var_imp.ObliqueForest() handles forest with no valid splits gracefull
   )
 
   forest <- aorsf::orsf(
-    y ~ x1 + x2,
+    y ~ predictor_01 + predictor_02,
     data = difficult_data,
     n_tree = 1,
     oobag_pred_type = "none",
@@ -831,11 +831,11 @@ test_that("var_imp.ObliqueForest() handles forest with no valid splits gracefull
 test_that("var_imp.ObliqueForest() with scaled predictors", {
   skip_if_not_installed("aorsf")
 
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
   # Test with scale_x = TRUE (default)
   set.seed(276)
   forest_scaled <- aorsf::orsf(
-    y ~ x1 + x2 + x3,
+    y ~ predictor_01 + predictor_02 + predictor_03,
     data = data,
     n_tree = 10,
     oobag_pred_type = "none",
@@ -851,11 +851,11 @@ test_that("var_imp.ObliqueForest() with scaled predictors", {
 test_that("var_imp.ObliqueForest() with unscaled predictors", {
   skip_if_not_installed("aorsf")
 
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
   # Test with scale_x = FALSE
   set.seed(894)
   forest_unscaled <- aorsf::orsf(
-    y ~ x1 + x2 + x3,
+    y ~ predictor_01 + predictor_02 + predictor_03,
     data = data,
     n_tree = 10,
     oobag_pred_type = "none",

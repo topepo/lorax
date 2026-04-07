@@ -33,7 +33,7 @@ test_that("as.party.xgb.Booster returns valid party object", {
 test_that("as.party.xgb.Booster works with binary classification", {
   skip_if_not_installed("xgboost")
 
-  data <- get_binary_data(n = 100)
+  data <- get_binary_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -57,7 +57,7 @@ test_that("as.party.xgb.Booster works with binary classification", {
 test_that("as.party.xgb.Booster works with regression", {
   skip_if_not_installed("xgboost")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -276,7 +276,7 @@ test_that("as.party.xgb.Booster handles trees with many nodes", {
 test_that("as.party.xgb.Booster handles different boosting rounds", {
   skip_if_not_installed("xgboost")
 
-  data <- get_binary_data(n = 100)
+  data <- get_binary_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -310,7 +310,7 @@ test_that("as.party.xgb.Booster handles different boosting rounds", {
 test_that("as.party.xgb.Booster handles narrow trees", {
   skip_if_not_installed("xgboost")
 
-  data <- get_binary_data(n = 50)
+  data <- get_binary_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -440,7 +440,7 @@ test_that("as.party.xgb.Booster does not show asterisks in node summaries", {
 test_that("active_predictors.xgb.Booster() returns correct structure", {
   skip_if_not_installed("xgboost")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -468,7 +468,7 @@ test_that("active_predictors.xgb.Booster() returns correct structure", {
 test_that("active_predictors.xgb.Booster() extracts from single tree", {
   skip_if_not_installed("xgboost")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -494,7 +494,7 @@ test_that("active_predictors.xgb.Booster() extracts from single tree", {
 test_that("active_predictors.xgb.Booster() extracts from multiple trees", {
   skip_if_not_installed("xgboost")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -520,7 +520,7 @@ test_that("active_predictors.xgb.Booster() extracts from multiple trees", {
 test_that("active_predictors.xgb.Booster() works with all trees", {
   skip_if_not_installed("xgboost")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -546,7 +546,7 @@ test_that("active_predictors.xgb.Booster() works with all trees", {
 test_that("active_predictors.xgb.Booster() validates tree argument", {
   skip_if_not_installed("xgboost")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -616,7 +616,7 @@ test_that("active_predictors.xgb.Booster() handles tree with no splits", {
 test_that("active_predictors.xgb.Booster() returns sorted unique variables", {
   skip_if_not_installed("xgboost")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -695,7 +695,7 @@ test_that("active_predictors.xgb.Booster() works with feature names", {
 test_that("var_imp.xgb.Booster() returns correct structure", {
   skip_if_not_installed("xgboost")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -723,7 +723,7 @@ test_that("var_imp.xgb.Booster() returns correct structure", {
 test_that("var_imp.xgb.Booster() extracts variable importance scores", {
   skip_if_not_installed("xgboost")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -756,7 +756,7 @@ test_that("var_imp.xgb.Booster() with complete=TRUE fills missing predictors", {
   skip_if_not_installed("xgboost")
 
   set.seed(236)
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -786,7 +786,7 @@ test_that("var_imp.xgb.Booster() with complete=TRUE fills missing predictors", {
 test_that("var_imp.xgb.Booster() with complete=FALSE returns only used predictors", {
   skip_if_not_installed("xgboost")
 
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -840,7 +840,7 @@ test_that("var_imp.xgb.Booster() works with numeric predictors only", {
 test_that("var_imp.xgb.Booster() importance scores match underlying object", {
   skip_if_not_installed("xgboost")
 
-  data <- get_regression_data(n = 100)
+  data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -874,7 +874,7 @@ test_that("var_imp.xgb.Booster() importance scores match underlying object", {
 test_that("var_imp.xgb.Booster() works with binary classification", {
   skip_if_not_installed("xgboost")
 
-  data <- get_binary_data(n = 100)
+  data <- get_binary_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -1049,7 +1049,7 @@ test_that("var_imp.xgb.Booster() works with deep trees", {
   skip_if_not_installed("xgboost")
 
   set.seed(291)
-  data <- get_regression_data(n = 200)
+  data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),
@@ -1100,7 +1100,7 @@ test_that("var_imp.xgb.Booster() handles agaricus data", {
 test_that("var_imp.xgb.Booster() handles very shallow trees", {
   skip_if_not_installed("xgboost")
 
-  data <- get_binary_data(n = 50)
+  data <- get_binary_data()
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, c("x1", "x2", "x3")]),

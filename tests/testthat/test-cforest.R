@@ -84,9 +84,13 @@ test_that("extract_rules.cforest() validates tree argument", {
 test_that("extract_rules.cforest() works with numeric predictors", {
   skip_if_not_installed("partykit")
 
-  data <- get_regression_data(n = 60)
+  data <- get_regression_data()
   set.seed(158)
-  cf <- partykit::cforest(y ~ x1 + x2, data = data, ntree = 3)
+  cf <- partykit::cforest(
+    y ~ predictor_01 + predictor_02,
+    data = data,
+    ntree = 3
+  )
   rules <- extract_rules(cf, tree = 1L)
 
   expect_s3_class(rules, "rule_set_party")
@@ -96,9 +100,9 @@ test_that("extract_rules.cforest() works with numeric predictors", {
 test_that("extract_rules.cforest() works with factor predictors", {
   skip_if_not_installed("partykit")
 
-  data <- get_factor_data(n = 60)
+  data <- get_factor_data()
   set.seed(391)
-  cf <- partykit::cforest(y ~ x2 + x4, data = data, ntree = 3)
+  cf <- partykit::cforest(y ~ island + sex, data = data, ntree = 3)
   rules <- extract_rules(cf, tree = 1L)
 
   expect_s3_class(rules, "rule_set_party")
@@ -266,9 +270,13 @@ test_that("active_predictors.cforest() validates tree argument", {
 test_that("active_predictors.cforest() works with numeric predictors", {
   skip_if_not_installed("partykit")
 
-  data <- get_regression_data(n = 60)
+  data <- get_regression_data()
   set.seed(729)
-  cf <- partykit::cforest(y ~ x1 + x2 + x3, data = data, ntree = 3)
+  cf <- partykit::cforest(
+    y ~ predictor_01 + predictor_02 + predictor_03,
+    data = data,
+    ntree = 3
+  )
   result <- active_predictors(cf, tree = 1L)
 
   active_vars <- result$active_predictors[[1]]
@@ -279,9 +287,9 @@ test_that("active_predictors.cforest() works with numeric predictors", {
 test_that("active_predictors.cforest() works with factor predictors", {
   skip_if_not_installed("partykit")
 
-  data <- get_factor_data(n = 60)
+  data <- get_factor_data()
   set.seed(841)
-  cf <- partykit::cforest(y ~ x2 + x4, data = data, ntree = 3)
+  cf <- partykit::cforest(y ~ island + sex, data = data, ntree = 3)
   result <- active_predictors(cf, tree = 1L)
 
   active_vars <- result$active_predictors[[1]]
@@ -450,9 +458,13 @@ test_that("var_imp.cforest() with complete=FALSE returns only used predictors", 
 test_that("var_imp.cforest() works with numeric predictors only", {
   skip_if_not_installed("partykit")
 
-  data <- get_regression_data(n = 80)
+  data <- get_regression_data()
   set.seed(476)
-  cf <- partykit::cforest(y ~ x1 + x2, data = data, ntree = 5)
+  cf <- partykit::cforest(
+    y ~ predictor_01 + predictor_02,
+    data = data,
+    ntree = 5
+  )
   result <- var_imp(cf, complete = TRUE)
 
   expect_s3_class(result, "tbl_df")
@@ -533,9 +545,13 @@ test_that("var_imp.cforest() works with classification forest", {
 test_that("var_imp.cforest() works with regression forest", {
   skip_if_not_installed("partykit")
 
-  data <- get_regression_data(n = 80)
+  data <- get_regression_data()
   set.seed(241)
-  cf <- partykit::cforest(y ~ x1 + x2, data = data, ntree = 5)
+  cf <- partykit::cforest(
+    y ~ predictor_01 + predictor_02,
+    data = data,
+    ntree = 5
+  )
   result <- var_imp(cf)
 
   expect_s3_class(result, "tbl_df")
@@ -574,7 +590,7 @@ test_that("var_imp.cforest() handles constrained splits", {
 
   set.seed(795)
   cf <- partykit::cforest(
-    y ~ x1 + x2,
+    y ~ predictor_01 + predictor_02,
     data = small_data,
     ntree = 3,
     control = partykit::ctree_control(minsplit = 20)
