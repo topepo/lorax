@@ -471,7 +471,7 @@ test_that("var_imp.cforest() works with numeric predictors only", {
 
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 2)
-  expect_setequal(result$term, c("x1", "x2"))
+  expect_setequal(result$term, c("predictor_01", "predictor_02"))
 })
 
 test_that("var_imp.cforest() works with factor predictors", {
@@ -558,7 +558,7 @@ test_that("var_imp.cforest() works with regression forest", {
 
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 2)
-  expect_setequal(result$term, c("x1", "x2"))
+  expect_setequal(result$term, c("predictor_01", "predictor_02"))
 })
 
 test_that("var_imp.cforest() handles many predictors", {
@@ -592,7 +592,7 @@ test_that("var_imp.cforest() handles constrained splits", {
 
   set.seed(795)
   cf <- partykit::cforest(
-    y ~ predictor_01 + predictor_02,
+    y ~ x1 + x2,
     data = small_data,
     ntree = 3,
     control = partykit::ctree_control(minsplit = 20)
