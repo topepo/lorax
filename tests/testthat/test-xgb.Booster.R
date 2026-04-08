@@ -36,7 +36,7 @@ test_that("as.party.xgb.Booster works with binary classification", {
   data <- get_binary_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   bst <- xgboost::xgb.train(
@@ -60,7 +60,7 @@ test_that("as.party.xgb.Booster works with regression", {
   data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   bst <- xgboost::xgb.train(
@@ -279,7 +279,7 @@ test_that("as.party.xgb.Booster handles different boosting rounds", {
   data <- get_binary_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   bst <- xgboost::xgb.train(
@@ -313,7 +313,7 @@ test_that("as.party.xgb.Booster handles narrow trees", {
   data <- get_binary_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   bst <- xgboost::xgb.train(
@@ -443,7 +443,7 @@ test_that("active_predictors.xgb.Booster() returns correct structure", {
   data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   bst <- xgboost::xgb.train(
@@ -471,7 +471,7 @@ test_that("active_predictors.xgb.Booster() extracts from single tree", {
   data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   bst <- xgboost::xgb.train(
@@ -497,7 +497,7 @@ test_that("active_predictors.xgb.Booster() extracts from multiple trees", {
   data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   bst <- xgboost::xgb.train(
@@ -523,7 +523,7 @@ test_that("active_predictors.xgb.Booster() works with all trees", {
   data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   bst <- xgboost::xgb.train(
@@ -549,7 +549,7 @@ test_that("active_predictors.xgb.Booster() validates tree argument", {
   data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   bst <- xgboost::xgb.train(
@@ -619,7 +619,7 @@ test_that("active_predictors.xgb.Booster() returns sorted unique variables", {
   data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   bst <- xgboost::xgb.train(
@@ -698,7 +698,7 @@ test_that("var_imp.xgb.Booster() returns correct structure", {
   data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   set.seed(423)
@@ -726,7 +726,7 @@ test_that("var_imp.xgb.Booster() extracts variable importance scores", {
   data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   set.seed(817)
@@ -759,7 +759,7 @@ test_that("var_imp.xgb.Booster() with complete=TRUE fills missing predictors", {
   data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   set.seed(591)
@@ -777,7 +777,9 @@ test_that("var_imp.xgb.Booster() with complete=TRUE fills missing predictors", {
 
   # Should have all predictors
   expect_true(nrow(result) >= 1)
-  expect_true(all(c("x1", "x2", "x3") %in% result$term))
+  expect_true(all(
+    c("predictor_01", "predictor_02", "predictor_03") %in% result$term
+  ))
 
   # All estimates should be non-negative
   expect_true(all(result$estimate >= 0))
@@ -789,7 +791,7 @@ test_that("var_imp.xgb.Booster() with complete=FALSE returns only used predictor
   data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   set.seed(748)
@@ -843,7 +845,7 @@ test_that("var_imp.xgb.Booster() importance scores match underlying object", {
   data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   set.seed(659)
@@ -877,7 +879,7 @@ test_that("var_imp.xgb.Booster() works with binary classification", {
   data <- get_binary_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   set.seed(184)
@@ -1052,7 +1054,7 @@ test_that("var_imp.xgb.Booster() works with deep trees", {
   data <- get_regression_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   set.seed(764)
@@ -1103,7 +1105,7 @@ test_that("var_imp.xgb.Booster() handles very shallow trees", {
   data <- get_binary_data()
 
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   set.seed(672)
@@ -1130,7 +1132,7 @@ test_that("as.party.xgb.Booster works with single numeric predictor", {
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, "x", drop = FALSE]),
-    label = data$y
+    label = as.numeric(data$y) - 1
   )
   set.seed(127)
   bst <- xgboost::xgb.train(
@@ -1155,7 +1157,7 @@ test_that("active_predictors.xgb.Booster() works with single numeric predictor",
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, "x", drop = FALSE]),
-    label = data$y
+    label = as.numeric(data$y) - 1
   )
   set.seed(298)
   bst <- xgboost::xgb.train(
@@ -1183,7 +1185,7 @@ test_that("var_imp.xgb.Booster() works with single numeric predictor", {
 
   dtrain <- xgboost::xgb.DMatrix(
     as.matrix(data[, "x", drop = FALSE]),
-    label = data$y
+    label = as.numeric(data$y) - 1
   )
   set.seed(413)
   bst <- xgboost::xgb.train(

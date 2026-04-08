@@ -558,7 +558,7 @@ test_that("active_predictors.randomForest() handles numeric-only predictors", {
 
   expect_type(active_vars, "character")
   expect_true(all(
-    active_vars %in% c("predictor_01", "predictor_02", "predictor_03")
+    active_vars %in% names(data)[names(data) != "y"]
   ))
 })
 
@@ -825,7 +825,7 @@ test_that("var_imp.randomForest() with complete=TRUE fills missing predictors", 
   set.seed(426)
   data <- get_regression_data()
   # Add a near-constant predictor
-  data$x4 <- rnorm(200, mean = 1000, sd = 0.001)
+  data$x4 <- rnorm(nrow(data), mean = 1000, sd = 0.001)
 
   set.seed(138)
   rf <- randomForest::randomForest(
@@ -995,7 +995,7 @@ test_that("var_imp.randomForest() handles forest with constrained splits", {
 
   set.seed(651)
   rf <- randomForest::randomForest(
-    y ~ predictor_01 + predictor_02,
+    y ~ x1 + x2,
     data = small_data,
     importance = TRUE,
     ntree = 5,
@@ -1056,7 +1056,7 @@ test_that("var_imp.randomForest() handles binary classification", {
   data <- get_binary_data()
 
   rf <- randomForest::randomForest(
-    y ~ predictor_01 + predictor_02 + predictor_03,
+    y ~ linear_1 + linear_2 + linear_3,
     data = data,
     importance = TRUE,
     ntree = 10
@@ -1067,7 +1067,7 @@ test_that("var_imp.randomForest() handles binary classification", {
   expect_equal(nrow(result), 3)
   expect_setequal(
     result$term,
-    c("predictor_01", "predictor_02", "predictor_03")
+    c("linear_1", "linear_2", "linear_3")
   )
 })
 

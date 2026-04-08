@@ -281,7 +281,9 @@ test_that("active_predictors.cforest() works with numeric predictors", {
 
   active_vars <- result$active_predictors[[1]]
   expect_type(active_vars, "character")
-  expect_true(all(active_vars %in% c("x1", "x2", "x3")))
+  expect_true(all(
+    active_vars %in% c("predictor_01", "predictor_02", "predictor_03")
+  ))
 })
 
 test_that("active_predictors.cforest() works with factor predictors", {

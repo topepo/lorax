@@ -3,7 +3,7 @@ test_that("extract_rules.xgb.Booster returns valid rule set", {
 
   data <- get_binary_data()
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   bst <- xgboost::xgb.train(
@@ -30,7 +30,7 @@ test_that("extract_rules.xgb.Booster validates tree parameter", {
 
   data <- get_binary_data()
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   bst <- xgboost::xgb.train(
@@ -75,7 +75,7 @@ test_that("extract_rules.xgb.Booster extracts different trees", {
 
   data <- get_binary_data()
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   bst <- xgboost::xgb.train(
@@ -99,7 +99,7 @@ test_that("extract_rules.lgb.Booster returns valid rule set", {
 
   data <- get_binary_data()
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   bst <- lightgbm::lgb.train(
@@ -126,7 +126,7 @@ test_that("extract_rules.lgb.Booster validates tree parameter", {
 
   data <- get_binary_data()
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   bst <- lightgbm::lgb.train(
@@ -179,7 +179,7 @@ test_that("extract_rules.lgb.Booster extracts different trees", {
 
   data <- get_binary_data()
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   bst <- lightgbm::lgb.train(
@@ -242,7 +242,7 @@ test_that("rule_text formats rules as text", {
 
   data <- get_binary_data()
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   bst <- xgboost::xgb.train(
@@ -267,7 +267,7 @@ test_that("extract_rules handles regression trees", {
 
   data <- get_regression_data()
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   bst <- xgboost::xgb.train(
@@ -289,7 +289,7 @@ test_that("extract_rules IDs are 1-based", {
 
   data <- get_binary_data()
   dtrain <- xgboost::xgb.DMatrix(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   bst <- xgboost::xgb.train(
@@ -312,7 +312,7 @@ test_that("extract_rules returns sorted by ID", {
 
   data <- get_binary_data()
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   bst <- lightgbm::lgb.train(

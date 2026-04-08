@@ -32,7 +32,7 @@ test_that("as.party.lgb.Booster works with binary classification", {
   data <- get_binary_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   bst <- lightgbm::lgb.train(
@@ -53,7 +53,7 @@ test_that("as.party.lgb.Booster works with regression", {
   data <- get_regression_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   bst <- lightgbm::lgb.train(
@@ -256,7 +256,7 @@ test_that("as.party.lgb.Booster handles different boosting rounds", {
   data <- get_binary_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   bst <- lightgbm::lgb.train(
@@ -290,7 +290,7 @@ test_that("as.party.lgb.Booster handles narrow trees", {
   data <- get_binary_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   bst <- lightgbm::lgb.train(
@@ -446,7 +446,7 @@ test_that("as.party.lgb.Booster works with single numeric predictor", {
 
   dtrain <- lightgbm::lgb.Dataset(
     as.matrix(data[, "x", drop = FALSE]),
-    label = data$y
+    label = as.numeric(data$y) - 1
   )
   set.seed(487)
   bst <- lightgbm::lgb.train(
@@ -503,7 +503,7 @@ test_that("active_predictors.lgb.Booster() returns correct structure", {
   data <- get_regression_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   bst <- lightgbm::lgb.train(
@@ -528,7 +528,7 @@ test_that("active_predictors.lgb.Booster() extracts from single tree", {
   data <- get_regression_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   bst <- lightgbm::lgb.train(
@@ -551,7 +551,7 @@ test_that("active_predictors.lgb.Booster() extracts from multiple trees", {
   data <- get_regression_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   bst <- lightgbm::lgb.train(
@@ -574,7 +574,7 @@ test_that("active_predictors.lgb.Booster() works with all trees", {
   data <- get_regression_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   bst <- lightgbm::lgb.train(
@@ -597,7 +597,7 @@ test_that("active_predictors.lgb.Booster() validates tree argument", {
   data <- get_regression_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   bst <- lightgbm::lgb.train(
@@ -666,7 +666,7 @@ test_that("active_predictors.lgb.Booster() returns sorted unique variables", {
   data <- get_regression_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   bst <- lightgbm::lgb.train(
@@ -740,7 +740,7 @@ test_that("active_predictors.lgb.Booster() works with single numeric predictor",
 
   dtrain <- lightgbm::lgb.Dataset(
     as.matrix(data[, "x", drop = FALSE]),
-    label = data$y
+    label = as.numeric(data$y) - 1
   )
   set.seed(127)
   bst <- lightgbm::lgb.train(
@@ -767,7 +767,7 @@ test_that("var_imp.lgb.Booster() returns correct structure", {
   data <- get_regression_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   set.seed(821)
@@ -795,7 +795,7 @@ test_that("var_imp.lgb.Booster() extracts variable importance scores", {
   data <- get_regression_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   set.seed(347)
@@ -828,7 +828,7 @@ test_that("var_imp.lgb.Booster() with complete=TRUE fills missing predictors", {
   data <- get_regression_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   set.seed(914)
@@ -857,7 +857,7 @@ test_that("var_imp.lgb.Booster() with complete=FALSE returns only used predictor
   data <- get_regression_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   set.seed(483)
@@ -913,7 +913,7 @@ test_that("var_imp.lgb.Booster() importance scores match underlying object", {
   data <- get_regression_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   set.seed(192)
@@ -947,7 +947,7 @@ test_that("var_imp.lgb.Booster() works with binary classification", {
   data <- get_binary_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   set.seed(568)
@@ -1122,7 +1122,7 @@ test_that("var_imp.lgb.Booster() works with deep trees", {
   data <- get_regression_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   set.seed(326)
@@ -1173,7 +1173,7 @@ test_that("var_imp.lgb.Booster() handles very shallow trees", {
   data <- get_binary_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("linear_1", "linear_2", "linear_3")]),
     label = as.numeric(data$y) - 1
   )
   set.seed(487)
@@ -1199,7 +1199,7 @@ test_that("var_imp.lgb.Booster() works with many boosting rounds", {
   data <- get_regression_data()
 
   dtrain <- lightgbm::lgb.Dataset(
-    as.matrix(data[, c("x1", "x2", "x3")]),
+    as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     label = data$y
   )
   set.seed(851)
@@ -1227,7 +1227,7 @@ test_that("var_imp.lgb.Booster() works with single numeric predictor", {
 
   dtrain <- lightgbm::lgb.Dataset(
     as.matrix(data[, "x", drop = FALSE]),
-    label = data$y
+    label = as.numeric(data$y) - 1
   )
   set.seed(298)
   bst <- lightgbm::lgb.train(

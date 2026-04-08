@@ -389,7 +389,7 @@ test_that("var_imp.party() works with numeric predictors only", {
 
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 2)
-  expect_setequal(result$term, c("x1", "x2"))
+  expect_setequal(result$term, c("predictor_01", "predictor_02"))
 })
 
 test_that("var_imp.party() works with factor predictors", {
@@ -468,7 +468,7 @@ test_that("var_imp.party() works with regression tree", {
 
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 2)
-  expect_setequal(result$term, c("x1", "x2"))
+  expect_setequal(result$term, c("predictor_01", "predictor_02"))
 })
 
 test_that("var_imp.party() handles tree with no splits", {
@@ -518,7 +518,7 @@ test_that("var_imp.party() handles constrained splits", {
 
   set.seed(263)
   tree <- partykit::ctree(
-    y ~ predictor_01 + predictor_02,
+    y ~ x1 + x2,
     data = small_data,
     control = partykit::ctree_control(minsplit = 20)
   )

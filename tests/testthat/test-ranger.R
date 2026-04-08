@@ -547,7 +547,7 @@ test_that("active_predictors.ranger() handles numeric-only predictors", {
   active_vars <- result$active_predictors[[1]]
 
   expect_type(active_vars, "character")
-  expect_true(all(active_vars %in% c("x1", "x2", "x3")))
+  expect_true(all(active_vars %in% names(data)[names(data) != "y"]))
 })
 
 test_that("active_predictors.ranger() works with all trees", {
@@ -654,7 +654,7 @@ test_that("var_imp.ranger() with complete=TRUE fills missing predictors", {
   set.seed(614)
   data <- get_regression_data()
   # Add a near-constant predictor
-  data$x4 <- rnorm(200, mean = 1000, sd = 0.001)
+  data$x4 <- rnorm(nrow(data), mean = 1000, sd = 0.001)
 
   rf <- ranger::ranger(
     y ~ predictor_01 + predictor_02 + predictor_03 + predictor_04,
@@ -667,7 +667,10 @@ test_that("var_imp.ranger() with complete=TRUE fills missing predictors", {
 
   # Should have all 4 predictors
   expect_equal(nrow(result), 4)
-  expect_setequal(result$term, c("x1", "x2", "x3", "x4"))
+  expect_setequal(
+    result$term,
+    c("predictor_01", "predictor_02", "predictor_03", "predictor_04")
+  )
 
   # All estimates should be non-negative
   expect_true(all(result$estimate >= 0))
@@ -897,7 +900,7 @@ test_that("var_imp.ranger() handles forest with constrained splits", {
   )
 
   rf <- ranger::ranger(
-    y ~ predictor_01 + predictor_02,
+    y ~ x1 + x2,
     data = small_data,
     importance = "impurity",
     num.trees = 5,

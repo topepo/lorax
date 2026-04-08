@@ -33,7 +33,7 @@ test_that("as.party.bart works with regression data", {
   data <- get_regression_data()
 
   fit <- suppressWarnings(dbarts::bart(
-    x.train = data[, c("x1", "x2", "x3")],
+    x.train = data[, c("predictor_01", "predictor_02", "predictor_03")],
     y.train = data$y,
     keeptrees = TRUE,
     verbose = FALSE,
@@ -54,7 +54,7 @@ test_that("as.party.bart works with factor predictors", {
   data <- get_factor_data()
 
   fit <- suppressWarnings(dbarts::bart(
-    x.train = data[, c("bill_length_mm", "island", "bill_depth_mm", "sex")],
+    x.train = data[, c("island", "sex", "bill_length_mm", "bill_depth_mm")],
     y.train = as.numeric(data$y),
     keeptrees = TRUE,
     verbose = FALSE,
@@ -240,7 +240,7 @@ test_that("as.party.bart handles models with missing values in training data", {
   )
 
   fit <- suppressWarnings(dbarts::bart(
-    x.train = data[, c("bill_length_mm", "island", "bill_depth_mm", "sex")],
+    x.train = data[, c("x1", "x2", "x3", "x4")],
     y.train = data$y,
     keeptrees = TRUE,
     verbose = FALSE,
@@ -595,7 +595,7 @@ test_that("active_predictors.bart() handles numeric-only predictors", {
   data <- get_regression_data()
 
   fit <- suppressWarnings(dbarts::bart(
-    x.train = data[, c("x1", "x2", "x3")],
+    x.train = data[, c("predictor_01", "predictor_02", "predictor_03")],
     y.train = data$y,
     keeptrees = TRUE,
     verbose = FALSE,
@@ -608,7 +608,9 @@ test_that("active_predictors.bart() handles numeric-only predictors", {
   active_vars <- result$active_predictors[[1]]
 
   expect_type(active_vars, "character")
-  expect_true(all(active_vars %in% c("x1", "x2", "x3")))
+  expect_true(all(
+    active_vars %in% c("predictor_01", "predictor_02", "predictor_03")
+  ))
 })
 
 test_that("active_predictors.bart() works with all trees", {

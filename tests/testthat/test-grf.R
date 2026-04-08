@@ -27,7 +27,7 @@ test_that("as.party.regression_forest works with simple data", {
   data <- get_regression_data()
 
   rf <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     num.trees = 5
   )
@@ -179,7 +179,7 @@ test_that("var_imp.grf() returns correct structure", {
 
   data <- get_regression_data()
   forest <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     num.trees = 50
   )
@@ -196,7 +196,7 @@ test_that("var_imp.grf() extracts variable importance scores", {
 
   data <- get_regression_data()
   forest <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     num.trees = 50
   )
@@ -219,17 +219,20 @@ test_that("var_imp.grf() with complete=TRUE includes all predictors", {
 
   data <- get_regression_data()
   # Create a scenario where one predictor might have very low importance
-  data$x3 <- rnorm(200, mean = 1000, sd = 0.001) # Near-constant predictor
+  data$predictor_03 <- rnorm(nrow(data), mean = 1000, sd = 0.001) # Near-constant predictor
 
   forest <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     num.trees = 50
   )
   result <- var_imp(forest, complete = TRUE)
 
   expect_equal(nrow(result), 3)
-  expect_setequal(result$term, c("x1", "x2", "x3"))
+  expect_setequal(
+    result$term,
+    c("predictor_01", "predictor_02", "predictor_03")
+  )
 })
 
 test_that("var_imp.grf() with complete=FALSE matches complete=TRUE for grf", {
@@ -239,7 +242,7 @@ test_that("var_imp.grf() with complete=FALSE matches complete=TRUE for grf", {
   # so complete should not matter much
   data <- get_regression_data()
   forest <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     num.trees = 50
   )
@@ -276,7 +279,7 @@ test_that("var_imp.grf() passes additional arguments to variable_importance", {
 
   data <- get_regression_data()
   forest <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     num.trees = 50
   )
@@ -294,7 +297,7 @@ test_that("var_imp.grf() importance scores match grf::variable_importance", {
 
   data <- get_regression_data()
   forest <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     num.trees = 50
   )
@@ -316,7 +319,7 @@ test_that("var_imp.grf() works with regression_forest", {
 
   data <- get_regression_data()
   forest <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     num.trees = 50
   )
@@ -330,10 +333,10 @@ test_that("var_imp.grf() works with causal_forest", {
   skip_if_not_installed("grf")
 
   data <- get_regression_data()
-  data$w <- rbinom(200, 1, 0.5)
+  data$w <- rbinom(nrow(data), 1, 0.5)
 
   forest <- grf::causal_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     W = data$w,
     num.trees = 50
@@ -342,14 +345,17 @@ test_that("var_imp.grf() works with causal_forest", {
 
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 3)
-  expect_setequal(result$term, c("x1", "x2", "x3"))
+  expect_setequal(
+    result$term,
+    c("predictor_01", "predictor_02", "predictor_03")
+  )
 })
 
 test_that("var_imp.grf() handles forest with named predictors", {
   skip_if_not_installed("grf")
 
   data <- get_regression_data()
-  X <- as.matrix(data[, c("x1", "x2", "x3")])
+  X <- as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")])
   colnames(X) <- c("predictor_a", "predictor_b", "predictor_c")
 
   forest <- grf::regression_forest(
@@ -391,7 +397,7 @@ test_that("var_imp.grf() with max.depth argument", {
 
   data <- get_regression_data()
   forest <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     num.trees = 50
   )
@@ -411,7 +417,7 @@ test_that("var_imp.grf() works with single numeric predictor", {
 
   model <- grf::regression_forest(
     X = as.matrix(data[, "x", drop = FALSE]),
-    Y = data$y,
+    Y = as.numeric(data$y),
     num.trees = 5
   )
 
@@ -432,7 +438,7 @@ test_that("extract_rules.grf() returns correct structure", {
   data <- get_regression_data()
   set.seed(847)
   rf <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     num.trees = 3
   )
@@ -453,7 +459,7 @@ test_that("extract_rules.grf() extracts from single tree", {
   data <- get_regression_data()
   set.seed(532)
   rf <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     num.trees = 3
   )
@@ -474,7 +480,7 @@ test_that("extract_rules.grf() extracts from multiple trees", {
   data <- get_regression_data()
   set.seed(219)
   rf <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     num.trees = 3
   )
@@ -496,7 +502,7 @@ test_that("extract_rules.grf() validates tree argument", {
   data <- get_regression_data()
   set.seed(674)
   rf <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     num.trees = 3
   )
@@ -513,7 +519,7 @@ test_that("extract_rules.grf() works with numeric predictors", {
   data <- get_regression_data()
   set.seed(158)
   rf <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02")]),
     Y = data$y,
     num.trees = 3
   )
@@ -529,7 +535,7 @@ test_that("extract_rules.grf() rules are sorted by tree then id", {
   data <- get_regression_data()
   set.seed(803)
   rf <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     num.trees = 3
   )
@@ -551,7 +557,7 @@ test_that("extract_rules.grf() handles duplicate tree numbers", {
   data <- get_regression_data()
   set.seed(456)
   rf <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     num.trees = 3
   )
@@ -568,7 +574,7 @@ test_that("extract_rules.grf() works with all trees", {
   data <- get_regression_data()
   set.seed(927)
   rf <- grf::regression_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     num.trees = 3
   )
@@ -608,7 +614,7 @@ test_that("extract_rules.grf() works with causal_forest", {
   data <- get_regression_data()
   set.seed(391)
   cf <- grf::causal_forest(
-    X = as.matrix(data[, c("x1", "x2", "x3")]),
+    X = as.matrix(data[, c("predictor_01", "predictor_02", "predictor_03")]),
     Y = data$y,
     W = rbinom(100, 1, 0.5),
     num.trees = 3
@@ -626,7 +632,7 @@ test_that("extract_rules.grf() works with single numeric predictor", {
 
   model <- grf::regression_forest(
     X = as.matrix(data[, "x", drop = FALSE]),
-    Y = data$y,
+    Y = as.numeric(data$y),
     num.trees = 5
   )
 
@@ -881,7 +887,7 @@ test_that("active_predictors.grf() works with single numeric predictor", {
 
   model <- grf::regression_forest(
     X = as.matrix(data[, "x", drop = FALSE]),
-    Y = data$y,
+    Y = as.numeric(data$y),
     num.trees = 5
   )
 
