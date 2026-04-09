@@ -5,7 +5,7 @@ test_that("as.party.C5.0 returns valid party object for single tree", {
   penguins <- get_penguins_data()
 
   c5_model <- C50::C5.0(species ~ ., data = penguins)
-  p <- as.party(c5_model, tree = 1, data = penguins)
+  p <- lorax::as.party(c5_model, tree = 1, data = penguins)
 
   expect_s3_class(p, "party")
   expect_s3_class(p$node, "partynode")
@@ -18,7 +18,7 @@ test_that("as.party.C5.0 works with binary classification", {
   data <- get_binary_data()
 
   c5_model <- C50::C5.0(y ~ ., data = data)
-  p <- as.party(c5_model, tree = 1, data = data)
+  p <- lorax::as.party(c5_model, tree = 1, data = data)
 
   expect_s3_class(p, "party")
   expect_s3_class(p$node, "partynode")
@@ -30,7 +30,7 @@ test_that("as.party.C5.0 works with penguins data", {
   penguins_data <- get_penguins_data()
 
   c5_model <- C50::C5.0(species ~ ., data = penguins_data)
-  p <- as.party(c5_model, tree = 1, data = penguins_data)
+  p <- lorax::as.party(c5_model, tree = 1, data = penguins_data)
 
   expect_s3_class(p, "party")
   expect_s3_class(p$node, "partynode")
@@ -43,14 +43,14 @@ test_that("as.party.C5.0 validates tree parameter", {
   penguins <- get_penguins_data()
   c5_model <- C50::C5.0(species ~ ., data = penguins)
 
-  expect_snapshot(as.party(c5_model, tree = 0, data = penguins), error = TRUE)
+  expect_snapshot(lorax::as.party(c5_model, tree = 0, data = penguins), error = TRUE)
   # When tree exceeds num_trials, it should warn and use max tree
-  expect_snapshot(as.party(c5_model, tree = 5, data = penguins))
+  expect_snapshot(lorax::as.party(c5_model, tree = 5, data = penguins))
   expect_snapshot(
-    as.party(c5_model, tree = c(1, 2), data = penguins),
+    lorax::as.party(c5_model, tree = c(1, 2), data = penguins),
     error = TRUE
   )
-  expect_snapshot(as.party(c5_model, tree = "1", data = penguins), error = TRUE)
+  expect_snapshot(lorax::as.party(c5_model, tree = "1", data = penguins), error = TRUE)
 })
 
 test_that("as.party.C5.0 requires data parameter", {
@@ -60,7 +60,7 @@ test_that("as.party.C5.0 requires data parameter", {
   penguins <- get_penguins_data()
   c5_model <- C50::C5.0(species ~ ., data = penguins)
 
-  expect_snapshot(as.party(c5_model, tree = 1), error = TRUE)
+  expect_snapshot(lorax::as.party(c5_model, tree = 1), error = TRUE)
 })
 
 test_that("as.party.C5.0 works with boosted models", {
@@ -71,8 +71,8 @@ test_that("as.party.C5.0 works with boosted models", {
   c5_boost <- C50::C5.0(species ~ ., data = penguins, trials = 10)
 
   # Extract first and second trees
-  p1 <- as.party(c5_boost, tree = 1, data = penguins)
-  p2 <- as.party(c5_boost, tree = 2, data = penguins)
+  p1 <- lorax::as.party(c5_boost, tree = 1, data = penguins)
+  p2 <- lorax::as.party(c5_boost, tree = 2, data = penguins)
 
   expect_s3_class(p1, "party")
   expect_s3_class(p2, "party")
@@ -81,9 +81,9 @@ test_that("as.party.C5.0 works with boosted models", {
   expect_false(isTRUE(all.equal(p1, p2)))
 
   # Check tree number validation
-  expect_snapshot(as.party(c5_boost, tree = 0, data = penguins), error = TRUE)
+  expect_snapshot(lorax::as.party(c5_boost, tree = 0, data = penguins), error = TRUE)
   # When tree exceeds num_trials, it should warn and use max tree
-  expect_snapshot(as.party(c5_boost, tree = 11, data = penguins))
+  expect_snapshot(lorax::as.party(c5_boost, tree = 11, data = penguins))
 })
 
 test_that("as.party.C5.0 extracts different boosted trees", {
@@ -94,9 +94,9 @@ test_that("as.party.C5.0 extracts different boosted trees", {
   c5_boost <- C50::C5.0(species ~ ., data = penguins, trials = 5)
 
   # Extract multiple trees
-  p1 <- as.party(c5_boost, tree = 1, data = penguins)
-  p2 <- as.party(c5_boost, tree = 2, data = penguins)
-  p3 <- as.party(c5_boost, tree = 5, data = penguins)
+  p1 <- lorax::as.party(c5_boost, tree = 1, data = penguins)
+  p2 <- lorax::as.party(c5_boost, tree = 2, data = penguins)
+  p3 <- lorax::as.party(c5_boost, tree = 5, data = penguins)
 
   # All should be valid
   expect_s3_class(p1, "party")
@@ -128,7 +128,7 @@ test_that("as.party.C5.0 rejects rule-based models", {
   penguins <- get_penguins_data()
   c5_rules <- C50::C5.0(species ~ ., data = penguins, rules = TRUE)
 
-  expect_snapshot(as.party(c5_rules, tree = 1, data = penguins), error = TRUE)
+  expect_snapshot(lorax::as.party(c5_rules, tree = 1, data = penguins), error = TRUE)
 })
 
 test_that("as.party.C5.0 does not show asterisks in node summaries", {
@@ -138,7 +138,7 @@ test_that("as.party.C5.0 does not show asterisks in node summaries", {
   penguins <- get_penguins_data()
 
   c5_model <- C50::C5.0(species ~ ., data = penguins)
-  p <- as.party(c5_model, tree = 1, data = penguins)
+  p <- lorax::as.party(c5_model, tree = 1, data = penguins)
 
   output <- capture.output(print(p))
 
@@ -156,7 +156,7 @@ test_that("as.party.C5.0 properly assigns all observations to terminal nodes", {
   penguins <- get_penguins_data()
 
   c5_model <- C50::C5.0(species ~ ., data = penguins)
-  p <- as.party(c5_model, tree = 1, data = penguins)
+  p <- lorax::as.party(c5_model, tree = 1, data = penguins)
 
   # Get fitted node IDs
   fitted_ids <- p$fitted[["(fitted)"]]
@@ -185,7 +185,7 @@ test_that("as.party.C5.0 properly routes observations through categorical splits
   wa_trees <- get_wa_trees_data()
 
   c5_model <- C50::C5.0(class ~ ., data = wa_trees)
-  p <- as.party(c5_model, tree = 1, data = wa_trees)
+  p <- lorax::as.party(c5_model, tree = 1, data = wa_trees)
 
   # Get fitted node IDs
   fitted_ids <- p$fitted[["(fitted)"]]
@@ -219,7 +219,7 @@ test_that("as.party.C5.0 handles multiway categorical splits correctly", {
   wa_trees <- get_wa_trees_data()
 
   c5_model <- C50::C5.0(class ~ ., data = wa_trees)
-  p <- as.party(c5_model, tree = 1, data = wa_trees)
+  p <- lorax::as.party(c5_model, tree = 1, data = wa_trees)
 
   # Find a node with a categorical split
   # The root's right child (precip_annual >= 418) should split on county
@@ -259,9 +259,9 @@ test_that("extract_rules.C5.0() returns correct structure", {
   data <- get_factor_data()
   set.seed(327)
   c5_tree <- C50::C5.0(y ~ bill_length_mm + island + bill_depth_mm, data = data)
-  rules <- extract_rules(c5_tree, tree = 1L, data = data)
+  rules <- lorax::extract_rules(c5_tree, tree = 1L, data = data)
 
-  expect_s3_class(rules, "rule_set_party")
+  expect_s3_class(rules, "rule_set_C5.0")
   expect_s3_class(rules, "rule_set")
   expect_s3_class(rules, "tbl_df")
   expect_named(rules, c("id", "rules", "tree"))
@@ -276,7 +276,7 @@ test_that("extract_rules.C5.0() extracts from single tree", {
   data <- get_factor_data()
   set.seed(438)
   c5_tree <- C50::C5.0(y ~ bill_length_mm + island + bill_depth_mm, data = data)
-  rules <- extract_rules(c5_tree, tree = 1L, data = data)
+  rules <- lorax::extract_rules(c5_tree, tree = 1L, data = data)
 
   expect_equal(unique(rules$tree), 1L)
   expect_true(nrow(rules) > 0)
@@ -303,7 +303,7 @@ test_that("extract_rules.C5.0() extracts from multiple boosted trees", {
   trees_to_extract <- min(3L, n_trials)
   tree_nums <- seq_len(trees_to_extract)
 
-  rules <- extract_rules(c5_boost, tree = tree_nums, data = wa_trees)
+  rules <- lorax::extract_rules(c5_boost, tree = tree_nums, data = wa_trees)
 
   expect_equal(sort(unique(rules$tree)), tree_nums)
   expect_true(nrow(rules) > 0)
@@ -340,15 +340,23 @@ test_that("extract_rules.C5.0() validates tree argument", {
   )
 })
 
-test_that("extract_rules.C5.0() requires data parameter", {
+test_that("extract_rules.C5.0() works without data parameter", {
   skip_if_not_installed("C50")
 
   data <- get_factor_data()
   set.seed(762)
   c5_tree <- C50::C5.0(y ~ bill_length_mm + island + bill_depth_mm, data = data)
 
-  expect_snapshot(extract_rules(c5_tree, tree = 1L), error = TRUE)
-  expect_snapshot(extract_rules(c5_tree, tree = 1L, data = NULL), error = TRUE)
+  # Data parameter is now optional
+  rules_no_data <- lorax::extract_rules(c5_tree, tree = 1L)
+  expect_s3_class(rules_no_data, "rule_set_C5.0")
+
+  # Should also work with data for backward compatibility
+  rules_with_data <- lorax::extract_rules(c5_tree, tree = 1L, data = data)
+  expect_s3_class(rules_with_data, "rule_set_C5.0")
+
+  # Results should be identical
+  expect_equal(rules_no_data$rules, rules_with_data$rules)
 })
 
 test_that("extract_rules.C5.0() works with numeric predictors", {
@@ -358,9 +366,9 @@ test_that("extract_rules.C5.0() works with numeric predictors", {
   data$y_cat <- cut(data$y, breaks = 3, labels = c("low", "med", "high"))
   set.seed(873)
   c5_tree <- C50::C5.0(y_cat ~ predictor_01 + predictor_02, data = data)
-  rules <- extract_rules(c5_tree, tree = 1L, data = data)
+  rules <- lorax::extract_rules(c5_tree, tree = 1L, data = data)
 
-  expect_s3_class(rules, "rule_set_party")
+  expect_s3_class(rules, "rule_set_C5.0")
   expect_true(nrow(rules) > 0)
 })
 
@@ -370,9 +378,9 @@ test_that("extract_rules.C5.0() works with factor predictors", {
   data <- get_factor_data()
   set.seed(984)
   c5_tree <- C50::C5.0(y ~ island + sex, data = data)
-  rules <- extract_rules(c5_tree, tree = 1L, data = data)
+  rules <- lorax::extract_rules(c5_tree, tree = 1L, data = data)
 
-  expect_s3_class(rules, "rule_set_party")
+  expect_s3_class(rules, "rule_set_C5.0")
   expect_true(nrow(rules) > 0)
 })
 
@@ -382,9 +390,9 @@ test_that("extract_rules.C5.0() works with mixed predictors", {
   wa_trees <- get_wa_trees_data()[1:200, ]
   set.seed(195)
   c5_tree <- C50::C5.0(class ~ elevation + county, data = wa_trees)
-  rules <- extract_rules(c5_tree, tree = 1L, data = wa_trees)
+  rules <- lorax::extract_rules(c5_tree, tree = 1L, data = wa_trees)
 
-  expect_s3_class(rules, "rule_set_party")
+  expect_s3_class(rules, "rule_set_C5.0")
   expect_true(nrow(rules) > 0)
 })
 
@@ -404,7 +412,7 @@ test_that("extract_rules.C5.0() rules are sorted by tree then id", {
   trees_to_extract <- min(3L, n_trials)
   tree_nums <- rev(seq_len(trees_to_extract))
 
-  rules <- extract_rules(c5_boost, tree = tree_nums, data = wa_trees)
+  rules <- lorax::extract_rules(c5_boost, tree = tree_nums, data = wa_trees)
 
   # Check sorting
   expect_true(all(diff(rules$tree) >= 0))
@@ -426,14 +434,14 @@ test_that("extract_rules.C5.0() handles duplicate tree numbers", {
   # Get actual number of trials
   n_trials <- c5_boost$trials["Actual"]
   if (n_trials >= 2) {
-    rules <- extract_rules(c5_boost, tree = c(1L, 1L, 2L), data = wa_trees)
+    rules <- lorax::extract_rules(c5_boost, tree = c(1L, 1L, 2L), data = wa_trees)
 
     # Should have results for tree 1 twice
     tree_counts <- table(rules$tree)
     expect_equal(as.numeric(names(tree_counts)), c(1, 2))
   } else {
     # If only 1 trial, just test with duplicates of that
-    rules <- extract_rules(c5_boost, tree = c(1L, 1L), data = wa_trees)
+    rules <- lorax::extract_rules(c5_boost, tree = c(1L, 1L), data = wa_trees)
     tree_counts <- table(rules$tree)
     expect_equal(as.numeric(names(tree_counts)), 1)
   }
@@ -452,7 +460,7 @@ test_that("extract_rules.C5.0() works with all trees", {
 
   # Get actual number of trials
   n_trials <- c5_boost$trials["Actual"]
-  rules <- extract_rules(c5_boost, tree = 1:n_trials, data = wa_trees)
+  rules <- lorax::extract_rules(c5_boost, tree = 1:n_trials, data = wa_trees)
 
   expect_equal(sort(unique(rules$tree)), 1:n_trials)
   expect_true(nrow(rules) > 0)
@@ -469,9 +477,9 @@ test_that("extract_rules.C5.0() handles tree with no valid splits", {
   )
   set.seed(549)
   c5_tree <- C50::C5.0(y ~ ., data = null_data)
-  rules <- extract_rules(c5_tree, tree = 1L, data = null_data)
+  rules <- lorax::extract_rules(c5_tree, tree = 1L, data = null_data)
 
-  expect_s3_class(rules, "rule_set_party")
+  expect_s3_class(rules, "rule_set_C5.0")
   # Even with no splits, should return at least one rule (TRUE)
   expect_true(nrow(rules) >= 1)
 })
@@ -483,7 +491,7 @@ test_that("extract_rules.C5.0() works with rule-based models", {
   set.seed(123)
   c5_rules <- C50::C5.0(species ~ ., data = data, rules = TRUE)
 
-  rules <- extract_rules(c5_rules, tree = 1L, data = data)
+  rules <- lorax::extract_rules(c5_rules, tree = 1L, data = data)
 
   expect_s3_class(rules, "rule_set_C5.0")
   expect_s3_class(rules, "rule_set")
@@ -498,7 +506,7 @@ test_that("extract_rules.C5.0() handles boosted rule models", {
   set.seed(456)
   c5_rules <- C50::C5.0(species ~ ., data = data, rules = TRUE, trials = 3)
 
-  rules <- extract_rules(c5_rules, tree = c(1L, 2L), data = data)
+  rules <- lorax::extract_rules(c5_rules, tree = c(1L, 2L), data = data)
 
   expect_equal(sort(unique(rules$tree)), c(1L, 2L))
   expect_true(all(rules$tree %in% c(1L, 2L)))
@@ -511,7 +519,7 @@ test_that("extract_rules.C5.0() parses rule conditions correctly", {
   set.seed(789)
   c5_rules <- C50::C5.0(species ~ ., data = data, rules = TRUE)
 
-  rules <- extract_rules(c5_rules, tree = 1L, data = data)
+  rules <- lorax::extract_rules(c5_rules, tree = 1L, data = data)
 
   # Check that rules contain expected variable names
   rule_text_all <- sapply(rules$rules, function(r) deparse1(r))
@@ -530,7 +538,7 @@ test_that("extract_rules.C5.0() handles rule models with numeric predictors", {
   set.seed(111)
   c5_rules <- C50::C5.0(vs ~ mpg + hp + wt, data = mtcars_factor, rules = TRUE)
 
-  rules <- extract_rules(c5_rules, tree = 1L, data = mtcars_factor)
+  rules <- lorax::extract_rules(c5_rules, tree = 1L, data = mtcars_factor)
 
   expect_s3_class(rules, "rule_set_C5.0")
   expect_true(nrow(rules) > 0)
@@ -574,7 +582,7 @@ test_that("extract_rules.C5.0() handles categorical predictors in rules", {
   )
 
   c5_rules <- C50::C5.0(outcome ~ ., data = test_data, rules = TRUE)
-  rules <- extract_rules(c5_rules, tree = 1L, data = test_data)
+  rules <- lorax::extract_rules(c5_rules, tree = 1L, data = test_data)
 
   expect_s3_class(rules, "rule_set_C5.0")
   expect_true(nrow(rules) >= 0)
@@ -614,7 +622,7 @@ test_that("extract_rules.C5.0() handles rules with only categorical predictors",
   )
 
   c5_rules <- C50::C5.0(outcome ~ ., data = test_data, rules = TRUE)
-  rules <- extract_rules(c5_rules, tree = 1L, data = test_data)
+  rules <- lorax::extract_rules(c5_rules, tree = 1L, data = test_data)
 
   expect_s3_class(rules, "rule_set_C5.0")
   # C5.0 might produce 0 rules if no good splits found
@@ -643,7 +651,7 @@ test_that("extract_rules.C5.0() handles mixed numeric and categorical conditions
   set.seed(555)
   c5_rules <- C50::C5.0(class ~ ., data = wa_trees, rules = TRUE)
 
-  rules <- extract_rules(c5_rules, tree = 1L, data = wa_trees)
+  rules <- lorax::extract_rules(c5_rules, tree = 1L, data = wa_trees)
 
   expect_s3_class(rules, "rule_set_C5.0")
   expect_true(nrow(rules) > 0)
@@ -661,6 +669,104 @@ test_that("extract_rules.C5.0() handles mixed numeric and categorical conditions
   expect_true(has_numeric || has_categorical)
 })
 
+# Internal C5.0 tree parsing functions ----------------------------------------
+
+test_that("c5_parse_tree_line correctly parses tree lines", {
+  # Test parsing various line formats
+  line1 <- 'type="2" class="setosa" freq="50,50,50" att="Petal.Length" forks="2" cut="2.45"'
+  parsed1 <- lorax:::c5_parse_tree_line(line1)
+
+  expect_equal(parsed1$type, 2L)
+  expect_equal(parsed1$class, "setosa")
+  expect_equal(parsed1$freq, "50,50,50")
+  expect_equal(parsed1$att, "Petal.Length")
+  expect_equal(parsed1$forks, 2L)
+  expect_equal(parsed1$cut, 2.45)
+
+  # Test leaf node
+  line2 <- 'type="0" class="versicolor" freq="0,47,3"'
+  parsed2 <- lorax:::c5_parse_tree_line(line2)
+
+  expect_equal(parsed2$type, 0L)
+  expect_equal(parsed2$class, "versicolor")
+  expect_equal(parsed2$freq, "0,47,3")
+})
+
+test_that("c5_build_tree_structure builds correct hierarchy", {
+  # Simple tree with one split and two leaves
+  lines <- c(
+    'type="2" class="setosa" freq="50,50,50" att="Petal.Length" forks="2" cut="2.45"',
+    'type="0" class="setosa" freq="50,0,0"',
+    'type="0" class="versicolor" freq="0,50,50"'
+  )
+
+  parsed_lines <- lapply(lines, lorax:::c5_parse_tree_line)
+  tree <- lorax:::c5_build_tree_structure(parsed_lines)
+
+  # Root should have type 2 and 2 children
+  expect_equal(tree$properties$type, 2L)
+  expect_length(tree$children, 2)
+
+  # Children should be leaf nodes
+  expect_equal(tree$children[[1]]$properties$type, 0L)
+  expect_equal(tree$children[[2]]$properties$type, 0L)
+})
+
+test_that("c5_extract_tree_paths extracts correct paths", {
+  # Build a simple tree
+  lines <- c(
+    'type="2" class="setosa" freq="50,50,50" att="Petal.Length" forks="2" cut="2.45"',
+    'type="0" class="setosa" freq="50,0,0"',
+    'type="0" class="versicolor" freq="0,50,50"'
+  )
+
+  parsed_lines <- lapply(lines, lorax:::c5_parse_tree_line)
+  tree <- lorax:::c5_build_tree_structure(parsed_lines)
+  paths <- lorax:::c5_extract_tree_paths(tree)
+
+  # Should have 2 paths (one to each leaf)
+  expect_length(paths, 2)
+
+  # First path: Petal.Length <= 2.45 -> setosa
+  expect_length(paths[[1]]$conditions, 1)
+  expect_equal(paths[[1]]$conditions[[1]]$att, "Petal.Length")
+  expect_equal(paths[[1]]$conditions[[1]]$op, "<=")
+  expect_equal(paths[[1]]$class, "setosa")
+
+  # Second path: Petal.Length > 2.45 -> versicolor
+  expect_length(paths[[2]]$conditions, 1)
+  expect_equal(paths[[2]]$conditions[[1]]$att, "Petal.Length")
+  expect_equal(paths[[2]]$conditions[[1]]$op, ">")
+  expect_equal(paths[[2]]$class, "versicolor")
+})
+
+test_that("c5_extract_rules_from_tree handles different node types", {
+  # Simple tree with threshold split
+  tree_text <- 'id="See5/C5.0 2.07 GPL Edition 2024-01-01"
+entries="1"
+type="2" class="setosa" freq="50,50,50" att="Petal.Length" forks="2" cut="2.45"
+type="0" class="setosa" freq="50,0,0"
+type="0" class="versicolor" freq="0,50,50"'
+
+  # Parse the tree
+  result <- lorax:::c5_extract_rules_from_tree(tree_text, trial = 1L)
+
+  # Should have 2 rules (one for each leaf)
+  expect_equal(nrow(result), 2)
+
+  # Check first rule (Petal.Length <= 2.45)
+  rule1 <- result$rules[[1]]
+  expect_true(is.language(rule1))
+  expect_true(grepl("Petal.Length", deparse(rule1)))
+  expect_true(grepl("<=", deparse(rule1)))
+
+  # Check second rule (Petal.Length > 2.45)
+  rule2 <- result$rules[[2]]
+  expect_true(is.language(rule2))
+  expect_true(grepl("Petal.Length", deparse(rule2)))
+  expect_true(grepl(">", deparse(rule2)))
+})
+
 # active_predictors() tests ---------------------------------------------------
 
 test_that("active_predictors.C5.0() has correct structure for tree models", {
@@ -669,7 +775,7 @@ test_that("active_predictors.C5.0() has correct structure for tree models", {
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins)
-  result <- active_predictors(fit)
+  result <- lorax::active_predictors(fit)
 
   expect_s3_class(result, "tbl_df")
   expect_named(result, c("active_predictors", "tree"))
@@ -683,7 +789,7 @@ test_that("active_predictors.C5.0() extracts correct variables", {
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins)
-  result <- active_predictors(fit)
+  result <- lorax::active_predictors(fit)
 
   active_vars <- result$active_predictors[[1]]
   expect_true(is.character(active_vars))
@@ -699,7 +805,7 @@ test_that("active_predictors.C5.0() works with numeric predictors", {
   mtcars_factor <- mtcars
   mtcars_factor$vs <- factor(mtcars_factor$vs)
   fit <- C50::C5.0(vs ~ mpg + hp + wt, data = mtcars_factor)
-  result <- active_predictors(fit)
+  result <- lorax::active_predictors(fit)
 
   expect_s3_class(result, "tbl_df")
   active_vars <- result$active_predictors[[1]]
@@ -712,7 +818,7 @@ test_that("active_predictors.C5.0() works with factor predictors", {
   wa_trees <- get_wa_trees_data()
 
   fit <- C50::C5.0(class ~ county + roughness, data = wa_trees)
-  result <- active_predictors(fit)
+  result <- lorax::active_predictors(fit)
 
   active_vars <- result$active_predictors[[1]]
   expect_true(all(active_vars %in% c("county", "roughness")))
@@ -728,7 +834,7 @@ test_that("active_predictors.C5.0() handles tree with no splits", {
     y = factor(c("a", "a", "a"))
   )
   fit <- C50::C5.0(y ~ x, data = small_data)
-  result <- active_predictors(fit)
+  result <- lorax::active_predictors(fit)
 
   expect_s3_class(result, "tbl_df")
   # A tree with no splits will have an empty active_predictors list
@@ -742,7 +848,7 @@ test_that("active_predictors.C5.0() extracts from single boosted tree", {
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins, trials = 5)
-  result <- active_predictors(fit, tree = 2L)
+  result <- lorax::active_predictors(fit, tree = 2L)
 
   expect_equal(nrow(result), 1)
   expect_equal(result$tree, 2L)
@@ -756,7 +862,7 @@ test_that("active_predictors.C5.0() extracts from multiple boosted trees", {
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins, trials = 5)
-  result <- active_predictors(fit, tree = c(1L, 2L, 3L))
+  result <- lorax::active_predictors(fit, tree = c(1L, 2L, 3L))
 
   expect_equal(nrow(result), 3)
   expect_equal(result$tree, c(1L, 2L, 3L))
@@ -771,7 +877,7 @@ test_that("active_predictors.C5.0() extracts from all trees", {
 
   fit <- C50::C5.0(species ~ ., data = penguins, trials = 5)
   num_trials <- as.integer(fit$trials["Actual"])
-  result <- active_predictors(fit, tree = 1:num_trials)
+  result <- lorax::active_predictors(fit, tree = 1:num_trials)
 
   expect_equal(nrow(result), num_trials)
   expect_equal(result$tree, 1:num_trials)
@@ -784,10 +890,10 @@ test_that("active_predictors.C5.0() validates tree argument", {
 
   fit <- C50::C5.0(species ~ ., data = penguins, trials = 3)
 
-  expect_snapshot(active_predictors(fit, tree = "1"), error = TRUE)
-  expect_snapshot(active_predictors(fit, tree = 1.5), error = TRUE)
-  expect_snapshot(active_predictors(fit, tree = 0L), error = TRUE)
-  expect_snapshot(active_predictors(fit, tree = 10L), error = TRUE)
+  expect_snapshot(lorax::active_predictors(fit, tree = "1"), error = TRUE)
+  expect_snapshot(lorax::active_predictors(fit, tree = 1.5), error = TRUE)
+  expect_snapshot(lorax::active_predictors(fit, tree = 0L), error = TRUE)
+  expect_snapshot(lorax::active_predictors(fit, tree = 10L), error = TRUE)
 })
 
 test_that("active_predictors.C5.0() returns sorted unique results", {
@@ -796,7 +902,7 @@ test_that("active_predictors.C5.0() returns sorted unique results", {
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins)
-  result <- active_predictors(fit)
+  result <- lorax::active_predictors(fit)
 
   active_vars <- result$active_predictors[[1]]
   expect_equal(active_vars, active_vars[order(tolower(active_vars))])
@@ -809,7 +915,7 @@ test_that("active_predictors.C5.0() automatically deduplicates tree numbers", {
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins, trials = 3)
-  result <- active_predictors(fit, tree = c(1L, 1L, 2L))
+  result <- lorax::active_predictors(fit, tree = c(1L, 1L, 2L))
 
   expect_equal(nrow(result), 2)
   expect_equal(result$tree, c(1L, 2L))
@@ -821,7 +927,7 @@ test_that("active_predictors.C5.0() rule model has correct structure", {
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins, rules = TRUE)
-  result <- active_predictors(fit)
+  result <- lorax::active_predictors(fit)
 
   expect_s3_class(result, "tbl_df")
   expect_named(result, "active_predictors")
@@ -836,7 +942,7 @@ test_that("active_predictors.C5.0() extracts from rule conditions", {
   penguins <- get_penguins_data()
 
   fit <- C50::C5.0(species ~ ., data = penguins, rules = TRUE)
-  result <- active_predictors(fit)
+  result <- lorax::active_predictors(fit)
 
   active_vars <- result$active_predictors[[1]]
   expect_true(is.character(active_vars))
@@ -850,7 +956,7 @@ test_that("active_predictors.C5.0() rule model with factors", {
   wa_trees <- get_wa_trees_data()
 
   fit <- C50::C5.0(class ~ county + roughness, data = wa_trees, rules = TRUE)
-  result <- active_predictors(fit)
+  result <- lorax::active_predictors(fit)
 
   active_vars <- result$active_predictors[[1]]
   expect_true(all(active_vars %in% c("county", "roughness")))
@@ -864,7 +970,7 @@ test_that("active_predictors.C5.0() rule model with numerics", {
   mtcars_factor <- mtcars
   mtcars_factor$vs <- factor(mtcars_factor$vs)
   fit <- C50::C5.0(vs ~ mpg + hp + wt, data = mtcars_factor, rules = TRUE)
-  result <- active_predictors(fit)
+  result <- lorax::active_predictors(fit)
 
   active_vars <- result$active_predictors[[1]]
   expect_true(all(active_vars %in% c("mpg", "hp", "wt")))
@@ -877,7 +983,7 @@ test_that("extract_rules.C5.0() works with single numeric predictor", {
   # C5.0 requires factor outcome - use single numeric data
   data <- get_single_numeric_data()
   model <- C50::C5.0(y ~ x, data = data, trials = 3)
-  rules <- extract_rules(model, tree = 1, data = data)
+  rules <- lorax::extract_rules(model, tree = 1, data = data)
 
   expect_s3_class(rules, "rule_set")
   expect_true(nrow(rules) > 0)
@@ -894,7 +1000,7 @@ test_that("extract_rules.C5.0() works with single factor predictor", {
 
   data <- get_single_factor_data()
   model <- C50::C5.0(y ~ x, data = data, trials = 3)
-  rules <- extract_rules(model, tree = 1, data = data)
+  rules <- lorax::extract_rules(model, tree = 1, data = data)
 
   expect_s3_class(rules, "rule_set")
   expect_true(nrow(rules) > 0)
@@ -913,7 +1019,7 @@ test_that("active_predictors.C5.0() works with single numeric predictor", {
   data <- get_single_factor_data()
   data$x_num <- rnorm(nrow(data))
   model <- C50::C5.0(y ~ x_num, data = data, trials = 3)
-  active <- active_predictors(model)
+  active <- lorax::active_predictors(model)
 
   expect_s3_class(active, "tbl_df")
   # If the model made splits, should have "x_num" as active predictor
@@ -928,7 +1034,7 @@ test_that("active_predictors.C5.0() works with single factor predictor", {
 
   data <- get_single_factor_data()
   model <- C50::C5.0(y ~ x, data = data, trials = 3)
-  active <- active_predictors(model)
+  active <- lorax::active_predictors(model)
 
   expect_s3_class(active, "tbl_df")
   # If the model made splits, should have "x" as active predictor

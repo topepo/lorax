@@ -817,7 +817,7 @@ c5_extract_one <- function(tree_num, tree_lines, num_trials) {
 # @param data Training data for factor level information
 #
 # @return Tibble with id, rules, and tree columns
-c5_extract_rules_from_rules_text <- function(x, tree, data) {
+c5_extract_rules_from_rules_text <- function(x, tree) {
   # Parse rules text
   rules_lines <- strsplit(x$rules, "\n")[[1]]
 
@@ -826,8 +826,7 @@ c5_extract_rules_from_rules_text <- function(x, tree, data) {
     tree,
     c5_extract_rules_one_trial,
     rules_lines = rules_lines,
-    num_trials = x$trials["Actual"],
-    data = data
+    num_trials = x$trials["Actual"]
   )
 
   # Combine and format
@@ -840,8 +839,7 @@ c5_extract_rules_from_rules_text <- function(x, tree, data) {
 c5_extract_rules_one_trial <- function(
   tree_num,
   rules_lines,
-  num_trials,
-  data
+  num_trials
 ) {
   # Find rule set boundaries for this trial
   if (num_trials == 1) {
@@ -903,14 +901,14 @@ c5_parse_rules_block <- function(rules_lines, data) {
     condition_lines <- rule_block[grepl('type="[123]"', rule_block)]
 
     # Parse conditions into expression
-    rules_list[[i]] <- c5_parse_rule_conditions(condition_lines, data)
+    rules_list[[i]] <- c5_parse_rule_conditions(condition_lines)
   }
 
   rules_list
 }
 
 # Parse condition lines into R expression
-c5_parse_rule_conditions <- function(condition_lines, data) {
+c5_parse_rule_conditions <- function(condition_lines) {
   if (length(condition_lines) == 0) {
     return(rlang::expr(TRUE))
   }
@@ -1029,19 +1027,9 @@ c5_extract_rules_one <- function(tree_num, x, data) {
 #'   extract rules from. Default is `1L` for the first tree or trial. Values must be
 #'   between 1 and the number of actual trials (`x$trials["Actual"]`).
 #'   For rule-based models, this parameter refers to the trial number.
-#' @param data Data.frame containing the training data. Required for C5.0
-#'   models to properly parse tree or rule structure with correct factor levels.
 #' @export
-extract_rules.C5.0 <- function(x, tree = 1L, data = NULL, ...) {
+extract_rules.C5.0 <- function(x, tree = 1L, ...) {
   rlang::check_installed("C50")
-
-  # Require data parameter
-  if (is.null(data)) {
-    cli::cli_abort(
-      "{.arg data} is required for {.fn extract_rules.C5.0}.",
-      "i" = "Provide the training data to extract rules correctly."
-    )
-  }
 
   # Detect model type
   is_rule_model <- !is.null(x$rules) && nchar(x$rules) > 0
@@ -1069,15 +1057,35 @@ extract_rules.C5.0 <- function(x, tree = 1L, data = NULL, ...) {
 
   if (is_rule_model) {
     # Parse rule-based models directly
-    return(c5_extract_rules_from_rules_text(x, tree, data))
+    return(c5_extract_rules_from_rules_text(x, tree))
   }
 
-  # Tree-based model: existing logic
-  results <- lapply(tree, c5_extract_rules_one, x = x, data = data)
+  # Tree-based model: Parse tree text directly without party conversion
+  # Extract rules for each requested tree
+  results <- lapply(tree, function(tree_num) {
+    # For now, parse the entire tree - multi-trial support can be added later
+    rules <- c5_extract_rules_from_tree(x$tree, trial = tree_num)
+
+    # Rename 'trial' column to 'tree' for consistency with existing API
+    if ("trial" %in% names(rules)) {
+      names(rules)[names(rules) == "trial"] <- "tree"
+    }
+
+    # Ensure tree column has correct value
+    rules$tree <- tree_num
+
+    # Ensure consistent column order: id, rules, tree
+    rules[c("id", "rules", "tree")]
+  })
 
   # Combine and sort by tree then id
-  dplyr::bind_rows(results) |>
+  result_df <- dplyr::bind_rows(results) |>
     dplyr::arrange(tree, id)
+
+  # Add the appropriate S3 classes
+  class(result_df) <- c("rule_set_C5.0", "rule_set", class(result_df))
+
+  result_df
 }
 
 # ------------------------------------------------------------------------------
@@ -1135,4 +1143,353 @@ active_predictors.C5.0 <- function(x, tree = 1L, ...) {
   # Combine results and sort by tree
   dplyr::bind_rows(results) |>
     dplyr::arrange(tree)
+}
+
+# ------------------------------------------------------------------------------
+# Direct C5.0 tree parsing functions (without party conversion)
+# ------------------------------------------------------------------------------
+
+#' Parse a single line of C5.0 tree text
+#'
+#' @param line Character string containing one line of tree text in key="value" format
+#' @return Named list of parsed properties
+#' @noRd
+c5_parse_tree_line <- function(line) {
+  if (length(line) == 0 || nchar(line) == 0) {
+    return(list())
+  }
+
+  # Use the existing c5_parse_attributes function which handles key="value" format
+  props <- c5_parse_attributes(line)
+
+  # Convert certain fields to appropriate types
+  if ("type" %in% names(props)) {
+    props$type <- as.integer(props$type)
+  }
+  if ("forks" %in% names(props)) {
+    props$forks <- as.integer(props$forks)
+  }
+  if ("cut" %in% names(props)) {
+    props$cut <- as.numeric(props$cut)
+  }
+
+  props
+}
+
+#' Build hierarchical tree structure from flat list of parsed lines
+#'
+#' C5.0 trees are stored in pre-order traversal (parent before children).
+#' This function reconstructs the hierarchy using the forks count.
+#'
+#' @param parsed_lines List of parsed node properties
+#' @return Root node of hierarchical tree structure
+#' @noRd
+c5_build_tree_structure <- function(parsed_lines) {
+  if (length(parsed_lines) == 0) {
+    return(NULL)
+  }
+
+  # Skip header lines (id, entries)
+  start_idx <- 1
+  while (start_idx <= length(parsed_lines) &&
+         !("type" %in% names(parsed_lines[[start_idx]]))) {
+    start_idx <- start_idx + 1
+  }
+
+  if (start_idx > length(parsed_lines)) {
+    return(NULL)
+  }
+
+  # Recursive function to build tree
+  build_node <- function(idx) {
+    if (idx > length(parsed_lines)) {
+      return(list(node = NULL, next_idx = idx))
+    }
+
+    node_props <- parsed_lines[[idx]]
+    node <- list(properties = node_props, children = list())
+
+    # If this is a leaf node (type=0 or no forks), return it
+    if (node_props$type == 0 || is.null(node_props$forks) || node_props$forks == 0) {
+      return(list(node = node, next_idx = idx + 1))
+    }
+
+    # Otherwise, recursively build children
+    next_idx <- idx + 1
+    for (i in seq_len(node_props$forks)) {
+      result <- build_node(next_idx)
+      node$children[[i]] <- result$node
+      next_idx <- result$next_idx
+    }
+
+    return(list(node = node, next_idx = next_idx))
+  }
+
+  result <- build_node(start_idx)
+  result$node
+}
+
+#' Extract all root-to-leaf paths from tree structure
+#'
+#' @param tree_node Tree node (from c5_build_tree_structure)
+#' @param current_path List of conditions accumulated so far
+#' @return List of paths, each containing conditions, class, and freq
+#' @noRd
+c5_extract_tree_paths <- function(tree_node, current_path = list()) {
+  if (is.null(tree_node)) {
+    return(list())
+  }
+
+  # Check if this is a leaf node
+  if (tree_node$properties$type == 0 ||
+      is.null(tree_node$children) ||
+      length(tree_node$children) == 0) {
+    # Return completed path
+    return(list(list(
+      conditions = current_path,
+      class = tree_node$properties$class,
+      freq = tree_node$properties$freq
+    )))
+  }
+
+  # For non-leaf nodes, recurse on each child
+  paths <- list()
+  for (i in seq_along(tree_node$children)) {
+    condition <- c5_create_branch_condition(tree_node$properties, i, length(tree_node$children))
+    child_paths <- c5_extract_tree_paths(
+      tree_node$children[[i]],
+      c(current_path, list(condition))
+    )
+    paths <- c(paths, child_paths)
+  }
+
+  paths
+}
+
+#' Create condition for a specific branch
+#'
+#' @param node_props Node properties (parsed from tree line)
+#' @param branch_index Which branch (1-based)
+#' @param num_branches Total number of branches from this node
+#' @return List with att, op, and value fields
+#' @noRd
+c5_create_branch_condition <- function(node_props, branch_index, num_branches) {
+  type <- node_props$type
+  att <- node_props$att
+
+  if (type == 2) {  # Threshold split
+    cut <- node_props$cut
+
+    if (num_branches == 2) {
+      # Binary split (no missing values)
+      if (branch_index == 1) {
+        return(list(att = att, op = "<=", value = cut))
+      } else {
+        return(list(att = att, op = ">", value = cut))
+      }
+    } else if (num_branches == 3) {
+      # Three-way split (with missing value branch)
+      if (branch_index == 1) {
+        return(list(att = att, op = "is.na", value = NULL))
+      } else if (branch_index == 2) {
+        return(list(att = att, op = "<=", value = cut))
+      } else {
+        return(list(att = att, op = ">", value = cut))
+      }
+    }
+  } else if (type == 1) {  # Discrete split
+    # Look for val field in properties
+    # For discrete splits, each branch has its own value
+    # The first branch gets the first value, etc.
+    # We need to extract from the elts field if present, or val field
+
+    # Check if there's an elts field (for multiple values per branch)
+    if (!is.null(node_props$elts)) {
+      # Parse the elts field - it contains comma-separated quoted values
+      elts <- c5_parse_elts(node_props$elts)
+      if (branch_index <= length(elts)) {
+        val <- elts[branch_index]
+        return(list(att = att, op = "==", value = val))
+      }
+    }
+
+    # Otherwise look for val field
+    if (!is.null(node_props$val)) {
+      return(list(att = att, op = "==", value = node_props$val))
+    }
+
+    # Fallback - this shouldn't happen with valid trees
+    return(list(att = att, op = "==", value = paste0("branch", branch_index)))
+
+  } else if (type == 3) {  # Subset split
+    # For subset splits, each branch can match multiple values
+    # The elts field contains the values for each branch
+
+    if (!is.null(node_props$elts)) {
+      # The elts field may contain multiple sets of values
+      # One for each branch, separated by some delimiter
+      # Need to parse this carefully
+
+      # For now, parse as comma-separated and assign to branches
+      all_elts <- c5_parse_elts(node_props$elts)
+
+      # If there's only one value, use ==
+      if (length(all_elts) == 1) {
+        return(list(att = att, op = "==", value = all_elts[1]))
+      } else {
+        # Multiple values, use %in%
+        return(list(att = att, op = "%in%", value = all_elts))
+      }
+    }
+
+    # Fallback
+    return(list(att = att, op = "%in%", value = character(0)))
+  }
+
+  # Unknown type - shouldn't happen
+  return(list(att = att, op = "==", value = "unknown"))
+}
+
+#' Parse elts field containing categorical values
+#'
+#' The elts field contains comma-separated quoted values like:
+#' "val1","val2","val3"
+#'
+#' @param elts_str Character string with elts values
+#' @return Character vector of unquoted values
+#' @noRd
+c5_parse_elts <- function(elts_str) {
+  if (is.null(elts_str) || length(elts_str) == 0) {
+    return(character(0))
+  }
+
+  # If elts_str is a vector, process first element
+  if (length(elts_str) > 1) {
+    elts_str <- elts_str[1]
+  }
+
+  if (nchar(elts_str) == 0) {
+    return(character(0))
+  }
+
+  # Remove outer quotes if present
+  elts_str <- gsub('^"|"$', '', elts_str)
+
+  # Split on ","
+  parts <- strsplit(elts_str, '","', fixed = TRUE)[[1]]
+
+  # Clean up any remaining quotes
+  parts <- gsub('"', '', parts)
+
+  parts
+}
+
+#' Convert tree paths to rule format
+#'
+#' @param paths List of paths from c5_extract_tree_paths
+#' @param trial Which trial these rules are from (for multi-trial models)
+#' @return Tibble with rules in standard format
+#' @noRd
+c5_convert_paths_to_rules <- function(paths, trial = 1L) {
+  if (length(paths) == 0) {
+    return(tibble::tibble(
+      id = integer(),
+      rules = list(),
+      trial = integer()
+    ))
+  }
+
+  # Store trial in a local variable to ensure it's accessible in lapply
+  trial_num <- trial
+
+  # Convert each path to a rule
+  rules <- lapply(seq_along(paths), function(i) {
+    path <- paths[[i]]
+
+    # Convert conditions to R expressions
+    if (length(path$conditions) == 0) {
+      # No conditions - always true
+      rule_expr <- rlang::expr(TRUE)
+    } else {
+      exprs <- lapply(path$conditions, function(cond) {
+        att_sym <- rlang::sym(cond$att)
+
+        if (cond$op == "is.na") {
+          rlang::call2("is.na", att_sym)
+        } else if (cond$op == "%in%") {
+          rlang::call2("%in%", att_sym, rlang::call2("c", !!!cond$value))
+        } else {
+          rlang::call2(cond$op, att_sym, cond$value)
+        }
+      })
+
+      # Combine with AND
+      rule_expr <- combine_rule_elements(exprs)
+    }
+
+    list(
+      trial = trial_num,
+      id = i,
+      rule = rule_expr,
+      class = path$class,
+      freq = path$freq
+    )
+  })
+
+  # Extract components before creating tibble to avoid scoping issues
+  id_vec <- vapply(rules, function(r) r$id, integer(1))
+  rules_list <- lapply(rules, function(r) r$rule)
+  trial_vec <- vapply(rules, function(r) r$trial, integer(1))
+
+  # Convert to tibble with consistent naming and ordering
+  tibble::tibble(
+    id = id_vec,
+    rules = rules_list,
+    trial = trial_vec
+  )
+}
+
+#' Extract rules directly from C5.0 tree text
+#'
+#' This is the main entry point for direct tree parsing.
+#' It combines all the helper functions to extract rules from tree text.
+#'
+#' @param tree_text Character string containing the tree in C5.0 format
+#' @param trial Which trial to extract (0 for all, 1+ for specific trial)
+#' @return Tibble with extracted rules
+#' @noRd
+c5_extract_rules_from_tree <- function(tree_text, trial = 1L) {
+  # Split into lines
+  lines <- strsplit(tree_text, "\n")[[1]]
+
+  # Remove empty lines
+  lines <- lines[nchar(trimws(lines)) > 0]
+
+  if (length(lines) == 0) {
+    return(tibble::tibble(
+      id = integer(),
+      rules = list(),
+      trial = integer()
+    ))
+  }
+
+  # Parse each line
+  parsed_lines <- lapply(lines, c5_parse_tree_line)
+
+  # Build tree structure
+  tree_structure <- c5_build_tree_structure(parsed_lines)
+
+  if (is.null(tree_structure)) {
+    return(tibble::tibble(
+      id = integer(),
+      rules = list(),
+      trial = integer()
+    ))
+  }
+
+  # Extract paths
+  paths <- c5_extract_tree_paths(tree_structure)
+
+  # Convert to rules
+  c5_convert_paths_to_rules(paths, trial)
 }
