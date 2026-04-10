@@ -104,7 +104,11 @@ cubist_extract_rules_from_committee <- function(x, committee_num) {
   # Get splits for this committee (may be NULL if no splits)
   if (!is.null(x$splits)) {
     # Note: splits$committee is integer, so we can compare directly
-    committee_splits <- x$splits[x$splits$committee == committee_num, , drop = FALSE]
+    committee_splits <- x$splits[
+      x$splits$committee == committee_num,
+      ,
+      drop = FALSE
+    ]
   } else {
     committee_splits <- data.frame()
   }
@@ -112,7 +116,11 @@ cubist_extract_rules_from_committee <- function(x, committee_num) {
   # Count rules in this committee
   # Use coefficients to determine number of rules
   # Note: committee and rule columns are character in Cubist
-  committee_coefs <- x$coefficients[x$coefficients$committee == as.character(committee_num), , drop = FALSE]
+  committee_coefs <- x$coefficients[
+    x$coefficients$committee == as.character(committee_num),
+    ,
+    drop = FALSE
+  ]
   rule_nums <- as.integer(unique(committee_coefs$rule))
   num_rules <- length(rule_nums)
 
@@ -127,7 +135,11 @@ cubist_extract_rules_from_committee <- function(x, committee_num) {
   # Extract conditions for each rule
   rule_exprs <- lapply(rule_nums, function(rule_num) {
     # Get splits for this rule
-    rule_splits <- committee_splits[committee_splits$rule == rule_num, , drop = FALSE]
+    rule_splits <- committee_splits[
+      committee_splits$rule == rule_num,
+      ,
+      drop = FALSE
+    ]
 
     if (nrow(rule_splits) == 0) {
       # No conditions - rule applies to all data
