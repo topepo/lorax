@@ -43,14 +43,20 @@ test_that("as.party.C5.0 validates tree parameter", {
   penguins <- get_penguins_data()
   c5_model <- C50::C5.0(species ~ ., data = penguins)
 
-  expect_snapshot(lorax::as.party(c5_model, tree = 0, data = penguins), error = TRUE)
+  expect_snapshot(
+    lorax::as.party(c5_model, tree = 0, data = penguins),
+    error = TRUE
+  )
   # When tree exceeds num_trials, it should warn and use max tree
   expect_snapshot(lorax::as.party(c5_model, tree = 5, data = penguins))
   expect_snapshot(
     lorax::as.party(c5_model, tree = c(1, 2), data = penguins),
     error = TRUE
   )
-  expect_snapshot(lorax::as.party(c5_model, tree = "1", data = penguins), error = TRUE)
+  expect_snapshot(
+    lorax::as.party(c5_model, tree = "1", data = penguins),
+    error = TRUE
+  )
 })
 
 test_that("as.party.C5.0 requires data parameter", {
@@ -81,7 +87,10 @@ test_that("as.party.C5.0 works with boosted models", {
   expect_false(isTRUE(all.equal(p1, p2)))
 
   # Check tree number validation
-  expect_snapshot(lorax::as.party(c5_boost, tree = 0, data = penguins), error = TRUE)
+  expect_snapshot(
+    lorax::as.party(c5_boost, tree = 0, data = penguins),
+    error = TRUE
+  )
   # When tree exceeds num_trials, it should warn and use max tree
   expect_snapshot(lorax::as.party(c5_boost, tree = 11, data = penguins))
 })
@@ -128,7 +137,10 @@ test_that("as.party.C5.0 rejects rule-based models", {
   penguins <- get_penguins_data()
   c5_rules <- C50::C5.0(species ~ ., data = penguins, rules = TRUE)
 
-  expect_snapshot(lorax::as.party(c5_rules, tree = 1, data = penguins), error = TRUE)
+  expect_snapshot(
+    lorax::as.party(c5_rules, tree = 1, data = penguins),
+    error = TRUE
+  )
 })
 
 test_that("as.party.C5.0 does not show asterisks in node summaries", {
@@ -434,7 +446,11 @@ test_that("extract_rules.C5.0() handles duplicate tree numbers", {
   # Get actual number of trials
   n_trials <- c5_boost$trials["Actual"]
   if (n_trials >= 2) {
-    rules <- lorax::extract_rules(c5_boost, tree = c(1L, 1L, 2L), data = wa_trees)
+    rules <- lorax::extract_rules(
+      c5_boost,
+      tree = c(1L, 1L, 2L),
+      data = wa_trees
+    )
 
     # Should have results for tree 1 twice
     tree_counts <- table(rules$tree)

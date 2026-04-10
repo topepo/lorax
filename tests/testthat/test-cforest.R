@@ -1,6 +1,6 @@
 # Tests for extract_rules.cforest() --------------------------------------------
 skip_on_cran()
-skip_if(runif(1) <=0.1)
+skip_if(runif(1) <= 0.1)
 
 
 test_that("extract_rules.cforest() returns correct structure", {

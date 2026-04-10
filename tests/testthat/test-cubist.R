@@ -88,7 +88,9 @@ test_that("extract_rules.cubist handles continuous splits correctly", {
   # Verify that rules contain expected variables
   # With structured data, we expect splits on x1 and/or x2
   rule_text_all <- sapply(rules$rules, deparse)
-  expect_true(any(grepl("x1", rule_text_all)) || any(grepl("x2", rule_text_all)))
+  expect_true(
+    any(grepl("x1", rule_text_all)) || any(grepl("x2", rule_text_all))
+  )
 })
 
 test_that("extract_rules.cubist handles categorical splits correctly", {
@@ -263,7 +265,7 @@ test_that("active_predictors.cubist works with multiple committees", {
   expect_true(all(vars %in% all_vars))
 
   # With real estate data, we expect most variables to be used
-  expect_gte(length(vars), 3)  # At least beds, baths, sqft
+  expect_gte(length(vars), 3) # At least beds, baths, sqft
 })
 
 test_that("extract_rules.cubist integrates with rule_text", {
@@ -287,7 +289,9 @@ test_that("extract_rules.cubist integrates with rule_text", {
 
       # Text should contain variable names from the data
       # Check that at least one predictor appears
-      any_var_present <- any(sapply(colnames(data$x), function(v) grepl(v, text)))
+      any_var_present <- any(sapply(colnames(data$x), function(v) {
+        grepl(v, text)
+      }))
       expect_true(any_var_present)
     }
   }
@@ -409,8 +413,8 @@ test_that("active_predictors.cubist handles models with no active predictors", {
   # Edge case: very simple model that might use no predictors
   # (just intercept)
   set.seed(999)
-  x <- data.frame(x1 = rep(1, 10))  # Constant predictor
-  y <- rnorm(10)  # Random outcome
+  x <- data.frame(x1 = rep(1, 10)) # Constant predictor
+  y <- rnorm(10) # Random outcome
 
   mod <- cubist(x, y, control = cubistControl(rules = 1))
   active <- active_predictors(mod)

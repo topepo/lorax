@@ -126,16 +126,19 @@ get_ames_data <- function(n = 200) {
 
   # Select relevant numeric and factor predictors
   # Focus on variables likely to affect house price
-  ames_subset <- ames[1:min(n, nrow(ames)), c(
-    "Sale_Price",        # outcome
-    "Gr_Liv_Area",       # numeric: above grade living area
-    "Year_Built",        # numeric: original construction date
-    "Overall_Cond",      # ordinal: overall condition
-    "Garage_Cars",       # numeric: size of garage in car capacity
-    "Total_Bsmt_SF",     # numeric: total basement area
-    "Neighborhood",      # factor: physical location
-    "Bldg_Type"          # factor: type of dwelling
-  )]
+  ames_subset <- ames[
+    1:min(n, nrow(ames)),
+    c(
+      "Sale_Price", # outcome
+      "Gr_Liv_Area", # numeric: above grade living area
+      "Year_Built", # numeric: original construction date
+      "Overall_Cond", # ordinal: overall condition
+      "Garage_Cars", # numeric: size of garage in car capacity
+      "Total_Bsmt_SF", # numeric: total basement area
+      "Neighborhood", # factor: physical location
+      "Bldg_Type" # factor: type of dwelling
+    )
+  ]
 
   # Convert to data frame and ensure no NAs
   ames_subset <- na.omit(as.data.frame(ames_subset))
@@ -171,13 +174,19 @@ get_structured_regression_data <- function(n = 100) {
 
   # Create outcome with clear conditional structure
   # This ensures Cubist will create meaningful splits
-  y <- ifelse(X$x1 > 5,
-              ifelse(X$x2 > 5,
-                     X$x1 + X$x2,       # High x1, high x2
-                     X$x1 - X$x2),      # High x1, low x2
-              ifelse(X$x3 == "A",
-                     2 * X$x2,          # Low x1, category A
-                     X$x1 + 3))         # Low x1, category B or C
+  y <- ifelse(
+    X$x1 > 5,
+    ifelse(
+      X$x2 > 5,
+      X$x1 + X$x2, # High x1, high x2
+      X$x1 - X$x2
+    ), # High x1, low x2
+    ifelse(
+      X$x3 == "A",
+      2 * X$x2, # Low x1, category A
+      X$x1 + 3
+    )
+  ) # Low x1, category B or C
   y <- y + rnorm(n, sd = 0.5)
 
   list(x = X, y = y)
@@ -208,6 +217,6 @@ get_noisy_cubist_data <- function(n = 100, p = 5) {
   set.seed(789)
   x <- matrix(rnorm(n * p), n, p)
   colnames(x) <- paste0("x", 1:p)
-  y <- rnorm(n)  # Completely independent of x
+  y <- rnorm(n) # Completely independent of x
   list(x = as.data.frame(x), y = y)
 }
