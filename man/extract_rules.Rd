@@ -10,7 +10,7 @@
 \alias{extract_rules.ranger}
 \title{Extract an expression that defines a path to a terminal node}
 \usage{
-\method{extract_rules}{C5.0}(x, tree = 1L, data = NULL, ...)
+\method{extract_rules}{C5.0}(x, tree = 1L, ...)
 
 \method{extract_rules}{cforest}(x, tree = 1L, ...)
 
@@ -29,10 +29,10 @@ extract_rules(x, ...)
 Default is \code{1L} for the first tree. Values must be between 1 and the
 number of trees in the forest (\code{x$num.trees}).}
 
+\item{...}{Other arguments passed to methods}
+
 \item{data}{Data.frame containing the training data. Required for ranger
 models to properly extract rules with fitted values and node summaries.}
-
-\item{...}{Other arguments passed to methods}
 }
 \value{
 A data frame with column \code{rules} (an R expression) and \code{id} (an

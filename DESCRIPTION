@@ -22,6 +22,7 @@ Imports:
 Suggests:
     aorsf,
     C50,
+    Cubist,
     dbarts,
     grf,
     knitr,
