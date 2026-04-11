@@ -54,7 +54,7 @@ can take any form but, for most trees, they are simple statements such as
 
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'C5.0'</span></span>
-<span><span class="fu">extract_rules</span><span class="op">(</span><span class="va">x</span>, tree <span class="op">=</span> <span class="fl">1L</span>, data <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
+<span><span class="fu">extract_rules</span><span class="op">(</span><span class="va">x</span>, tree <span class="op">=</span> <span class="fl">1L</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'cforest'</span></span>
 <span><span class="fu">extract_rules</span><span class="op">(</span><span class="va">x</span>, tree <span class="op">=</span> <span class="fl">1L</span>, <span class="va">...</span><span class="op">)</span></span>
@@ -85,13 +85,13 @@ Default is <code>1L</code> for the first tree. Values must be between 1 and the
 number of trees in the forest (<code>x$num.trees</code>).</p></dd>
 
 
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
+<dd><p>Other arguments passed to methods</p></dd>
+
+
 <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p>Data.frame containing the training data. Required for ranger
 models to properly extract rules with fitted values and node summaries.</p></dd>
-
-
-<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Other arguments passed to methods</p></dd>
 
 </dl></div>
     <div id="value">
