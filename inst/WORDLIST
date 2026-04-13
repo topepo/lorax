@@ -1,6 +1,7 @@
 CMD
 Codecov
 GRF
+Gini
 IncMSE
 IncNodePurity
 LightGBM
@@ -10,14 +11,14 @@ Multiway
 ORCID
 ObliqueForest
 PBC
-Unscaling
 XGBoost
 aorsf
-aorsf's
+bart
 categoricals
+cforest
 funder
 grf
-interpretability
+importances
 leftDaughter
 lgb
 multiclass
@@ -26,7 +27,6 @@ partykit
 pre
 randomForest
 rightDaughter
+rpart
 tibble
-unscale
-unscaling
 xgb

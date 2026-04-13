@@ -6,8 +6,13 @@ Authors@R: c(
            comment = c(ORCID = "0000-0003-2402-136X")),
     person("Posit Software, PBC", role = c("cph", "fnd"))
   )
-Description: R functions and methods to extract elements of tree- and
-    rule-based models.
+Description: Provides a unified interface for extracting information from
+    tree- and rule-based models. Functions include extracting logical rules
+    that define terminal nodes, identifying predictors that were actually used
+    in splits, retrieving variable importance scores, and converting trees to
+    the 'partykit' format for visualization. Supports models from packages
+    including 'rpart', 'ranger', 'randomForest', 'xgboost', 'lightgbm', 'C50',
+    'Cubist', 'bart', and 'grf'.
 License: MIT + file LICENSE
 Depends: 
     R (>= 4.1.0)

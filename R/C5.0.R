@@ -867,7 +867,7 @@ c5_extract_rules_one_trial <- function(
 
   # Extract rules from this block
   rules_block <- rules_lines[start_idx:end_idx]
-  rules_list <- c5_parse_rules_block(rules_block, data)
+  rules_list <- c5_parse_rules_block(rules_block)
 
   # Return tibble with tree column
   tibble::tibble(
@@ -878,7 +878,7 @@ c5_extract_rules_one_trial <- function(
 }
 
 # Parse a block of C5.0 rules into list of expressions
-c5_parse_rules_block <- function(rules_lines, data) {
+c5_parse_rules_block <- function(rules_lines) {
   # Find rule boundaries (lines with conds=)
   rule_starts <- grep('^conds="\\d+"', rules_lines)
 

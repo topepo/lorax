@@ -6,7 +6,7 @@
 \alias{lorax-package}
 \title{lorax: Speak for the Trees}
 \description{
-R functions and methods to extract elements of tree- and rule-based models.
+Provides a unified interface for extracting information from tree- and rule-based models. Functions include extracting logical rules that define terminal nodes, identifying predictors that were actually used in splits, retrieving variable importance scores, and converting trees to the 'partykit' format for visualization. Supports models from packages including 'rpart', 'ranger', 'randomForest', 'xgboost', 'lightgbm', 'C50', 'Cubist', 'bart', and 'grf'.
 }
 \author{
 \strong{Maintainer}: Max Kuhn \email{max@posit.co} (\href{https://orcid.org/0000-0003-2402-136X}{ORCID})
